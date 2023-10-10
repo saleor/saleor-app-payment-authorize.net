@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
-  "name": "saleor-app-payment-template",
-  "description": "Saleor App Payment Template",
+  "name": "saleor-app-authorize-net",
+  "description": "Saleor App Authorize.net",
   "version": "0.0.1",
   "private": true,
   "repository": "github:saleor/saleor-app-payment-template",
