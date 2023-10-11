@@ -12,6 +12,7 @@
 		"postinstall": "pnpm generate"
 	},
 	"dependencies": {
+		"@apollo/client": "3.8.5",
 		"graphql": "16.8.0",
 		"graphql-tag": "2.12.6",
 		"next": "13.4.19",

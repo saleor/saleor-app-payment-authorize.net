@@ -12,7 +12,7 @@ export default createManifestHandler({
       tokenTargetUrl: `${context.appBaseUrl}/api/register`,
       appUrl: `${context.appBaseUrl}/config`,
       permissions: ["HANDLE_PAYMENTS"],
-      id: "saleor.app",
+      id: "saleor.app.authorize.net",
       version: packageJson.version,
       requiredSaleorVersion: ">=3.13",
       webhooks: [
