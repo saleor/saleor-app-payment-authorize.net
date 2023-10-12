@@ -1,5 +1,5 @@
-mutation PaymentGatewayInitialize($checkoutId: ID!) {
-	paymentGatewayInitialize(id: $checkoutId, amount: 0, paymentGateways: [{ id: "app.saleor.stripe" }]) {
+mutation PaymentGatewayInitialize($checkoutId: ID!, $paymentGateway: String!) {
+	paymentGatewayInitialize(id: $checkoutId, amount: 0, paymentGateways: [{ id: $paymentGateway }]) {
 		gatewayConfigs {
 			id
 			data

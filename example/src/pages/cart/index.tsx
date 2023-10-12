@@ -40,6 +40,7 @@ export default function CartPage() {
 		void createTransaction({
 			variables: {
 				checkoutId: checkoutResponse.checkout.id,
+				paymentGateway: authorizeNetAppId,
 				data: {},
 			},
 		});
@@ -80,7 +81,7 @@ export default function CartPage() {
 	if (transactionInitializeResponse.transactionInitialize?.errors.length || !authorizeData) {
 		return (
 			<div className="text-red-500">
-				<p>Failed to initialize Stripe transaction</p>
+				<p>Failed to initialize Authorize.net transaction</p>
 				<pre>{JSON.stringify(transactionInitializeResponse, null, 2)}</pre>
 			</div>
 		);

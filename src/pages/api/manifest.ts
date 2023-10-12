@@ -8,7 +8,7 @@ import { paymentGatewayInitializeSessionSyncWebhook } from "./webhooks/payment-g
 export default createManifestHandler({
   async manifestFactory(context) {
     const manifest: AppManifest = {
-      name: packageJson.name,
+      name: "Authorize.net",
       tokenTargetUrl: `${context.appBaseUrl}/api/register`,
       appUrl: `${context.appBaseUrl}/config`,
       permissions: ["HANDLE_PAYMENTS"],

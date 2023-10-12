@@ -1,5 +1,5 @@
-mutation TransactionInitialize($checkoutId: ID!, $data: JSON) {
-	transactionInitialize(id: $checkoutId, paymentGateway: { id: "app.saleor.stripe", data: $data }) {
+mutation TransactionInitialize($checkoutId: ID!, $paymentGateway: String!, $data: JSON) {
+	transactionInitialize(id: $checkoutId, paymentGateway: { id: $paymentGateway, data: $data }) {
 		transaction {
 			id
 		}

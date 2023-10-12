@@ -4,6 +4,13 @@ import {
   UntypedPaymentGatewayInitializeSessionDocument,
   type PaymentGatewayInitializeSessionEventFragment,
 } from "generated/graphql";
+import { createLogger } from "@/lib/logger";
+
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
 
 export const paymentGatewayInitializeSessionSyncWebhook =
   new SaleorSyncWebhook<PaymentGatewayInitializeSessionEventFragment>({
@@ -14,13 +21,15 @@ export const paymentGatewayInitializeSessionSyncWebhook =
     webhookPath: "/api/webhooks/payment-gateway-initialize-session",
   });
 
+const logger = createLogger({
+  name: "paymentGatewayInitializeSessionSyncWebhook",
+});
+
 /**
  * Happens before the payment. Responds with all the data needed to initialize the payment process, e.g. the payment methods.
  */
 export default paymentGatewayInitializeSessionSyncWebhook.createHandler(async (req, res, ctx) => {
-  const { payload } = ctx;
-
-  console.log(payload);
+  logger.debug("handler called");
 
   //   todo: replace with real response
   return res.send(
