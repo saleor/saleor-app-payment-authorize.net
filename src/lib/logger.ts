@@ -1,35 +1,37 @@
 // We have to use process.env, otherwise pino doesn't work
 /* eslint-disable node/no-process-env */
 import pino from "pino";
-import { isDevelopment, isTest } from "./isEnv";
-import { isObject } from "./utils";
-import { obfuscateValue } from "@/modules/app-configuration/utils";
-import { BaseError, BaseTrpcError } from "@/errors";
 
-/* c8 ignore start */
-export const logger = pino({
-  level: process.env.APP_DEBUG ?? "info",
-  redact: {
-    paths: [
-      "apiKey",
-      "*[*].apiKey",
-      // CHANGEME: Add other fields to obfuscate
-    ],
-    censor: (value) => redactLogValue(value),
+import pinoPretty from "pino-pretty";
+import { isObject } from "./utils";
+import { BaseError, BaseTrpcError } from "@/errors";
+import { obfuscateValue } from "@/modules/app-configuration/utils";
+
+const forbiddenProductionLevels = ["debug", "trace"];
+
+const logLevel = process.env.APP_LOG_LEVEL ?? "silent";
+
+if (process.env.NODE_ENV === "production" && forbiddenProductionLevels.includes(logLevel)) {
+  throw new Error(
+    `Production app can only log INFO or higher log level. "${logLevel}" is development only.`,
+  );
+}
+
+export const logger = pino(
+  {
+    level: logLevel,
   },
-  transport:
-    process.env.CI || isDevelopment() || isTest()
-      ? {
-          target: "pino-pretty",
-          options: {
-            colorize: true,
-          },
-        }
-      : undefined,
-});
-/* c8 ignore stop */
+  // stream,
+  process.env.NODE_ENV === "development"
+    ? pinoPretty({
+        colorize: true,
+      })
+    : pino.destination(),
+);
 
 export const createLogger = logger.child.bind(logger);
+
+export type Logger = typeof logger;
 
 export const redactLogValue = (value: unknown) => {
   if (typeof value !== "string") {
