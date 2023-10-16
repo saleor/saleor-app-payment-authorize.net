@@ -1,14 +1,16 @@
 import { gql, useMutation, useQuery } from "@apollo/client";
-import { useEffect } from "react";
-import { authorizeNetAppId } from "../../lib/common";
 import {
+	CheckoutCompleteDocument,
+	CheckoutCompleteMutation,
+	CheckoutCompleteMutationVariables,
+	GetCheckoutByIdDocument,
 	GetCheckoutByIdQuery,
 	GetCheckoutByIdQueryVariables,
-	GetCheckoutByIdDocument,
+	TransactionInitializeDocument,
 	TransactionInitializeMutation,
 	TransactionInitializeMutationVariables,
-	TransactionInitializeDocument,
 } from "../../../generated/graphql";
+import { authorizeNetAppId } from "../../lib/common";
 
 export default function CartPage() {
 	const checkoutId = typeof sessionStorage === "undefined" ? undefined : sessionStorage.getItem("checkoutId");
@@ -23,34 +25,33 @@ export default function CartPage() {
 			gql(TransactionInitializeDocument.toString()),
 		);
 
+	const [completeCheckout, { data: completeCheckoutResponse, loading: completeCheckoutLoading }] =
+		useMutation<CheckoutCompleteMutation, CheckoutCompleteMutationVariables>(
+			gql(CheckoutCompleteDocument.toString()),
+		);
+
 	const isAuthorizeAppInstalled = checkoutResponse?.checkout?.availablePaymentGateways.some(
 		(gateway) => gateway.id === authorizeNetAppId,
 	);
 
-	useEffect(() => {
-		if (
-			!checkoutResponse ||
-			!isAuthorizeAppInstalled ||
-			transactionInitializeLoading ||
-			transactionInitializeResponse ||
-			!checkoutResponse.checkout
-		) {
-			return;
-		}
-		void createTransaction({
+	const createOrder = async () => {
+		completeCheckout({
 			variables: {
-				checkoutId: checkoutResponse.checkout.id,
-				paymentGateway: authorizeNetAppId,
-				data: {},
+				checkoutId: checkoutId!,
 			},
 		});
-	}, [
-		checkoutResponse,
-		createTransaction,
-		isAuthorizeAppInstalled,
-		transactionInitializeLoading,
-		transactionInitializeResponse,
-	]);
+	};
+
+	const charge500USD = () => {
+		if (checkoutResponse?.checkout)
+			void createTransaction({
+				variables: {
+					checkoutId: checkoutResponse.checkout.id,
+					paymentGateway: authorizeNetAppId,
+					data: {},
+				},
+			});
+	};
 
 	if (!checkoutResponse || checkoutLoading) {
 		return <div>Loading…</div>;
@@ -65,20 +66,7 @@ export default function CartPage() {
 		);
 	}
 
-	if (!transactionInitializeResponse || transactionInitializeLoading) {
-		return <div>Loading…</div>;
-	}
-
-	const authorizeData = transactionInitializeResponse.transactionInitialize?.data as
-		| undefined
-		| {
-				paymentIntent: {
-					client_secret: string;
-				};
-				publishableKey: string;
-		  };
-
-	if (transactionInitializeResponse.transactionInitialize?.errors.length || !authorizeData) {
+	if (transactionInitializeResponse?.transactionInitialize?.errors.length) {
 		return (
 			<div className="text-red-500">
 				<p>Failed to initialize Authorize.net transaction</p>
@@ -87,18 +75,33 @@ export default function CartPage() {
 		);
 	}
 
+	const isTransactionCreated =
+		(transactionInitializeResponse?.transactionInitialize?.transaction?.id.length ?? 0) > 0;
+
+	if (isTransactionCreated) {
+		return (
+			<button
+				onClick={createOrder}
+				className="mt-2 rounded-md border bg-slate-900 px-8 py-2 text-lg text-white hover:bg-slate-800"
+			>
+				{completeCheckoutResponse?.checkoutComplete?.order ? (
+					"Order created ✅"
+				) : (
+					<>{completeCheckoutLoading ? "Creating..." : "Create order"}</>
+				)}
+			</button>
+		);
+	}
+
 	return (
 		<div>
-			<p>Use the following card details to test payments:</p>
-			<dl className="mb-4 grid w-fit grid-cols-[1fr,2fr] gap-x-2">
-				<dt className="font-bold">Card number</dt>
-				<dd>4242 4242 4242 4242</dd>
-				<dt className="font-bold">Expiry date</dt>
-				<dd>Any future date (eg. 03/30)</dd>
-				<dt className="font-bold">CVC</dt>
-				<dd>Any 3 digits (eg. 737)</dd>
-			</dl>
-			<div>Placeholder for Authorize component</div>
+			<button
+				className="mt-2 rounded-md border border-slate-600 bg-white px-8 py-2 text-lg text-slate-800 hover:bg-slate-100"
+				onClick={charge500USD}
+				disabled={transactionInitializeLoading}
+			>
+				{transactionInitializeLoading ? "Charging..." : "Charge 500 USD"}
+			</button>
 		</div>
 	);
 }
