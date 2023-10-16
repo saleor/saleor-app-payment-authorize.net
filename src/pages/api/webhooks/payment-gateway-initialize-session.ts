@@ -1,10 +1,11 @@
 import { SaleorSyncWebhook } from "@saleor/app-sdk/handlers/next";
+import { createLogger } from "@/lib/logger";
+import { SynchronousWebhookResponse } from "@/lib/webhook-response";
 import { saleorApp } from "@/saleor-app";
 import {
   UntypedPaymentGatewayInitializeSessionDocument,
   type PaymentGatewayInitializeSessionEventFragment,
 } from "generated/graphql";
-import { createLogger } from "@/lib/logger";
 
 export const config = {
   api: {
@@ -25,20 +26,23 @@ const logger = createLogger({
   name: "paymentGatewayInitializeSessionSyncWebhook",
 });
 
+class PaymentGatewayInitializeSessionWebhookResponse extends SynchronousWebhookResponse<"PAYMENT_GATEWAY_INITIALIZE_SESSION"> {}
+
 /**
  * Happens before the payment. Responds with all the data needed to initialize the payment process, e.g. the payment methods.
  */
 export default paymentGatewayInitializeSessionSyncWebhook.createHandler(async (req, res, ctx) => {
-  logger.debug("handler called");
+  logger.debug({ action: ctx.payload }, "handler called");
+  const webhookResponse = new PaymentGatewayInitializeSessionWebhookResponse(res);
 
-  //   todo: replace with real response
-  return res.send(
-    ctx.buildResponse({
-      excluded_methods: [],
-      lines: [],
-      shipping_price_gross_amount: 0,
-      shipping_price_net_amount: 0,
-      shipping_tax_rate: 0,
-    }),
-  );
+  try {
+    // todo: replace with real response
+    return webhookResponse.success({
+      data: {
+        foo: "bar",
+      },
+    });
+  } catch (error) {
+    return webhookResponse.error(error);
+  }
 });

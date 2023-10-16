@@ -1,10 +1,11 @@
 import { SaleorSyncWebhook } from "@saleor/app-sdk/handlers/next";
+import { createLogger } from "@/lib/logger";
+import { SynchronousWebhookResponse } from "@/lib/webhook-response";
 import { saleorApp } from "@/saleor-app";
 import {
-  type TransactionInitializeSessionEventFragment,
   UntypedTransactionInitializeSessionDocument,
+  type TransactionInitializeSessionEventFragment,
 } from "generated/graphql";
-import { createLogger } from "@/lib/logger";
 
 export const config = {
   api: {
@@ -25,23 +26,32 @@ const logger = createLogger({
   name: "transactionInitializeSessionSyncWebhook",
 });
 
+class TransactionInitializeSessionWebhookResponse extends SynchronousWebhookResponse<"TRANSACTION_INITIALIZE_SESSION"> {}
+
 /**
  * Initializes the payment processing. Based on the response, Saleor will create or update the transaction with the appropriate status and balance. The logic for whether the transaction is charged or cancelled is executed in different webhooks (`TRANSACTION_CANCELATION_REQUESTED`, `TRANSACTION_CHARGE_REQUESTED`)
  */
 export default transactionInitializeSessionSyncWebhook.createHandler(async (req, res, ctx) => {
-  logger.debug("handler called");
+  const webhookResponse = new TransactionInitializeSessionWebhookResponse(res);
+  logger.debug(
+    { action: ctx.payload.action, data: ctx.payload.data, transaction: ctx.payload.transaction },
+    "handler called",
+  );
 
-  //   todo: replace with real response
-  return res.send(
-    ctx.buildResponse({
-      excluded_methods: [],
-      lines: [],
-      shipping_price_gross_amount: 0,
-      shipping_price_net_amount: 0,
-      shipping_tax_rate: 0,
+  try {
+    //   todo: replace with real response
+    return webhookResponse.success({
+      amount: 500,
+      result: "CHARGE_SUCCESS",
       data: {
         foo: "bar",
       },
-    }),
-  );
+      externalUrl: "https://example.com",
+      message: "Success",
+      pspReference: "pspReference",
+      time: "",
+    });
+  } catch (error) {
+    return webhookResponse.error(error);
+  }
 });
