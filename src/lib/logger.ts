@@ -10,7 +10,7 @@ import { obfuscateValue } from "@/modules/app-configuration/utils";
 const forbiddenProductionLevels = ["debug", "trace"];
 
 const logLevel = process.env.APP_LOG_LEVEL ?? "silent";
-
+/* c8 ignore start */
 if (process.env.NODE_ENV === "production" && forbiddenProductionLevels.includes(logLevel)) {
   throw new Error(
     `Production app can only log INFO or higher log level. "${logLevel}" is development only.`,
