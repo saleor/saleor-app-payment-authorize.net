@@ -29,6 +29,8 @@ export const logger = pino(
     : pino.destination(),
 );
 
+/* c8 ignore stop */
+
 export const createLogger = logger.child.bind(logger);
 
 export type Logger = typeof logger;
