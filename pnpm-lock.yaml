@@ -1,9 +1,5 @@
 lockfileVersion: '6.0'
 
-settings:
-  autoInstallPeers: true
-  excludeLinksFromLockfile: false
-
 overrides:
   '@urql/exchange-auth>@urql/core': 3.2.2
 
@@ -105,11 +101,11 @@ dependencies:
     specifier: 1.1.7
     version: 1.1.7
   pino:
-    specifier: 8.15.0
-    version: 8.15.0
+    specifier: 8.14.1
+    version: 8.14.1
   pino-pretty:
-    specifier: 10.2.0
-    version: 10.2.0
+    specifier: 10.0.0
+    version: 10.0.0
   react:
     specifier: 18.2.0
     version: 18.2.0
@@ -9097,8 +9093,8 @@ packages:
       split2: 4.2.0
     dev: false
 
-  /pino-pretty@10.2.0:
-    resolution: {integrity: sha512-tRvpyEmGtc2D+Lr3FulIZ+R1baggQ4S3xD2Ar93KixFEDx6SEAUP3W5aYuEw1C73d6ROrNcB2IXLteW8itlwhA==}
+  /pino-pretty@10.0.0:
+    resolution: {integrity: sha512-zKFjYXBzLaLTEAN1ayKpHXtL5UeRQC7R3lvhKe7fWs7hIVEjKGG/qIXwQt9HmeUp71ogUd/YcW+LmMwRp4KT6Q==}
     hasBin: true
     dependencies:
       colorette: 2.0.20
@@ -9121,8 +9117,8 @@ packages:
     resolution: {integrity: sha512-cHjPPsE+vhj/tnhCy/wiMh3M3z3h/j15zHQX+S9GkTBgqJuTuJzYJ4gUyACLhDaJ7kk9ba9iRDmbH2tJU03OiA==}
     dev: false
 
-  /pino@8.15.0:
-    resolution: {integrity: sha512-olUADJByk4twxccmAxb1RiGKOSvddHugCV3wkqjyv+3Sooa2KLrmXrKEWOKi0XPCLasRR5jBXxioE1jxUa4KzQ==}
+  /pino@8.14.1:
+    resolution: {integrity: sha512-8LYNv7BKWXSfS+k6oEc6occy5La+q2sPwU3q2ljTX5AZk7v+5kND2o5W794FyRaqha6DJajmkNRsWtPpFyMUdw==}
     hasBin: true
     dependencies:
       atomic-sleep: 1.0.0
@@ -11417,3 +11413,7 @@ packages:
       react: 18.2.0
       use-sync-external-store: 1.2.0(react@18.2.0)
     dev: false
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
