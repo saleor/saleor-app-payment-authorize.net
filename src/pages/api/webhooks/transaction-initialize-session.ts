@@ -1,11 +1,12 @@
 import { SaleorSyncWebhook } from "@saleor/app-sdk/handlers/next";
 import { createLogger } from "@/lib/logger";
-import { SynchronousWebhookResponse } from "@/lib/webhook-response";
+import { SynchronousWebhookResponseBuilder } from "@/lib/webhook-response";
 import { saleorApp } from "@/saleor-app";
 import {
   UntypedTransactionInitializeSessionDocument,
   type TransactionInitializeSessionEventFragment,
 } from "generated/graphql";
+import { AuthorizeNetService } from "@/modules/authorize-net/authorize-net.service";
 
 export const config = {
   api: {
@@ -26,32 +27,24 @@ const logger = createLogger({
   name: "transactionInitializeSessionSyncWebhook",
 });
 
-class TransactionInitializeSessionWebhookResponse extends SynchronousWebhookResponse<"TRANSACTION_INITIALIZE_SESSION"> {}
+class WebhookResponseBuilder extends SynchronousWebhookResponseBuilder<"TRANSACTION_INITIALIZE_SESSION"> {}
+
+const authorizeNetService = new AuthorizeNetService();
 
 /**
  * Initializes the payment processing. Based on the response, Saleor will create or update the transaction with the appropriate status and balance. The logic for whether the transaction is charged or cancelled is executed in different webhooks (`TRANSACTION_CANCELATION_REQUESTED`, `TRANSACTION_CHARGE_REQUESTED`)
  */
 export default transactionInitializeSessionSyncWebhook.createHandler(async (req, res, ctx) => {
-  const webhookResponse = new TransactionInitializeSessionWebhookResponse(res);
+  const responseBuilder = new WebhookResponseBuilder(res);
   logger.debug(
     { action: ctx.payload.action, data: ctx.payload.data, transaction: ctx.payload.transaction },
     "handler called",
   );
 
   try {
-    //   todo: replace with real response
-    return webhookResponse.success({
-      amount: 500,
-      result: "CHARGE_SUCCESS",
-      data: {
-        foo: "bar",
-      },
-      externalUrl: "https://example.com",
-      message: "Success",
-      pspReference: "pspReference",
-      time: "",
-    });
+    const response = authorizeNetService.transactionInitializeSession(ctx.payload);
+    return responseBuilder.success(response);
   } catch (error) {
-    return webhookResponse.error(error);
+    return responseBuilder.error(error);
   }
 });

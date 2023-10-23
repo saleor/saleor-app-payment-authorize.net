@@ -4,12 +4,12 @@ import { type SyncWebhookResponsesMap } from "@saleor/app-sdk/handlers/next";
 import { createLogger } from "@/lib/logger";
 import { BaseError } from "@/errors";
 
-type SyncWebhookResponse<TWebhookName extends keyof SyncWebhookResponsesMap> =
+export type SyncWebhookResponse<TWebhookName extends keyof SyncWebhookResponsesMap> =
   SyncWebhookResponsesMap[TWebhookName];
 
-export class SynchronousWebhookResponse<TWebhookName extends keyof SyncWebhookResponsesMap> {
+export class SynchronousWebhookResponseBuilder<TWebhookName extends keyof SyncWebhookResponsesMap> {
   private logger = createLogger({
-    name: "SynchronousWebhookResponse",
+    name: "SynchronousWebhookResponseBuilder",
   });
   constructor(private res: NextApiResponse) {}
 
