@@ -210,6 +210,9 @@ devDependencies:
   '@testing-library/react-hooks':
     specifier: 8.0.1
     version: 8.0.1(@types/react@18.2.21)(react-dom@18.2.0)(react@18.2.0)
+  '@types/authorizenet':
+    specifier: 1.0.1
+    version: 1.0.1
   '@types/bluebird':
     specifier: 3.5.38
     version: 3.5.38
@@ -4078,6 +4081,10 @@ packages:
 
   /@types/aria-query@5.0.1:
     resolution: {integrity: sha512-XTIieEY+gvJ39ChLcB4If5zHtPxt3Syj5rgZR+e1ctpmK8NjPf0zFqsz4JpLJT0xla9GFDKjy8Cpu331nrmE1Q==}
+    dev: true
+
+  /@types/authorizenet@1.0.1:
+    resolution: {integrity: sha512-e2xp1627TQtaV4Q6hCO873lbW+ZiBWSegjUEGxyl7gyM0rZMM7Q4ZqnDYWHyYdQVMsKSCSfuviWf05PKHjs0lA==}
     dev: true
 
   /@types/bluebird@3.5.38:
