@@ -7,6 +7,24 @@ const ApiContracts = AuthorizeNet.APIContracts;
 const ApiControllers = AuthorizeNet.APIControllers;
 const ApiConstants = AuthorizeNet.Constants;
 
+type AuthorizeTransactionInput = {
+  amount: number;
+  creditCardNumber: string;
+  expirationDate: string;
+  cardCode: string;
+  orderDescription: string;
+  orderInvoiceNumber: string;
+  lines: [
+    {
+      id: string;
+      name: string;
+      description: string;
+      quantity: number;
+      unitPrice: number;
+    },
+  ];
+};
+
 export class AuthorizeNetClient {
   private merchantAuthenticationType: AuthorizeNet.APIContracts.MerchantAuthenticationType;
   private logger = createLogger({
@@ -25,10 +43,41 @@ export class AuthorizeNetClient {
     return this.config.isSandBox ? ApiConstants.endpoint.sandbox : ApiConstants.endpoint.production;
   }
 
-  chargeCreditCard({ amount }: { amount: number }) {
+  /*
+    https://developer.authorize.net/api/reference/features/credit_card_tutorial.html
+    https://developer.authorize.net/hello_world.html
+  */
+  async chargeCreditCard({
+    amount,
+    creditCardNumber,
+    expirationDate,
+    cardCode,
+    orderDescription,
+    orderInvoiceNumber,
+    lines,
+  }: AuthorizeTransactionInput) {
     const creditCard = new ApiContracts.CreditCardType();
-    creditCard.setCardNumber("4111111111111111");
-    creditCard.setExpirationDate("2024-12");
+    creditCard.setCardNumber(creditCardNumber);
+    creditCard.setExpirationDate(expirationDate);
+    creditCard.setCardCode(cardCode);
+
+    const order = new ApiContracts.OrderType();
+    order.setDescription(orderDescription);
+    order.setInvoiceNumber(orderInvoiceNumber);
+
+    const lineItems = new ApiContracts.ArrayOfLineItem();
+
+    const mappedLineItems = lines.map((line) => {
+      const lineItem = new ApiContracts.LineItemType();
+      lineItem.setItemId(line.id);
+      lineItem.setName(line.name);
+      lineItem.setDescription(line.description);
+      lineItem.setQuantity(line.quantity);
+      lineItem.setUnitPrice(line.unitPrice);
+      return lineItem;
+    });
+
+    lineItems.setLineItem(mappedLineItems);
 
     const payment = new ApiContracts.PaymentType();
     payment.setCreditCard(creditCard);
@@ -37,6 +86,8 @@ export class AuthorizeNetClient {
     transactionRequest.setTransactionType(ApiContracts.TransactionTypeEnum.AUTHCAPTURETRANSACTION);
     transactionRequest.setAmount(amount);
     transactionRequest.setPayment(payment);
+    transactionRequest.setOrder(order);
+    transactionRequest.setLineItems(lineItems);
 
     const createRequest = new ApiContracts.CreateTransactionRequest();
     createRequest.setMerchantAuthentication(this.merchantAuthenticationType);
@@ -48,6 +99,9 @@ export class AuthorizeNetClient {
 
     transactionController.setEnvironment(this.getEnvironment());
 
-    return createTypeSafeTransaction(transactionController);
+    const response = await createTypeSafeTransaction(transactionController);
+    this.logger.info({ response });
+
+    return response;
   }
 }
