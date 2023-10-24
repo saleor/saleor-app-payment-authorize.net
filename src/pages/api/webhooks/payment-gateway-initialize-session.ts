@@ -1,12 +1,13 @@
 import { SaleorSyncWebhook } from "@saleor/app-sdk/handlers/next";
 import { createLogger } from "@/lib/logger";
 import { SynchronousWebhookResponseBuilder } from "@/lib/webhook-response";
+import { authorizeMockedConfig } from "@/modules/authorize-net/authorize-net-config";
+import { AuthorizeNetService } from "@/modules/authorize-net/authorize-net.service";
 import { saleorApp } from "@/saleor-app";
 import {
   UntypedPaymentGatewayInitializeSessionDocument,
   type PaymentGatewayInitializeSessionEventFragment,
 } from "generated/graphql";
-import { AuthorizeNetService } from "@/modules/authorize-net/authorize-net.service";
 
 export const config = {
   api: {
@@ -29,7 +30,7 @@ const logger = createLogger({
 
 class WebhookResponseBuilder extends SynchronousWebhookResponseBuilder<"PAYMENT_GATEWAY_INITIALIZE_SESSION"> {}
 
-const authorizeNetService = new AuthorizeNetService();
+const authorizeNetService = new AuthorizeNetService(authorizeMockedConfig);
 
 /**
  * Happens before the payment. Responds with all the data needed to initialize the payment process, e.g. the payment methods.

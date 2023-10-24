@@ -1,12 +1,13 @@
 import { SaleorSyncWebhook } from "@saleor/app-sdk/handlers/next";
 import { createLogger } from "@/lib/logger";
 import { SynchronousWebhookResponseBuilder } from "@/lib/webhook-response";
+import { authorizeMockedConfig } from "@/modules/authorize-net/authorize-net-config";
+import { AuthorizeNetService } from "@/modules/authorize-net/authorize-net.service";
 import { saleorApp } from "@/saleor-app";
 import {
   UntypedTransactionInitializeSessionDocument,
   type TransactionInitializeSessionEventFragment,
 } from "generated/graphql";
-import { AuthorizeNetService } from "@/modules/authorize-net/authorize-net.service";
 
 export const config = {
   api: {
@@ -29,7 +30,7 @@ const logger = createLogger({
 
 class WebhookResponseBuilder extends SynchronousWebhookResponseBuilder<"TRANSACTION_INITIALIZE_SESSION"> {}
 
-const authorizeNetService = new AuthorizeNetService();
+const authorizeNetService = new AuthorizeNetService(authorizeMockedConfig);
 
 /**
  * Initializes the payment processing. Based on the response, Saleor will create or update the transaction with the appropriate status and balance. The logic for whether the transaction is charged or cancelled is executed in different webhooks (`TRANSACTION_CANCELATION_REQUESTED`, `TRANSACTION_CHARGE_REQUESTED`)
@@ -42,7 +43,7 @@ export default transactionInitializeSessionSyncWebhook.createHandler(async (req,
   );
 
   try {
-    const response = authorizeNetService.transactionInitializeSession(ctx.payload);
+    const response = await authorizeNetService.transactionInitializeSession(ctx.payload);
     return responseBuilder.success(response);
   } catch (error) {
     return responseBuilder.error(error);

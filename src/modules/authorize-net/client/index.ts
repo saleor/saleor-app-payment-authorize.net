@@ -1,6 +1,7 @@
 import AuthorizeNet from "authorizenet";
+import { type AuthorizeNetConfig } from "../authorize-net-config";
+import { createTypeSafeTransaction } from "./create-transaction";
 import { createLogger } from "@/lib/logger";
-import { env } from "@/lib/env.mjs";
 
 const ApiContracts = AuthorizeNet.APIContracts;
 const ApiControllers = AuthorizeNet.APIControllers;
@@ -12,15 +13,19 @@ export class AuthorizeNetClient {
     name: "AuthorizeNetClient",
   });
 
-  constructor() {
+  constructor(private config: AuthorizeNetConfig) {
     const merchantAuthenticationType = new ApiContracts.MerchantAuthenticationType();
-    merchantAuthenticationType.setName(env.API_LOGIN_ID);
-    merchantAuthenticationType.setTransactionKey(env.TRANSACTION_KEY);
+    merchantAuthenticationType.setName(config.apiLoginId);
+    merchantAuthenticationType.setTransactionKey(config.transactionKey);
 
     this.merchantAuthenticationType = merchantAuthenticationType;
   }
 
-  ping() {
+  private getEnvironment() {
+    return this.config.isSandBox ? ApiConstants.endpoint.sandbox : ApiConstants.endpoint.production;
+  }
+
+  chargeCreditCard({ amount }: { amount: number }) {
     const creditCard = new ApiContracts.CreditCardType();
     creditCard.setCardNumber("4111111111111111");
     creditCard.setExpirationDate("2024-12");
@@ -30,7 +35,7 @@ export class AuthorizeNetClient {
 
     const transactionRequest = new ApiContracts.TransactionRequestType();
     transactionRequest.setTransactionType(ApiContracts.TransactionTypeEnum.AUTHCAPTURETRANSACTION);
-    transactionRequest.setAmount(100);
+    transactionRequest.setAmount(amount);
     transactionRequest.setPayment(payment);
 
     const createRequest = new ApiContracts.CreateTransactionRequest();
@@ -41,12 +46,8 @@ export class AuthorizeNetClient {
       createRequest.getJSON(),
     );
 
-    transactionController.setEnvironment(ApiConstants.endpoint.sandbox);
-    transactionController.execute(() => {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      const apiResponse = transactionController.getResponse();
-      const response = new ApiContracts.CreateTransactionResponse(apiResponse);
-      this.logger.debug({ response });
-    });
+    transactionController.setEnvironment(this.getEnvironment());
+
+    return createTypeSafeTransaction(transactionController);
   }
 }
