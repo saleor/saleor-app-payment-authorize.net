@@ -1,34 +1,42 @@
 import AuthorizeNet from "authorizenet";
+import { z } from "zod";
+import { AuthorizeNetUnexpectedDataError } from "./authorize-net-error";
 import { type TransactionInitializeSessionEventFragment } from "generated/graphql";
 
 const ApiContracts = AuthorizeNet.APIContracts;
 
-const mockedInput = {
-  creditCardNumber: "4111111111111111",
-  expirationDate: "2023-12",
-  cardCode: "123",
-  orderDescription: "Saleor order",
-  orderInvoiceNumber: "INV-12345",
-  lines: [
-    {
-      description: "Cool T-Shirt from Saleor",
-      id: "test",
-      name: "T-Shirt",
-      quantity: 1,
-      unitPrice: 1,
-    },
-  ],
-};
+/**
+ * `payload.data` is app-agnostic stringified JSON object we need to parse to make sure it has the expected structure.
+ * To be able to create the transaction, Authorize App expects to receive Accept Payment nonce in the `event.data` object.
+ * @see https://developer.authorize.net/api/reference/index.html#accept-suite-create-an-accept-payment-transaction
+ */
+const payloadDataSchema = z.object({
+  dataDescriptor: z.string(),
+  dataValue: z.string(),
+});
 
 // This function doesn't know anything about the payment method
 function buildTransactionFromPayload(
   payload: TransactionInitializeSessionEventFragment,
-  payment: AuthorizeNet.APIContracts.PaymentType,
 ): AuthorizeNet.APIContracts.TransactionRequestType {
-  // todo: map order data
-  // const order = new ApiContracts.OrderType();
-  // order.setDescription(payload.orderDescription);
-  // order.setInvoiceNumber(input.orderInvoiceNumber);
+  const payloadDataParseResult = payloadDataSchema.safeParse(payload.data);
+
+  if (!payloadDataParseResult.success) {
+    throw new AuthorizeNetUnexpectedDataError("`data` object has unexpected structure.", {
+      props: {
+        detail: payloadDataParseResult.error,
+      },
+    });
+  }
+
+  const paymentNonce = payloadDataParseResult.data;
+
+  const opaqueData = new ApiContracts.OpaqueDataType();
+  opaqueData.setDataDescriptor(paymentNonce.dataDescriptor);
+  opaqueData.setDataValue(paymentNonce.dataValue);
+
+  const payment = new ApiContracts.PaymentType();
+  payment.setOpaqueData(opaqueData);
 
   const lineItems = new ApiContracts.ArrayOfLineItem();
 
@@ -52,28 +60,11 @@ function buildTransactionFromPayload(
   transactionRequest.setTransactionType(ApiContracts.TransactionTypeEnum.AUTHCAPTURETRANSACTION);
   transactionRequest.setAmount(payload.action.amount);
   transactionRequest.setPayment(payment);
-  // transactionRequest.setOrder(order);
   transactionRequest.setLineItems(lineItems);
 
   return transactionRequest;
 }
 
-function buildCreditCardTransaction(
-  payload: TransactionInitializeSessionEventFragment,
-): AuthorizeNet.APIContracts.TransactionRequestType {
-  ApiContracts.PaymentMethodEnum;
-  // todo: replace with real credit card
-  const creditCard = new ApiContracts.CreditCardType();
-  creditCard.setCardNumber(mockedInput.creditCardNumber);
-  creditCard.setExpirationDate(mockedInput.expirationDate);
-  creditCard.setCardCode(mockedInput.cardCode);
-
-  const payment = new ApiContracts.PaymentType();
-  payment.setCreditCard(creditCard);
-
-  return buildTransactionFromPayload(payload, payment);
-}
-
 export const transactionBuilder = {
-  buildCreditCardTransaction,
+  buildTransactionFromPayload,
 };

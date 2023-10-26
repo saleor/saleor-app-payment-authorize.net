@@ -42,7 +42,7 @@ export default function CartPage() {
 		});
 	};
 
-	const charge500USD = () => {
+	const payFully = () => {
 		if (checkoutResponse?.checkout)
 			void createTransaction({
 				variables: {
@@ -97,10 +97,10 @@ export default function CartPage() {
 		<div>
 			<button
 				className="mt-2 rounded-md border border-slate-600 bg-white px-8 py-2 text-lg text-slate-800 hover:bg-slate-100"
-				onClick={charge500USD}
+				onClick={payFully}
 				disabled={transactionInitializeLoading}
 			>
-				{transactionInitializeLoading ? "Charging..." : "Charge 500 USD"}
+				{transactionInitializeLoading ? "Paying..." : "Pay fully"}
 			</button>
 		</div>
 	);

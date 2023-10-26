@@ -1,6 +1,6 @@
 import { transactionBuilder } from "./authorize-net-transaction-builder";
 import { type AuthorizeNetConfig } from "./authorize-net-config";
-import { AuthorizeNetClient } from "./client";
+import { AuthorizeNetClient } from "./authorize-net-client";
 import { createLogger } from "@/lib/logger";
 import { type SyncWebhookResponse } from "@/lib/webhook-response";
 import {
@@ -43,9 +43,9 @@ export class AuthorizeNetService implements PaymentsWebhooks {
   async transactionInitializeSession(
     payload: TransactionInitializeSessionEventFragment,
   ): Promise<SyncWebhookResponse<"TRANSACTION_INITIALIZE_SESSION">> {
-    const creditCardTransaction = transactionBuilder.buildCreditCardTransaction(payload);
+    const transaction = transactionBuilder.buildTransactionFromPayload(payload);
 
-    const response = await this.client.createTransaction(creditCardTransaction);
+    const response = await this.client.createTransaction(transaction);
     this.logger.debug({ response }, "transactionInitializeSession");
 
     return {
