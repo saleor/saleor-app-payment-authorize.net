@@ -12,7 +12,7 @@ export class SynchronousWebhookResponseBuilder<TWebhookName extends keyof SyncWe
   constructor(private res: NextApiResponse) {}
 
   respond(response: SyncWebhookResponse<TWebhookName>) {
-    this.logger.debug("responding with", response);
+    this.logger.debug({ response }, "responding with");
     this.res.status(200).json(response);
   }
 }

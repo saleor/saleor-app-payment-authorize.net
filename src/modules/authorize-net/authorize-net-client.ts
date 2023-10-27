@@ -116,7 +116,6 @@ export class AuthorizeNetClient {
           resolve(parsedResponse);
         });
       } catch (error) {
-        this.logger.error(error);
         if (error instanceof z.ZodError) {
           reject(error.format());
         }

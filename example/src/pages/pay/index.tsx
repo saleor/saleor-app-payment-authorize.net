@@ -51,7 +51,7 @@ export default function PayPage() {
 		GetCheckoutByIdQueryVariables
 	>(gql(GetCheckoutByIdDocument.toString()), { variables: { id: checkoutId } });
 
-	const [initializePaymentGateway] = useMutation<
+	const [initializePaymentGateway, { loading: isPaymentGatewayLoading }] = useMutation<
 		PaymentGatewayInitializeMutation,
 		PaymentGatewayInitializeMutationVariables
 	>(gql(PaymentGatewayInitializeDocument.toString()));
@@ -67,7 +67,6 @@ export default function PayPage() {
 
 	const getAcceptData = React.useCallback(async () => {
 		if (checkoutId) {
-			setIsLoading(true);
 			const response = await initializePaymentGateway({
 				variables: {
 					checkoutId,
@@ -95,7 +94,6 @@ export default function PayPage() {
 				publicClientKey: string;
 			};
 
-			setIsLoading(false);
 			setAcceptData(nextAcceptData);
 		}
 	}, [checkoutId, initializePaymentGateway]);
@@ -159,6 +157,7 @@ export default function PayPage() {
 			<form onSubmit={handleFormSubmit}>
 				<div className="flex flex-col gap-2 w-2/5">
 					<input
+						disabled={isPaymentGatewayLoading}
 						type="text"
 						placeholder="Card number"
 						name="cardNumber"
@@ -166,6 +165,7 @@ export default function PayPage() {
 						onChange={(event) => setCardData({ ...cardData, cardNumber: event.target.value })}
 					/>
 					<input
+						disabled={isPaymentGatewayLoading}
 						type="text"
 						placeholder="Card expiration month"
 						name="month"
@@ -173,6 +173,7 @@ export default function PayPage() {
 						onChange={(event) => setCardData({ ...cardData, month: event.target.value })}
 					/>
 					<input
+						disabled={isPaymentGatewayLoading}
 						type="text"
 						placeholder="Card expiration year"
 						name="year"
@@ -180,6 +181,7 @@ export default function PayPage() {
 						onChange={(event) => setCardData({ ...cardData, year: event.target.value })}
 					/>
 					<input
+						disabled={isPaymentGatewayLoading}
 						type="text"
 						placeholder="Card code"
 						name="cardCode"
@@ -190,7 +192,7 @@ export default function PayPage() {
 				<button
 					className="mt-2 rounded-md border border-slate-600 bg-white px-8 py-2 text-lg text-slate-800 hover:bg-slate-100"
 					type="submit"
-					disabled={isLoading}
+					disabled={isPaymentGatewayLoading || isLoading}
 				>
 					{isLoading ? "Paying..." : "Pay"}
 				</button>

@@ -44,6 +44,8 @@ export default paymentGatewayInitializeSessionSyncWebhook.createHandler(async (r
     const response = authorizeNetService.paymentGatewayInitializeSession(ctx.payload);
     return responseBuilder.respond(response);
   } catch (error) {
+    // eslint-disable-next-line @saleor/saleor-app/logger-leak
+    logger.error({ error }, "paymentGatewayInitializeSession error");
     Sentry.captureMessage("paymentGatewayInitializeSession error");
     Sentry.captureException(error);
 

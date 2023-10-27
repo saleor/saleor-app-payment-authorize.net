@@ -44,6 +44,8 @@ export default transactionInitializeSessionSyncWebhook.createHandler(async (req,
     const response = await authorizeNetService.transactionInitializeSession(ctx.payload);
     return responseBuilder.respond(response);
   } catch (error) {
+    // eslint-disable-next-line @saleor/saleor-app/logger-leak
+    logger.error({ error }, "transactionInitializeSession error");
     Sentry.captureMessage("transactionInitializeSession error");
     Sentry.captureException(error);
 
