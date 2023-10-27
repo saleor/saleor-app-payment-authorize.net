@@ -1,4 +1,4 @@
-import { useAcceptJs } from "react-acceptjs";
+import { AuthNetEnvironment, useAcceptJs } from "react-acceptjs";
 
 import { gql, useMutation, useQuery } from "@apollo/client";
 import { useRouter } from "next/router";
@@ -29,6 +29,20 @@ function getAuthData() {
 
 const authData = getAuthData();
 
+function getAcceptEnvironment() {
+	const acceptEnvironment = process.env.NEXT_PUBLIC_AUTHORIZE_ENVIRONMENT;
+
+	if (!acceptEnvironment) {
+		throw new Error("Missing Authorize.net environment");
+	}
+
+	if (acceptEnvironment !== "SANDBOX" && acceptEnvironment !== "PRODUCTION") {
+		throw new Error("Invalid Authorize.net environment");
+	}
+
+	return acceptEnvironment as AuthNetEnvironment;
+}
+
 export default function PayPage() {
 	const [isLoading, setIsLoading] = useState(false);
 	const [isError, setIsError] = useState(false);
@@ -38,7 +52,7 @@ export default function PayPage() {
 		year: "",
 		cardCode: "",
 	});
-	const { dispatchData } = useAcceptJs({ authData, environment: "SANDBOX" });
+	const { dispatchData } = useAcceptJs({ authData, environment: getAcceptEnvironment() });
 
 	const router = useRouter();
 	const checkoutId = typeof sessionStorage === "undefined" ? undefined : sessionStorage.getItem("checkoutId");
