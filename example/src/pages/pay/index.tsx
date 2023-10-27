@@ -1,3 +1,5 @@
+import { useAcceptJs } from "react-acceptjs";
+
 import { gql, useMutation, useQuery } from "@apollo/client";
 import { useRouter } from "next/router";
 import {
@@ -9,8 +11,35 @@ import {
 	TransactionInitializeMutationVariables,
 } from "../../../generated/graphql";
 import { authorizeNetAppId } from "../../lib/common";
+import { useState } from "react";
+
+function getAuthData() {
+	const apiLoginID = process.env.NEXT_PUBLIC_AUTHORIZE_API_LOGIN_ID;
+	const clientKey = process.env.NEXT_PUBLIC_AUTHORIZE_PUBLIC_KEY;
+
+	if (!apiLoginID || !clientKey) {
+		throw new Error("Missing Authorize.net credentials");
+	}
+
+	return {
+		apiLoginID,
+		clientKey,
+	};
+}
+
+const authData = getAuthData();
 
 export default function PayPage() {
+	const [isLoading, setIsLoading] = useState(false);
+	const [isError, setIsError] = useState(false);
+	const [cardData, setCardData] = useState({
+		cardNumber: "",
+		month: "",
+		year: "",
+		cardCode: "",
+	});
+	const { dispatchData } = useAcceptJs({ authData, environment: "SANDBOX" });
+
 	const router = useRouter();
 	const checkoutId = typeof sessionStorage === "undefined" ? undefined : sessionStorage.getItem("checkoutId");
 
@@ -18,15 +47,15 @@ export default function PayPage() {
 		throw new Error("Checkout ID not found in sessionStorage");
 	}
 
-	const { data: checkoutResponse, loading: checkoutLoading } = useQuery<
+	const { data: checkoutResponse, loading: isCheckoutLoading } = useQuery<
 		GetCheckoutByIdQuery,
 		GetCheckoutByIdQueryVariables
 	>(gql(GetCheckoutByIdDocument.toString()), { variables: { id: checkoutId } });
 
-	const [createTransaction, { data: transactionInitializeResponse, loading: transactionInitializeLoading }] =
-		useMutation<TransactionInitializeMutation, TransactionInitializeMutationVariables>(
-			gql(TransactionInitializeDocument.toString()),
-		);
+	const [createTransaction] = useMutation<
+		TransactionInitializeMutation,
+		TransactionInitializeMutationVariables
+	>(gql(TransactionInitializeDocument.toString()));
 
 	const isAuthorizeAppInstalled = checkoutResponse?.checkout?.availablePaymentGateways.some(
 		(gateway) => gateway.id === authorizeNetAppId,
@@ -34,24 +63,38 @@ export default function PayPage() {
 
 	const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
+
 		if (checkoutResponse?.checkout) {
-			const response = await createTransaction({
-				variables: {
-					checkoutId: checkoutResponse.checkout.id,
-					paymentGateway: authorizeNetAppId,
-					data: {},
-				},
-			});
+			setIsLoading(true);
+			try {
+				const authorizeResponse = await dispatchData({ cardData });
 
-			if (response.data?.transactionInitialize?.errors) {
-				throw new Error("Failed to initialize transaction");
+				const saleorTransactionResponse = await createTransaction({
+					variables: {
+						checkoutId: checkoutResponse.checkout.id,
+						paymentGateway: authorizeNetAppId,
+						data: {
+							...authorizeResponse.opaqueData,
+						},
+					},
+				});
+
+				if (saleorTransactionResponse.data?.transactionInitialize?.data !== undefined) {
+					throw new Error("Failed to initialize transaction");
+				}
+
+				setIsLoading(false);
+
+				router.push("/success");
+			} catch (error) {
+				console.error(error);
+				setIsError(true);
+				setIsLoading(false);
 			}
-
-			router.push("/success");
 		}
 	};
 
-	if (!checkoutResponse || checkoutLoading) {
+	if (!checkoutResponse || isCheckoutLoading) {
 		return <div>Loading…</div>;
 	}
 
@@ -64,29 +107,49 @@ export default function PayPage() {
 		);
 	}
 
-	if (transactionInitializeResponse?.transactionInitialize?.errors.length) {
-		return (
-			<div className="text-red-500">
-				<p>Failed to initialize Authorize.net transaction</p>
-				<pre>{JSON.stringify(transactionInitializeResponse, null, 2)}</pre>
-			</div>
-		);
+	if (isError) {
+		return <div className="text-red-500">Error while creating a transaction</div>;
 	}
 
 	return (
 		<div>
 			<form onSubmit={handleFormSubmit}>
 				<div className="flex flex-col gap-2 w-2/5">
-					<input type="text" placeholder="Card number" />
-					<input type="text" placeholder="Expiration date" />
-					<input type="text" placeholder="CVV" />
+					<input
+						type="text"
+						placeholder="Card number"
+						name="cardNumber"
+						value={cardData.cardNumber}
+						onChange={(event) => setCardData({ ...cardData, cardNumber: event.target.value })}
+					/>
+					<input
+						type="text"
+						placeholder="Card expiration month"
+						name="month"
+						value={cardData.month}
+						onChange={(event) => setCardData({ ...cardData, month: event.target.value })}
+					/>
+					<input
+						type="text"
+						placeholder="Card expiration year"
+						name="year"
+						value={cardData.year}
+						onChange={(event) => setCardData({ ...cardData, year: event.target.value })}
+					/>
+					<input
+						type="text"
+						placeholder="Card code"
+						name="cardCode"
+						value={cardData.cardCode}
+						onChange={(event) => setCardData({ ...cardData, cardCode: event.target.value })}
+					/>
 				</div>
 				<button
 					className="mt-2 rounded-md border border-slate-600 bg-white px-8 py-2 text-lg text-slate-800 hover:bg-slate-100"
 					type="submit"
-					disabled={transactionInitializeLoading}
+					disabled={isLoading}
 				>
-					{transactionInitializeLoading ? "Paying..." : "Pay"}
+					{isLoading ? "Paying..." : "Pay"}
 				</button>
 			</form>
 		</div>

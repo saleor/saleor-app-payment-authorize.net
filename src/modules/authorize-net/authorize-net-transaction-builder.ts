@@ -38,29 +38,10 @@ function buildTransactionFromPayload(
   const payment = new ApiContracts.PaymentType();
   payment.setOpaqueData(opaqueData);
 
-  const lineItems = new ApiContracts.ArrayOfLineItem();
-
-  const mappedLineItems = payload.sourceObject.lines.map((line) => {
-    const lineItem = new ApiContracts.LineItemType();
-    const name =
-      line.__typename === "OrderLine" ? line.orderVariant?.name : line.checkoutVariant.name;
-
-    lineItem.setItemId(line.id);
-    lineItem.setName(name);
-    // lineItem.setDescription(line.description);
-    lineItem.setQuantity(line.quantity);
-    // todo: replace with unit price
-    lineItem.setUnitPrice(1);
-    return lineItem;
-  });
-
-  lineItems.setLineItem(mappedLineItems);
-
   const transactionRequest = new ApiContracts.TransactionRequestType();
   transactionRequest.setTransactionType(ApiContracts.TransactionTypeEnum.AUTHCAPTURETRANSACTION);
   transactionRequest.setAmount(payload.action.amount);
   transactionRequest.setPayment(payment);
-  transactionRequest.setLineItems(lineItems);
 
   return transactionRequest;
 }

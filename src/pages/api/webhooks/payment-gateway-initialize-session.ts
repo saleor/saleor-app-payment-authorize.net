@@ -36,7 +36,7 @@ const authorizeNetService = new AuthorizeNetService(authorizeMockedConfig);
  * Happens before the payment. Responds with all the data needed to initialize the payment process, e.g. the payment methods.
  */
 export default paymentGatewayInitializeSessionSyncWebhook.createHandler(async (req, res, ctx) => {
-  logger.debug({ action: ctx.payload }, "handler called");
+  logger.debug("handler called");
   const responseBuilder = new WebhookResponseBuilder(res);
 
   try {

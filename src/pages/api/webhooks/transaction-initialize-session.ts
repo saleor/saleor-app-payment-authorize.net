@@ -37,10 +37,7 @@ const authorizeNetService = new AuthorizeNetService(authorizeMockedConfig);
  */
 export default transactionInitializeSessionSyncWebhook.createHandler(async (req, res, ctx) => {
   const responseBuilder = new WebhookResponseBuilder(res);
-  logger.debug(
-    { action: ctx.payload.action, data: ctx.payload.data, transaction: ctx.payload.transaction },
-    "handler called",
-  );
+  logger.debug("handler called");
 
   try {
     const response = await authorizeNetService.transactionInitializeSession(ctx.payload);
