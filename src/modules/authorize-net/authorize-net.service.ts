@@ -1,6 +1,6 @@
 import { z } from "zod";
 import AuthorizeNet from "authorizenet";
-import { type AuthorizeNetConfig } from "./authorize-net-config";
+import { authorizeNetConfigSchema, type AuthorizeNetConfig } from "./authorize-net-config";
 import { AuthorizeNetClient } from "./authorize-net-client";
 import { AuthorizeNetUnexpectedDataError } from "./authorize-net-error";
 import { createLogger } from "@/lib/logger";
@@ -17,9 +17,15 @@ const ApiContracts = AuthorizeNet.APIContracts;
  * To be able to create the transaction, Authorize App expects to receive Accept Payment nonce in the `event.data` object.
  * @see https://developer.authorize.net/api/reference/index.html#accept-suite-create-an-accept-payment-transaction
  */
-const payloadDataSchema = z.object({
+const transactionInitializePayloadDataSchema = z.object({
   dataDescriptor: z.string(),
   dataValue: z.string(),
+});
+
+const paymentGatewayInitializeResponseDataSchema = authorizeNetConfigSchema.pick({
+  apiLoginId: true,
+  environment: true,
+  publicClientKey: true,
 });
 
 // This function doesn't know anything about the payment method
@@ -27,7 +33,7 @@ const payloadDataSchema = z.object({
 function buildTransactionFromPayload(
   payload: TransactionInitializeSessionEventFragment,
 ): AuthorizeNet.APIContracts.TransactionRequestType {
-  const payloadDataParseResult = payloadDataSchema.safeParse(payload.data);
+  const payloadDataParseResult = transactionInitializePayloadDataSchema.safeParse(payload.data);
 
   if (!payloadDataParseResult.success) {
     throw new AuthorizeNetUnexpectedDataError("`data` object has unexpected structure.", {
@@ -69,20 +75,32 @@ export class AuthorizeNetService implements PaymentsWebhooks {
     name: "AuthorizeNetService",
   });
 
-  constructor(config: AuthorizeNetConfig) {
+  constructor(private config: AuthorizeNetConfig) {
     /* eslint-disable @typescript-eslint/no-unsafe-argument */
     this.client = new AuthorizeNetClient(config);
   }
 
-  //   todo: replace with real response
   paymentGatewayInitializeSession(
-    payload: PaymentGatewayInitializeSessionEventFragment,
+    _payload: PaymentGatewayInitializeSessionEventFragment,
   ): SyncWebhookResponse<"PAYMENT_GATEWAY_INITIALIZE_SESSION"> {
-    console.log(payload);
+    const dataParseResult = paymentGatewayInitializeResponseDataSchema.safeParse({
+      apiLoginId: this.config.apiLoginId,
+      environment: this.config.environment,
+      publicClientKey: this.config.publicClientKey,
+    });
+
+    if (!dataParseResult.success) {
+      throw new AuthorizeNetUnexpectedDataError("`data` object has unexpected structure.", {
+        props: {
+          detail: dataParseResult.error,
+        },
+      });
+    }
+
+    const data = dataParseResult.data;
+
     return {
-      data: {
-        foo: "bar",
-      },
+      data,
     };
   }
 
@@ -91,13 +109,12 @@ export class AuthorizeNetService implements PaymentsWebhooks {
   ): Promise<SyncWebhookResponse<"TRANSACTION_INITIALIZE_SESSION">> {
     const transaction = buildTransactionFromPayload(payload);
 
-    const response = await this.client.createTransaction(transaction);
-    this.logger.debug({ response }, "transactionInitializeSession");
+    await this.client.createTransaction(transaction);
 
     // todo: revisit response
     return {
       amount: payload.action.amount,
-      result: "CHARGE_SUCCESS",
+      result: "AUTHORIZATION_SUCCESS",
       data: {
         foo: "bar",
       },

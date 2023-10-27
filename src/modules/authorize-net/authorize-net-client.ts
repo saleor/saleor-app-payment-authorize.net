@@ -6,7 +6,6 @@ import { createLogger } from "@/lib/logger";
 
 const ApiContracts = AuthorizeNet.APIContracts;
 const ApiControllers = AuthorizeNet.APIControllers;
-const ApiConstants = AuthorizeNet.Constants;
 
 // AuthorizeNet types don't contain the response
 const createTransactionResponseSchema = z.object({
@@ -83,10 +82,6 @@ export class AuthorizeNetClient {
     this.merchantAuthenticationType = merchantAuthenticationType;
   }
 
-  private getEnvironment() {
-    return this.config.isSandBox ? ApiConstants.endpoint.sandbox : ApiConstants.endpoint.production;
-  }
-
   /*
     https://developer.authorize.net/api/reference/features/credit_card_tutorial.html
     https://developer.authorize.net/hello_world.html
@@ -102,7 +97,7 @@ export class AuthorizeNetClient {
       createRequest.getJSON(),
     );
 
-    transactionController.setEnvironment(this.getEnvironment());
+    transactionController.setEnvironment(this.config.environment);
 
     return new Promise((resolve, reject) => {
       try {
@@ -121,6 +116,7 @@ export class AuthorizeNetClient {
           resolve(parsedResponse);
         });
       } catch (error) {
+        this.logger.error(error);
         if (error instanceof z.ZodError) {
           reject(error.format());
         }

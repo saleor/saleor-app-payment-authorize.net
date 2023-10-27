@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/nextjs";
 import { SaleorSyncWebhook } from "@saleor/app-sdk/handlers/next";
 import { createLogger } from "@/lib/logger";
 import { SynchronousWebhookResponseBuilder } from "@/lib/webhook-response";
@@ -41,8 +42,22 @@ export default transactionInitializeSessionSyncWebhook.createHandler(async (req,
 
   try {
     const response = await authorizeNetService.transactionInitializeSession(ctx.payload);
-    return responseBuilder.success(response);
+    return responseBuilder.respond(response);
   } catch (error) {
-    return responseBuilder.error(error);
+    Sentry.captureMessage("transactionInitializeSession error");
+    Sentry.captureException(error);
+
+    // todo: normalize errors
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    return responseBuilder.respond({
+      amount: 0, // 0 or real amount?
+      result: "AUTHORIZATION_FAILURE",
+      message: "Failure",
+      data: {
+        error: {
+          message: errorMessage,
+        },
+      },
+    });
   }
 });

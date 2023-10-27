@@ -2,57 +2,42 @@ import { AuthNetEnvironment, useAcceptJs } from "react-acceptjs";
 
 import { gql, useMutation, useQuery } from "@apollo/client";
 import { useRouter } from "next/router";
+import React, { useState } from "react";
 import {
 	GetCheckoutByIdDocument,
 	GetCheckoutByIdQuery,
 	GetCheckoutByIdQueryVariables,
+	PaymentGatewayInitializeDocument,
+	PaymentGatewayInitializeMutation,
+	PaymentGatewayInitializeMutationVariables,
 	TransactionInitializeDocument,
 	TransactionInitializeMutation,
 	TransactionInitializeMutationVariables,
 } from "../../../generated/graphql";
 import { authorizeNetAppId } from "../../lib/common";
-import { useState } from "react";
-
-function getAuthData() {
-	const apiLoginID = process.env.NEXT_PUBLIC_AUTHORIZE_API_LOGIN_ID;
-	const clientKey = process.env.NEXT_PUBLIC_AUTHORIZE_PUBLIC_KEY;
-
-	if (!apiLoginID || !clientKey) {
-		throw new Error("Missing Authorize.net credentials");
-	}
-
-	return {
-		apiLoginID,
-		clientKey,
-	};
-}
-
-const authData = getAuthData();
-
-function getAcceptEnvironment() {
-	const acceptEnvironment = process.env.NEXT_PUBLIC_AUTHORIZE_ENVIRONMENT;
-
-	if (!acceptEnvironment) {
-		throw new Error("Missing Authorize.net environment");
-	}
-
-	if (acceptEnvironment !== "SANDBOX" && acceptEnvironment !== "PRODUCTION") {
-		throw new Error("Invalid Authorize.net environment");
-	}
-
-	return acceptEnvironment as AuthNetEnvironment;
-}
 
 export default function PayPage() {
 	const [isLoading, setIsLoading] = useState(false);
 	const [isError, setIsError] = useState(false);
+	const [acceptData, setAcceptData] = useState<{
+		apiLoginId: string;
+		environment: AuthNetEnvironment;
+		publicClientKey: string;
+	}>({
+		apiLoginId: "",
+		environment: "SANDBOX",
+		publicClientKey: "",
+	});
 	const [cardData, setCardData] = useState({
 		cardNumber: "",
 		month: "",
 		year: "",
 		cardCode: "",
 	});
-	const { dispatchData } = useAcceptJs({ authData, environment: getAcceptEnvironment() });
+
+	const { environment, apiLoginId, publicClientKey } = acceptData;
+	const authData = { apiLoginID: apiLoginId, clientKey: publicClientKey };
+	const { dispatchData } = useAcceptJs({ authData, environment });
 
 	const router = useRouter();
 	const checkoutId = typeof sessionStorage === "undefined" ? undefined : sessionStorage.getItem("checkoutId");
@@ -66,6 +51,11 @@ export default function PayPage() {
 		GetCheckoutByIdQueryVariables
 	>(gql(GetCheckoutByIdDocument.toString()), { variables: { id: checkoutId } });
 
+	const [initializePaymentGateway] = useMutation<
+		PaymentGatewayInitializeMutation,
+		PaymentGatewayInitializeMutationVariables
+	>(gql(PaymentGatewayInitializeDocument.toString()));
+
 	const [createTransaction] = useMutation<
 		TransactionInitializeMutation,
 		TransactionInitializeMutationVariables
@@ -74,6 +64,45 @@ export default function PayPage() {
 	const isAuthorizeAppInstalled = checkoutResponse?.checkout?.availablePaymentGateways.some(
 		(gateway) => gateway.id === authorizeNetAppId,
 	);
+
+	const getAcceptData = React.useCallback(async () => {
+		if (checkoutId) {
+			setIsLoading(true);
+			const response = await initializePaymentGateway({
+				variables: {
+					checkoutId,
+					paymentGateway: authorizeNetAppId,
+				},
+			});
+
+			console.log(response);
+
+			if (response.data?.paymentGatewayInitialize?.errors.length) {
+				throw new Error("Failed to initialize payment gateway");
+			}
+
+			const data = response.data?.paymentGatewayInitialize?.gatewayConfigs?.find(
+				(config) => config.id === authorizeNetAppId,
+			)?.data;
+
+			if (!data) {
+				throw new Error("Failed to get payment gateway data");
+			}
+
+			const nextAcceptData = data as {
+				apiLoginId: string;
+				environment: AuthNetEnvironment;
+				publicClientKey: string;
+			};
+
+			setIsLoading(false);
+			setAcceptData(nextAcceptData);
+		}
+	}, [checkoutId, initializePaymentGateway]);
+
+	React.useEffect(() => {
+		getAcceptData();
+	}, [getAcceptData]);
 
 	const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();

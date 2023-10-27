@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/nextjs";
 import { SaleorSyncWebhook } from "@saleor/app-sdk/handlers/next";
 import { createLogger } from "@/lib/logger";
 import { SynchronousWebhookResponseBuilder } from "@/lib/webhook-response";
@@ -41,8 +42,19 @@ export default paymentGatewayInitializeSessionSyncWebhook.createHandler(async (r
 
   try {
     const response = authorizeNetService.paymentGatewayInitializeSession(ctx.payload);
-    return responseBuilder.success(response);
+    return responseBuilder.respond(response);
   } catch (error) {
-    return responseBuilder.error(error);
+    Sentry.captureMessage("paymentGatewayInitializeSession error");
+    Sentry.captureException(error);
+
+    // todo: normalize errors
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    return responseBuilder.respond({
+      data: {
+        error: {
+          message: errorMessage,
+        },
+      },
+    });
   }
 });

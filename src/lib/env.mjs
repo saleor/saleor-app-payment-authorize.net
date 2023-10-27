@@ -18,14 +18,16 @@ export const env = createEnv({
       .enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"])
       .optional()
       .default("error"),
-    API_LOGIN_ID: z.string().min(1),
-    TRANSACTION_KEY: z.string().min(1),
     VERCEL_URL: z.string().optional(),
     PORT: z.coerce.number().optional(),
     UPSTASH_URL: z.string().optional(),
     UPSTASH_TOKEN: z.string().optional(),
     REST_APL_ENDPOINT: z.string().optional(),
     REST_APL_TOKEN: z.string().optional(),
+    AUTHORIZE_API_LOGIN_ID: z.string().min(1),
+    AUTHORIZE_TRANSACTION_KEY: z.string().min(1),
+    AUTHORIZE_PUBLIC_CLIENT_KEY: z.string().min(1),
+    AUTHORIZE_ENVIRONMENT: z.enum(["SANDBOX", "PRODUCTION"]).default("SANDBOX"),
   },
 
   /*
@@ -57,7 +59,9 @@ export const env = createEnv({
     UPSTASH_TOKEN: process.env.UPSTASH_TOKEN,
     REST_APL_ENDPOINT: process.env.REST_APL_ENDPOINT,
     REST_APL_TOKEN: process.env.REST_APL_TOKEN,
-    API_LOGIN_ID: process.env.API_LOGIN_ID,
-    TRANSACTION_KEY: process.env.TRANSACTION_KEY,
+    AUTHORIZE_API_LOGIN_ID: process.env.AUTHORIZE_API_LOGIN_ID,
+    AUTHORIZE_TRANSACTION_KEY: process.env.AUTHORIZE_TRANSACTION_KEY,
+    AUTHORIZE_PUBLIC_CLIENT_KEY: process.env.AUTHORIZE_PUBLIC_CLIENT_KEY,
+    AUTHORIZE_ENVIRONMENT: process.env.AUTHORIZE_ENVIRONMENT,
   },
 });
