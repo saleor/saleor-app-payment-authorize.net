@@ -27,7 +27,7 @@ export const env = createEnv({
     AUTHORIZE_API_LOGIN_ID: z.string().min(1),
     AUTHORIZE_TRANSACTION_KEY: z.string().min(1),
     AUTHORIZE_PUBLIC_CLIENT_KEY: z.string().min(1),
-    AUTHORIZE_ENVIRONMENT: z.enum(["SANDBOX", "PRODUCTION"]).default("SANDBOX"),
+    AUTHORIZE_ENVIRONMENT: z.enum(["sandbox", "production"]).default("sandbox"),
   },
 
   /*

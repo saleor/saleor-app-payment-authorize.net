@@ -16,14 +16,16 @@ import {
 } from "../../../generated/graphql";
 import { authorizeNetAppId } from "../../lib/common";
 
+type AcceptData = {
+	apiLoginId: string;
+	environment: AuthNetEnvironment;
+	publicClientKey: string;
+};
+
 export default function PayPage() {
 	const [isLoading, setIsLoading] = useState(false);
 	const [isError, setIsError] = useState(false);
-	const [acceptData, setAcceptData] = useState<{
-		apiLoginId: string;
-		environment: AuthNetEnvironment;
-		publicClientKey: string;
-	}>({
+	const [acceptData, setAcceptData] = useState<AcceptData>({
 		apiLoginId: "",
 		environment: "SANDBOX",
 		publicClientKey: "",
@@ -88,11 +90,12 @@ export default function PayPage() {
 				throw new Error("Failed to get payment gateway data");
 			}
 
-			const nextAcceptData = data as {
-				apiLoginId: string;
-				environment: AuthNetEnvironment;
-				publicClientKey: string;
-			};
+			const rawAcceptData = data as AcceptData;
+
+			const nextAcceptData = {
+				...data,
+				environment: rawAcceptData.environment.toUpperCase() as AuthNetEnvironment, // Accept.js expects environment to be uppercase
+			} as AcceptData;
 
 			setAcceptData(nextAcceptData);
 		}
@@ -120,7 +123,10 @@ export default function PayPage() {
 					},
 				});
 
-				if (saleorTransactionResponse.data?.transactionInitialize?.data !== undefined) {
+				if (
+					saleorTransactionResponse.data?.transactionInitialize?.errors?.length &&
+					saleorTransactionResponse.data?.transactionInitialize?.errors?.length > 0
+				) {
 					throw new Error("Failed to initialize transaction");
 				}
 

@@ -5,7 +5,7 @@ export const authorizeNetConfigSchema = z.object({
   apiLoginId: z.string().min(1),
   publicClientKey: z.string().min(1),
   transactionKey: z.string().min(1),
-  environment: z.enum(["SANDBOX", "PRODUCTION"]).default("SANDBOX"),
+  environment: z.enum(["sandbox", "production"]).default("sandbox"),
 });
 
 export type AuthorizeNetConfig = z.infer<typeof authorizeNetConfigSchema>;
