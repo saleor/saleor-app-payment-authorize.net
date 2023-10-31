@@ -1,14 +1,13 @@
 import { gql, useQuery } from "@apollo/client";
-import { useRouter } from "next/router";
 import {
 	GetCheckoutByIdDocument,
 	GetCheckoutByIdQuery,
 	GetCheckoutByIdQueryVariables,
 } from "../../../generated/graphql";
 import { authorizeNetAppId } from "../../lib/common";
+import { PayButton } from "../../pay-button";
 
 export default function CartPage() {
-	const router = useRouter();
 	const checkoutId = typeof sessionStorage === "undefined" ? undefined : sessionStorage.getItem("checkoutId");
 
 	if (!checkoutId) {
@@ -43,12 +42,7 @@ export default function CartPage() {
 			<ul className="my-4 ml-4 list-disc">
 				{checkoutResponse.checkout?.lines.map((line) => <li key={line.id}>{line.variant.product.name}</li>)}
 			</ul>
-			<button
-				className="mt-2 rounded-md border bg-slate-900 px-8 py-2 text-lg text-white hover:bg-slate-800"
-				onClick={() => router.push("/pay")}
-			>
-				Pay
-			</button>
+			<PayButton />
 		</div>
 	);
 }

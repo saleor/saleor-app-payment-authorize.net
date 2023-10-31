@@ -1,4 +1,4 @@
-import { AuthNetEnvironment, useAcceptJs } from "react-acceptjs";
+import { AuthNetEnvironment, HostedForm, HostedFormDispatchDataResponse } from "react-acceptjs";
 
 import { gql, useMutation, useQuery } from "@apollo/client";
 import { useRouter } from "next/router";
@@ -13,8 +13,8 @@ import {
 	TransactionInitializeDocument,
 	TransactionInitializeMutation,
 	TransactionInitializeMutationVariables,
-} from "../../../generated/graphql";
-import { authorizeNetAppId } from "../../lib/common";
+} from "../generated/graphql";
+import { authorizeNetAppId } from "./lib/common";
 
 type AcceptData = {
 	apiLoginId: string;
@@ -22,24 +22,16 @@ type AcceptData = {
 	publicClientKey: string;
 };
 
-export default function PayPage() {
-	const [isLoading, setIsLoading] = useState(false);
+export function PayButton() {
 	const [isError, setIsError] = useState(false);
 	const [acceptData, setAcceptData] = useState<AcceptData>({
 		apiLoginId: "",
 		environment: "SANDBOX",
 		publicClientKey: "",
 	});
-	const [cardData, setCardData] = useState({
-		cardNumber: "",
-		month: "",
-		year: "",
-		cardCode: "",
-	});
 
 	const { environment, apiLoginId, publicClientKey } = acceptData;
 	const authData = { apiLoginID: apiLoginId, clientKey: publicClientKey };
-	const { dispatchData } = useAcceptJs({ authData, environment });
 
 	const router = useRouter();
 	const checkoutId = typeof sessionStorage === "undefined" ? undefined : sessionStorage.getItem("checkoutId");
@@ -53,7 +45,7 @@ export default function PayPage() {
 		GetCheckoutByIdQueryVariables
 	>(gql(GetCheckoutByIdDocument.toString()), { variables: { id: checkoutId } });
 
-	const [initializePaymentGateway, { loading: isPaymentGatewayLoading }] = useMutation<
+	const [initializePaymentGateway] = useMutation<
 		PaymentGatewayInitializeMutation,
 		PaymentGatewayInitializeMutationVariables
 	>(gql(PaymentGatewayInitializeDocument.toString()));
@@ -75,8 +67,6 @@ export default function PayPage() {
 					paymentGateway: authorizeNetAppId,
 				},
 			});
-
-			console.log(response);
 
 			if (response.data?.paymentGatewayInitialize?.errors.length) {
 				throw new Error("Failed to initialize payment gateway");
@@ -105,20 +95,17 @@ export default function PayPage() {
 		getAcceptData();
 	}, [getAcceptData]);
 
-	const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-		e.preventDefault();
-
+	const handleSubmit = async (response: HostedFormDispatchDataResponse) => {
 		if (checkoutResponse?.checkout) {
-			setIsLoading(true);
 			try {
-				const authorizeResponse = await dispatchData({ cardData });
+				const opaqueData = response.opaqueData;
 
 				const saleorTransactionResponse = await createTransaction({
 					variables: {
 						checkoutId: checkoutResponse.checkout.id,
 						paymentGateway: authorizeNetAppId,
 						data: {
-							...authorizeResponse.opaqueData,
+							...opaqueData,
 						},
 					},
 				});
@@ -130,13 +117,10 @@ export default function PayPage() {
 					throw new Error("Failed to initialize transaction");
 				}
 
-				setIsLoading(false);
-
 				router.push("/success");
 			} catch (error) {
 				console.error(error);
 				setIsError(true);
-				setIsLoading(false);
 			}
 		}
 	};
@@ -160,49 +144,14 @@ export default function PayPage() {
 
 	return (
 		<div>
-			<form onSubmit={handleFormSubmit}>
-				<div className="flex flex-col gap-2 w-2/5">
-					<input
-						disabled={isPaymentGatewayLoading}
-						type="text"
-						placeholder="Card number"
-						name="cardNumber"
-						value={cardData.cardNumber}
-						onChange={(event) => setCardData({ ...cardData, cardNumber: event.target.value })}
-					/>
-					<input
-						disabled={isPaymentGatewayLoading}
-						type="text"
-						placeholder="Card expiration month"
-						name="month"
-						value={cardData.month}
-						onChange={(event) => setCardData({ ...cardData, month: event.target.value })}
-					/>
-					<input
-						disabled={isPaymentGatewayLoading}
-						type="text"
-						placeholder="Card expiration year"
-						name="year"
-						value={cardData.year}
-						onChange={(event) => setCardData({ ...cardData, year: event.target.value })}
-					/>
-					<input
-						disabled={isPaymentGatewayLoading}
-						type="text"
-						placeholder="Card code"
-						name="cardCode"
-						value={cardData.cardCode}
-						onChange={(event) => setCardData({ ...cardData, cardCode: event.target.value })}
-					/>
-				</div>
-				<button
-					className="mt-2 rounded-md border border-slate-600 bg-white px-8 py-2 text-lg text-slate-800 hover:bg-slate-100"
-					type="submit"
-					disabled={isPaymentGatewayLoading || isLoading}
-				>
-					{isLoading ? "Paying..." : "Pay"}
-				</button>
-			</form>
+			{authData.apiLoginID.length > 0 && (
+				<HostedForm
+					buttonClassName="mt-2 rounded-md border bg-slate-900 px-8 py-2 text-lg text-white hover:bg-slate-800"
+					environment={environment}
+					authData={authData}
+					onSubmit={handleSubmit}
+				/>
+			)}
 		</div>
 	);
 }
