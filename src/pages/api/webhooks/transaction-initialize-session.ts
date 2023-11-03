@@ -1,11 +1,15 @@
 import { SaleorSyncWebhook } from "@saleor/app-sdk/handlers/next";
+import * as Sentry from "@sentry/nextjs";
 import { createLogger } from "@/lib/logger";
-import { SynchronousWebhookResponse } from "@/lib/webhook-response";
+import { SynchronousWebhookResponseBuilder } from "@/lib/webhook-response-builder";
+import { authorizeMockedConfig } from "@/modules/authorize-net/authorize-net-config";
+import { WebhookManagerService } from "@/modules/webhooks/webhook-manager-service";
 import { saleorApp } from "@/saleor-app";
 import {
   UntypedTransactionInitializeSessionDocument,
   type TransactionInitializeSessionEventFragment,
 } from "generated/graphql";
+import { TransactionInitializeError } from "@/modules/webhooks/transaction-initialize-session";
 
 export const config = {
   api: {
@@ -26,32 +30,41 @@ const logger = createLogger({
   name: "transactionInitializeSessionSyncWebhook",
 });
 
-class TransactionInitializeSessionWebhookResponse extends SynchronousWebhookResponse<"TRANSACTION_INITIALIZE_SESSION"> {}
+class WebhookResponseBuilder extends SynchronousWebhookResponseBuilder<"TRANSACTION_INITIALIZE_SESSION"> {}
+
+const webhookManagerService = new WebhookManagerService(authorizeMockedConfig);
 
 /**
  * Initializes the payment processing. Based on the response, Saleor will create or update the transaction with the appropriate status and balance. The logic for whether the transaction is charged or cancelled is executed in different webhooks (`TRANSACTION_CANCELATION_REQUESTED`, `TRANSACTION_CHARGE_REQUESTED`)
  */
 export default transactionInitializeSessionSyncWebhook.createHandler(async (req, res, ctx) => {
-  const webhookResponse = new TransactionInitializeSessionWebhookResponse(res);
+  const responseBuilder = new WebhookResponseBuilder(res);
+  // todo: add more extensive logs
   logger.debug(
-    { action: ctx.payload.action, data: ctx.payload.data, transaction: ctx.payload.transaction },
+    {
+      action: ctx.payload.action,
+      channelSlug: ctx.payload.sourceObject.channel.slug,
+      transaction: ctx.payload.transaction,
+    },
     "handler called",
   );
 
   try {
-    //   todo: replace with real response
-    return webhookResponse.success({
-      amount: 500,
-      result: "CHARGE_SUCCESS",
-      data: {
-        foo: "bar",
-      },
-      externalUrl: "https://example.com",
-      message: "Success",
-      pspReference: "pspReference",
-      time: "",
-    });
+    const response = await webhookManagerService.transactionInitializeSession(ctx.payload);
+    return responseBuilder.ok(response);
   } catch (error) {
-    return webhookResponse.error(error);
+    Sentry.captureException(error);
+
+    const normalizedError = TransactionInitializeError.normalize(error);
+    return responseBuilder.ok({
+      amount: 0, // 0 or real amount?
+      result: "AUTHORIZATION_FAILURE",
+      message: "Failure",
+      data: {
+        error: {
+          message: normalizedError.message,
+        },
+      },
+    });
   }
 });

@@ -1,6 +1,14 @@
 query GetCheckoutById($id: ID!) {
 	checkout(id: $id) {
 		id
+		lines {
+			id
+			variant {
+				product {
+					name
+				}
+			}
+		}
 		availablePaymentGateways {
 			id
 			name

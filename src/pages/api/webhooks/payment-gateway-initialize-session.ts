@@ -1,11 +1,15 @@
+import * as Sentry from "@sentry/nextjs";
 import { SaleorSyncWebhook } from "@saleor/app-sdk/handlers/next";
 import { createLogger } from "@/lib/logger";
-import { SynchronousWebhookResponse } from "@/lib/webhook-response";
+import { SynchronousWebhookResponseBuilder } from "@/lib/webhook-response-builder";
+import { authorizeMockedConfig } from "@/modules/authorize-net/authorize-net-config";
+import { WebhookManagerService } from "@/modules/webhooks/webhook-manager-service";
 import { saleorApp } from "@/saleor-app";
 import {
   UntypedPaymentGatewayInitializeSessionDocument,
   type PaymentGatewayInitializeSessionEventFragment,
 } from "generated/graphql";
+import { PaymentGatewayInitializeError } from "@/modules/webhooks/payment-gateway-initialize-session";
 
 export const config = {
   api: {
@@ -26,23 +30,28 @@ const logger = createLogger({
   name: "paymentGatewayInitializeSessionSyncWebhook",
 });
 
-class PaymentGatewayInitializeSessionWebhookResponse extends SynchronousWebhookResponse<"PAYMENT_GATEWAY_INITIALIZE_SESSION"> {}
+class WebhookResponseBuilder extends SynchronousWebhookResponseBuilder<"PAYMENT_GATEWAY_INITIALIZE_SESSION"> {}
+
+const webhookManagerService = new WebhookManagerService(authorizeMockedConfig);
 
 /**
  * Happens before the payment. Responds with all the data needed to initialize the payment process, e.g. the payment methods.
  */
 export default paymentGatewayInitializeSessionSyncWebhook.createHandler(async (req, res, ctx) => {
-  logger.debug({ action: ctx.payload }, "handler called");
-  const webhookResponse = new PaymentGatewayInitializeSessionWebhookResponse(res);
+  // todo: add more extensive logs
+  logger.debug(
+    { channelSlug: ctx.payload.sourceObject.channel.slug, amount: ctx.payload.amount },
+    "handler called",
+  );
+  const responseBuilder = new WebhookResponseBuilder(res);
 
   try {
-    // todo: replace with real response
-    return webhookResponse.success({
-      data: {
-        foo: "bar",
-      },
-    });
+    const response = webhookManagerService.paymentGatewayInitializeSession(ctx.payload);
+    return responseBuilder.ok(response);
   } catch (error) {
-    return webhookResponse.error(error);
+    Sentry.captureException(error);
+
+    const normalizedError = PaymentGatewayInitializeError.normalize(error);
+    return responseBuilder.internalServerError(normalizedError);
   }
 });
