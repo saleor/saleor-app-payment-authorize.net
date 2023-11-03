@@ -1,4 +1,4 @@
-import { isNotNullish, toStringOrEmpty } from "../../lib/utils";
+import { isNotNullish, toStringOrEmpty } from "./utils";
 
 export const OBFUSCATION_DOTS = "••••";
 
