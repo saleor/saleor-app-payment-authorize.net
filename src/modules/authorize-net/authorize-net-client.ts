@@ -107,6 +107,7 @@ export class AuthorizeNetClient {
     return new Promise((resolve, reject) => {
       try {
         transactionController.execute(() => {
+          // eslint disabled because of insufficient types
           // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           const apiResponse = transactionController.getResponse();
           const response = new ApiContracts.CreateTransactionResponse(apiResponse);
