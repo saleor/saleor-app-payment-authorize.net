@@ -1,7 +1,7 @@
 import { SaleorSyncWebhook } from "@saleor/app-sdk/handlers/next";
 import * as Sentry from "@sentry/nextjs";
 import { createLogger } from "@/lib/logger";
-import { SynchronousWebhookResponseBuilder } from "@/lib/webhook-response";
+import { SynchronousWebhookResponseBuilder } from "@/lib/webhook-response-builder";
 import { authorizeMockedConfig } from "@/modules/authorize-net/authorize-net-config";
 import { WebhookManagerService } from "@/modules/webhooks/webhook-manager-service";
 import { saleorApp } from "@/saleor-app";

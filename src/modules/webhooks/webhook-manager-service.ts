@@ -7,7 +7,7 @@ import {
   type PaymentGatewayInitializeSessionEventFragment,
   type TransactionInitializeSessionEventFragment,
 } from "generated/graphql";
-import { type SyncWebhookResponse } from "@/lib/webhook-response";
+import { type SyncWebhookResponse } from "@/lib/webhook-response-builder";
 import { createLogger } from "@/lib/logger";
 
 interface PaymentsWebhooks {

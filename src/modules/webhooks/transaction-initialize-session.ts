@@ -2,7 +2,7 @@ import AuthorizeNet from "authorizenet";
 import { z } from "zod";
 import { type AuthorizeNetClient } from "../authorize-net/authorize-net-client";
 import { BaseError } from "@/errors";
-import { type SyncWebhookResponse } from "@/lib/webhook-response";
+import { type SyncWebhookResponse } from "@/lib/webhook-response-builder";
 import { type TransactionInitializeSessionEventFragment } from "generated/graphql";
 
 const ApiContracts = AuthorizeNet.APIContracts;

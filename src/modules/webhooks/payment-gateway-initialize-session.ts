@@ -4,7 +4,7 @@ import {
 } from "../authorize-net/authorize-net-config";
 import { BaseError } from "@/errors";
 
-import { type SyncWebhookResponse } from "@/lib/webhook-response";
+import { type SyncWebhookResponse } from "@/lib/webhook-response-builder";
 import { type PaymentGatewayInitializeSessionEventFragment } from "generated/graphql";
 
 export const PaymentGatewayInitializeError = BaseError.subclass("PaymentGatewayInitializeError");
