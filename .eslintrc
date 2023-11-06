@@ -104,7 +104,9 @@
     "require-form-method/require-form-method": "error",
 
     // for security reasons, always require buttons to provide type="button" ("submit" on rare occasions)
-    "react/button-has-type": ["error", { "button": true, "submit": true, "reset": false }]
+    "react/button-has-type": ["error", { "button": true, "submit": true, "reset": false }],
+
+    "@typescript-eslint/no-namespace": "off"
   },
   "overrides": [
     {
