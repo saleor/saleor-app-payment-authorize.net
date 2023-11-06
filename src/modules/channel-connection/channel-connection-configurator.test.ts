@@ -1,37 +1,28 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { type RootConfig } from "../configuration/app-config";
+import { type RootConfig } from "../configuration/app-configurator";
 import { ChannelConnectionConfigurator } from "./channel-connection-configurator";
 
-let rootData: RootConfig.Shape = {
-  providers: [],
-  connections: [],
-};
+let rootData: RootConfig.Shape["connections"] = [];
 
 beforeEach(() => {
-  rootData = {
-    providers: [],
-    connections: [],
-  };
+  rootData = [];
 });
 
 describe("ChannelConnectionConfigurator", () => {
   describe("getConnections", () => {
     it("returns all connections", () => {
-      const configurator = new ChannelConnectionConfigurator({
-        providers: [],
-        connections: [
-          {
-            id: "1",
-            channelSlug: "channel-slug-1",
-            providerId: "provider-id-1",
-          },
-          {
-            id: "2",
-            channelSlug: "channel-slug-2",
-            providerId: "provider-id-2",
-          },
-        ],
-      });
+      const configurator = new ChannelConnectionConfigurator([
+        {
+          id: "1",
+          channelSlug: "channel-slug-1",
+          providerId: "provider-id-1",
+        },
+        {
+          id: "2",
+          channelSlug: "channel-slug-2",
+          providerId: "provider-id-2",
+        },
+      ]);
 
       expect(configurator.getConnections()).toEqual([
         {
@@ -45,52 +36,6 @@ describe("ChannelConnectionConfigurator", () => {
           providerId: "provider-id-2",
         },
       ]);
-    });
-  });
-
-  describe("getConnectionById", () => {
-    it("returns the connection with the given id", () => {
-      const configurator = new ChannelConnectionConfigurator({
-        providers: [],
-        connections: [
-          {
-            id: "1",
-            channelSlug: "channel-slug-1",
-            providerId: "provider-id-1",
-          },
-          {
-            id: "2",
-            channelSlug: "channel-slug-2",
-            providerId: "provider-id-2",
-          },
-        ],
-      });
-
-      expect(configurator.getConnectionById("1")).toEqual({
-        id: "1",
-        channelSlug: "channel-slug-1",
-        providerId: "provider-id-1",
-      });
-    });
-
-    it("returns undefined if no connection with the given id exists", () => {
-      const configurator = new ChannelConnectionConfigurator({
-        providers: [],
-        connections: [
-          {
-            id: "1",
-            channelSlug: "channel-slug-1",
-            providerId: "provider-id-1",
-          },
-          {
-            id: "2",
-            channelSlug: "channel-slug-2",
-            providerId: "provider-id-2",
-          },
-        ],
-      });
-
-      expect(configurator.getConnectionById("3")).toBeUndefined();
     });
   });
 
@@ -115,16 +60,13 @@ describe("ChannelConnectionConfigurator", () => {
 
   describe("updateConnection", () => {
     it("updates a connection", () => {
-      const configurator = new ChannelConnectionConfigurator({
-        providers: [],
-        connections: [
-          {
-            id: "1",
-            channelSlug: "channel-slug-1",
-            providerId: "provider-id-1",
-          },
-        ],
-      });
+      const configurator = new ChannelConnectionConfigurator([
+        {
+          id: "1",
+          channelSlug: "channel-slug-1",
+          providerId: "provider-id-1",
+        },
+      ]);
 
       configurator.updateConnection({
         id: "1",
@@ -142,16 +84,13 @@ describe("ChannelConnectionConfigurator", () => {
     });
 
     it("doesn't update a connection if the id doesn't match", () => {
-      const configurator = new ChannelConnectionConfigurator({
-        providers: [],
-        connections: [
-          {
-            id: "1",
-            channelSlug: "channel-slug-1",
-            providerId: "provider-id-1",
-          },
-        ],
-      });
+      const configurator = new ChannelConnectionConfigurator([
+        {
+          id: "1",
+          channelSlug: "channel-slug-1",
+          providerId: "provider-id-1",
+        },
+      ]);
 
       configurator.updateConnection({
         id: "2",
@@ -171,21 +110,18 @@ describe("ChannelConnectionConfigurator", () => {
 
   describe("deleteConnection", () => {
     it("deletes a connection", () => {
-      const configurator = new ChannelConnectionConfigurator({
-        providers: [],
-        connections: [
-          {
-            id: "1",
-            channelSlug: "channel-slug-1",
-            providerId: "provider-id-1",
-          },
-          {
-            id: "2",
-            channelSlug: "channel-slug-2",
-            providerId: "provider-id-2",
-          },
-        ],
-      });
+      const configurator = new ChannelConnectionConfigurator([
+        {
+          id: "1",
+          channelSlug: "channel-slug-1",
+          providerId: "provider-id-1",
+        },
+        {
+          id: "2",
+          channelSlug: "channel-slug-2",
+          providerId: "provider-id-2",
+        },
+      ]);
 
       configurator.deleteConnection("1");
 
@@ -199,21 +135,18 @@ describe("ChannelConnectionConfigurator", () => {
     });
 
     it("doesn't delete a connection if the id doesn't match", () => {
-      const configurator = new ChannelConnectionConfigurator({
-        providers: [],
-        connections: [
-          {
-            id: "1",
-            channelSlug: "channel-slug-1",
-            providerId: "provider-id-1",
-          },
-          {
-            id: "2",
-            channelSlug: "channel-slug-2",
-            providerId: "provider-id-2",
-          },
-        ],
-      });
+      const configurator = new ChannelConnectionConfigurator([
+        {
+          id: "1",
+          channelSlug: "channel-slug-1",
+          providerId: "provider-id-1",
+        },
+        {
+          id: "2",
+          channelSlug: "channel-slug-2",
+          providerId: "provider-id-2",
+        },
+      ]);
 
       configurator.deleteConnection("3");
 

@@ -27,8 +27,8 @@ export class AppConfigurator {
       this.rootData = initialData;
     }
 
-    this.providers = new ProvidersConfigurator(this.rootData);
-    this.connections = new ChannelConnectionConfigurator(this.rootData);
+    this.providers = new ProvidersConfigurator(this.rootData.providers);
+    this.connections = new ChannelConnectionConfigurator(this.rootData.connections);
   }
 
   static parse(serializedSchema: string) {

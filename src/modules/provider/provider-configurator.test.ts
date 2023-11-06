@@ -1,41 +1,32 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { type RootConfig } from "../configuration/app-config";
+import { type RootConfig } from "../configuration/app-configurator";
 import { ProvidersConfigurator } from "./provider-configurator";
 
-let rootData: RootConfig.Shape = {
-  providers: [],
-  connections: [],
-};
+let rootData: RootConfig.Shape["providers"] = [];
 
 beforeEach(() => {
-  rootData = {
-    providers: [],
-    connections: [],
-  };
+  rootData = [];
 });
 
 describe("ProvidersConfigurator", () => {
   describe("getProviders", () => {
     it("returns all providers", () => {
-      const configurator = new ProvidersConfigurator({
-        providers: [
-          {
-            id: "1",
-            apiLoginId: "api-login-id",
-            transactionKey: "transaction-key",
-            environment: "sandbox",
-            publicClientKey: "public-client-key",
-          },
-          {
-            id: "2",
-            apiLoginId: "api-login-id",
-            transactionKey: "transaction-key",
-            environment: "sandbox",
-            publicClientKey: "public-client-key",
-          },
-        ],
-        connections: [],
-      });
+      const configurator = new ProvidersConfigurator([
+        {
+          id: "1",
+          apiLoginId: "api-login-id",
+          transactionKey: "transaction-key",
+          environment: "sandbox",
+          publicClientKey: "public-client-key",
+        },
+        {
+          id: "2",
+          apiLoginId: "api-login-id",
+          transactionKey: "transaction-key",
+          environment: "sandbox",
+          publicClientKey: "public-client-key",
+        },
+      ]);
 
       expect(configurator.getProviders()).toEqual([
         {
@@ -58,18 +49,15 @@ describe("ProvidersConfigurator", () => {
 
   describe("getProviderById", () => {
     it("returns the provider with the given id", () => {
-      const configurator = new ProvidersConfigurator({
-        providers: [
-          {
-            id: "1",
-            apiLoginId: "api-login-id",
-            transactionKey: "transaction-key",
-            environment: "sandbox",
-            publicClientKey: "public-client-key",
-          },
-        ],
-        connections: [],
-      });
+      const configurator = new ProvidersConfigurator([
+        {
+          id: "1",
+          apiLoginId: "api-login-id",
+          transactionKey: "transaction-key",
+          environment: "sandbox",
+          publicClientKey: "public-client-key",
+        },
+      ]);
 
       expect(configurator.getProviderById("1")).toEqual({
         id: "1",
@@ -81,18 +69,15 @@ describe("ProvidersConfigurator", () => {
     });
 
     it("returns undefined if the id doesn't match", () => {
-      const configurator = new ProvidersConfigurator({
-        providers: [
-          {
-            id: "1",
-            apiLoginId: "api-login-id",
-            transactionKey: "transaction-key",
-            environment: "sandbox",
-            publicClientKey: "public-client-key",
-          },
-        ],
-        connections: [],
-      });
+      const configurator = new ProvidersConfigurator([
+        {
+          id: "1",
+          apiLoginId: "api-login-id",
+          transactionKey: "transaction-key",
+          environment: "sandbox",
+          publicClientKey: "public-client-key",
+        },
+      ]);
 
       expect(configurator.getProviderById("not-a-real-id")).toBeUndefined();
     });
@@ -133,21 +118,18 @@ describe("ProvidersConfigurator", () => {
         publicClientKey: "public-client-key",
       });
 
-      expect(configurator.getProviders()).toEqual(rootData.providers);
+      expect(configurator.getProviders()).toEqual(rootData);
     });
     it("updates the provider with the given id", () => {
-      const configurator = new ProvidersConfigurator({
-        providers: [
-          {
-            id: "1",
-            apiLoginId: "api-login-id",
-            transactionKey: "transaction-key",
-            environment: "sandbox",
-            publicClientKey: "public-client-key",
-          },
-        ],
-        connections: [],
-      });
+      const configurator = new ProvidersConfigurator([
+        {
+          id: "1",
+          apiLoginId: "api-login-id",
+          transactionKey: "transaction-key",
+          environment: "sandbox",
+          publicClientKey: "public-client-key",
+        },
+      ]);
 
       configurator.updateProvider({
         id: "1",
@@ -171,25 +153,22 @@ describe("ProvidersConfigurator", () => {
 
   describe("deleteProvider", () => {
     it("deletes the selected provider", () => {
-      const configurator = new ProvidersConfigurator({
-        providers: [
-          {
-            id: "1",
-            apiLoginId: "api-login-id",
-            transactionKey: "transaction-key",
-            environment: "sandbox",
-            publicClientKey: "public-client-key",
-          },
-          {
-            id: "2",
-            apiLoginId: "api-login-id",
-            transactionKey: "transaction-key",
-            environment: "sandbox",
-            publicClientKey: "public-client-key",
-          },
-        ],
-        connections: [],
-      });
+      const configurator = new ProvidersConfigurator([
+        {
+          id: "1",
+          apiLoginId: "api-login-id",
+          transactionKey: "transaction-key",
+          environment: "sandbox",
+          publicClientKey: "public-client-key",
+        },
+        {
+          id: "2",
+          apiLoginId: "api-login-id",
+          transactionKey: "transaction-key",
+          environment: "sandbox",
+          publicClientKey: "public-client-key",
+        },
+      ]);
 
       configurator.deleteProvider("1");
 
@@ -205,25 +184,22 @@ describe("ProvidersConfigurator", () => {
     });
 
     it("doesn't delete any providers if the id doesn't match", () => {
-      const configurator = new ProvidersConfigurator({
-        providers: [
-          {
-            id: "1",
-            apiLoginId: "api-login-id",
-            transactionKey: "transaction-key",
-            environment: "sandbox",
-            publicClientKey: "public-client-key",
-          },
-          {
-            id: "2",
-            apiLoginId: "api-login-id",
-            transactionKey: "transaction-key",
-            environment: "sandbox",
-            publicClientKey: "public-client-key",
-          },
-        ],
-        connections: [],
-      });
+      const configurator = new ProvidersConfigurator([
+        {
+          id: "1",
+          apiLoginId: "api-login-id",
+          transactionKey: "transaction-key",
+          environment: "sandbox",
+          publicClientKey: "public-client-key",
+        },
+        {
+          id: "2",
+          apiLoginId: "api-login-id",
+          transactionKey: "transaction-key",
+          environment: "sandbox",
+          publicClientKey: "public-client-key",
+        },
+      ]);
 
       configurator.deleteProvider("not-a-real-id");
 

@@ -1,6 +1,6 @@
 import { type SettingsManager } from "@saleor/app-sdk/settings-manager";
 import { type AuthData } from "@saleor/app-sdk/APL";
-import { AppConfigurator } from "./app-config";
+import { AppConfigurator } from "./app-configurator";
 import { createSettingsManager } from "./settings-manager";
 import { createClient } from "@/lib/create-graphq-client";
 

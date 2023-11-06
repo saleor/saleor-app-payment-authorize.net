@@ -24,13 +24,6 @@ export const channelConnectionRouter = router({
 
     return providers;
   }),
-  getOne: procedure
-    .input(z.object({ id: z.string() }))
-    .query(async ({ ctx: { appConfigService }, input }) => {
-      const config = await appConfigService.get();
-
-      return config.connections.getConnectionById(input.id) ?? null;
-    }),
   addOne: procedure
     .input(ChannelConnection.Schema.Input)
     .mutation(async ({ ctx: { appConfigService }, input }) => {

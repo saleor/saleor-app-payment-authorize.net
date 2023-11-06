@@ -1,26 +1,28 @@
 import { AuthorizeProviderConfig } from "../authorize-net/authorize-net-config";
-import { type RootConfig } from "../configuration/app-config";
+import { type RootConfig } from "../configuration/app-configurator";
 import { generateId } from "@/lib/generate-id";
 
-export class ProvidersConfigurator {
-  private rootData: RootConfig.Shape;
+type Providers = RootConfig.Shape["providers"];
 
-  constructor(rootData: RootConfig.Shape) {
-    this.rootData = rootData;
+export class ProvidersConfigurator {
+  private providers: Providers;
+
+  constructor(rootData: Providers) {
+    this.providers = rootData;
   }
 
   getProviders() {
-    return this.rootData.providers;
+    return this.providers;
   }
 
   getProviderById(id: string) {
-    return this.rootData.providers.find((p) => p.id === id);
+    return this.providers.find((p) => p.id === id);
   }
 
   addProvider(input: AuthorizeProviderConfig.InputShape) {
     const providerConfig = AuthorizeProviderConfig.Schema.Input.parse(input);
 
-    this.rootData.providers.push({
+    this.providers.push({
       ...providerConfig,
       id: generateId(),
     });
@@ -31,7 +33,7 @@ export class ProvidersConfigurator {
   updateProvider(provider: AuthorizeProviderConfig.FullShape) {
     const parsedConfig = AuthorizeProviderConfig.Schema.Full.parse(provider);
 
-    this.rootData.providers = this.rootData.providers.map((p) => {
+    this.providers = this.providers.map((p) => {
       if (p.id === parsedConfig.id) {
         return parsedConfig;
       } else {
@@ -41,6 +43,6 @@ export class ProvidersConfigurator {
   }
 
   deleteProvider(providerId: string) {
-    this.rootData.providers = this.rootData.providers.filter((p) => p.id !== providerId);
+    this.providers = this.providers.filter((p) => p.id !== providerId);
   }
 }

@@ -1,26 +1,24 @@
-import { type RootConfig } from "../configuration/app-config";
+import { type RootConfig } from "../configuration/app-configurator";
 import { ChannelConnection } from "./channel-connection.schema";
 import { generateId } from "@/lib/generate-id";
 
-export class ChannelConnectionConfigurator {
-  private rootData: RootConfig.Shape;
+type Connections = RootConfig.Shape["connections"];
 
-  constructor(rootData: RootConfig.Shape) {
-    this.rootData = rootData;
+export class ChannelConnectionConfigurator {
+  private connections: Connections = [];
+
+  constructor(connections: Connections) {
+    this.connections = connections;
   }
 
   getConnections() {
-    return this.rootData.connections;
-  }
-
-  getConnectionById(id: string) {
-    return this.rootData.connections.find((p) => p.id === id);
+    return this.connections;
   }
 
   addConnection(input: ChannelConnection.InputShape) {
     const connectionConfig = ChannelConnection.Schema.Input.parse(input);
 
-    this.rootData.connections.push({
+    this.connections.push({
       ...connectionConfig,
       id: generateId(),
     });
@@ -31,7 +29,7 @@ export class ChannelConnectionConfigurator {
   updateConnection(connection: ChannelConnection.FullShape) {
     const parsedConfig = ChannelConnection.Schema.Full.parse(connection);
 
-    this.rootData.connections = this.rootData.connections.map((p) => {
+    this.connections = this.connections.map((p) => {
       if (p.id === parsedConfig.id) {
         return parsedConfig;
       }
@@ -41,6 +39,6 @@ export class ChannelConnectionConfigurator {
   }
 
   deleteConnection(connectionId: string) {
-    this.rootData.connections = this.rootData.connections.filter((p) => p.id !== connectionId);
+    this.connections = this.connections.filter((p) => p.id !== connectionId);
   }
 }
