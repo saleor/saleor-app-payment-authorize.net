@@ -1,6 +1,6 @@
 import { type SettingsManager } from "@saleor/app-sdk/settings-manager";
 import { type AuthData } from "@saleor/app-sdk/APL";
-import { AppConfig } from "./app-config";
+import { AppConfigurator } from "./app-config";
 import { createSettingsManager } from "./settings-manager";
 import { createClient } from "@/lib/create-graphq-client";
 
@@ -12,13 +12,13 @@ export class AppConfigMetadataManager {
   async get() {
     const metadata = await this.mm.get(this.metadataKey);
 
-    return metadata ? AppConfig.parse(metadata) : new AppConfig();
+    return metadata ? AppConfigurator.parse(metadata) : new AppConfigurator();
   }
 
-  set(config: AppConfig) {
+  set(configurator: AppConfigurator) {
     return this.mm.set({
       key: this.metadataKey,
-      value: config.serialize(),
+      value: configurator.serialize(),
     });
   }
 

@@ -13,7 +13,7 @@ export namespace RootConfig {
   export type Shape = z.infer<typeof Schema>;
 }
 
-export class AppConfig {
+export class AppConfigurator {
   private rootData: RootConfig.Shape = {
     providers: [],
     connections: [],
@@ -35,7 +35,7 @@ export class AppConfig {
     const parsedSchema = JSON.parse(serializedSchema);
     const configSchema = RootConfig.Schema.parse(parsedSchema);
 
-    return new AppConfig(configSchema);
+    return new AppConfigurator(configSchema);
   }
 
   serialize() {
