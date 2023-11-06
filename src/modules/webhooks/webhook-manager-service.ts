@@ -1,5 +1,5 @@
 import { AuthorizeNetClient } from "../authorize-net/authorize-net-client";
-import { type AuthorizeNetConfig } from "../authorize-net/authorize-net-config";
+import { type AuthorizeProviderConfig } from "../authorize-net/authorize-net-config";
 import { PaymentGatewayInitializeSessionService } from "./payment-gateway-initialize-session";
 
 import { TransactionInitializeSessionService } from "./transaction-initialize-session";
@@ -25,7 +25,7 @@ export class WebhookManagerService implements PaymentsWebhooks {
     name: "WebhookManagerService",
   });
 
-  constructor(private config: AuthorizeNetConfig) {
+  constructor(private config: AuthorizeProviderConfig.FullShape) {
     this.client = new AuthorizeNetClient(config);
   }
 
@@ -35,6 +35,7 @@ export class WebhookManagerService implements PaymentsWebhooks {
     const transactionInitializeSessionService = new TransactionInitializeSessionService(
       this.client,
     );
+
     return transactionInitializeSessionService.execute(payload);
   }
 
@@ -44,6 +45,7 @@ export class WebhookManagerService implements PaymentsWebhooks {
     const paymentGatewayInitializeSessionService = new PaymentGatewayInitializeSessionService(
       this.config,
     );
+
     return paymentGatewayInitializeSessionService.execute(payload);
   }
 }
