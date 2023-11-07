@@ -1,7 +1,7 @@
 fragment TransactionRefundRequestedEvent on TransactionRefundRequested {
   __typename
   recipient {
-    ...PaymentGatewayRecipient
+    ...WebhookRecipient
   }
   action {
     amount

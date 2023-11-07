@@ -1,7 +1,7 @@
 fragment TransactionProcessSessionEvent on TransactionProcessSession {
   __typename
   recipient {
-    ...PaymentGatewayRecipient
+    ...WebhookRecipient
   }
   data
   merchantReference

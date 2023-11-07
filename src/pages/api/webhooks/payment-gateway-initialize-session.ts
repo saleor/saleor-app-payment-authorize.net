@@ -1,15 +1,15 @@
-import * as Sentry from "@sentry/nextjs";
 import { SaleorSyncWebhook } from "@saleor/app-sdk/handlers/next";
+import * as Sentry from "@sentry/nextjs";
+import { ActiveProviderResolver } from "../../../modules/configuration/active-provider-resolver";
 import { createLogger } from "@/lib/logger";
 import { SynchronousWebhookResponseBuilder } from "@/lib/webhook-response-builder";
-import { mocked } from "@/modules/authorize-net/mocked";
+import { PaymentGatewayInitializeError } from "@/modules/webhooks/payment-gateway-initialize-session";
 import { WebhookManagerService } from "@/modules/webhooks/webhook-manager-service";
 import { saleorApp } from "@/saleor-app";
 import {
   UntypedPaymentGatewayInitializeSessionDocument,
   type PaymentGatewayInitializeSessionEventFragment,
 } from "generated/graphql";
-import { PaymentGatewayInitializeError } from "@/modules/webhooks/payment-gateway-initialize-session";
 
 export const config = {
   api: {
@@ -32,8 +32,6 @@ const logger = createLogger({
 
 class WebhookResponseBuilder extends SynchronousWebhookResponseBuilder<"PAYMENT_GATEWAY_INITIALIZE_SESSION"> {}
 
-const webhookManagerService = new WebhookManagerService(mocked.authorizeConfig);
-
 /**
  * Happens before the payment. Responds with all the data needed to initialize the payment process, e.g. the payment methods.
  */
@@ -45,7 +43,14 @@ export default paymentGatewayInitializeSessionSyncWebhook.createHandler(async (r
   );
   const responseBuilder = new WebhookResponseBuilder(res);
 
+  const appMetadata = ctx.payload.recipient?.privateMetadata ?? [];
+  const channelSlug = ctx.payload.sourceObject.channel.slug;
+
   try {
+    const activeProviderResolver = new ActiveProviderResolver({ appMetadata, channelSlug });
+    const providerConfig = activeProviderResolver.resolve();
+    const webhookManagerService = new WebhookManagerService(providerConfig);
+
     const response = webhookManagerService.paymentGatewayInitializeSession(ctx.payload);
     return responseBuilder.ok(response);
   } catch (error) {

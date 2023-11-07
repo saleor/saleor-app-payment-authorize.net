@@ -15,6 +15,12 @@ export const BaseError = ModernError.subclass("BaseError", {
 });
 export const UnknownError = BaseError.subclass("UnknownError");
 
+export const NoConnectionFoundError = BaseError.subclass("NoConnectionFoundError");
+
+export const NoProviderFoundError = BaseError.subclass("NoProviderFoundError");
+
+export const NoAppConfigFoundError = BaseError.subclass("NoAppConfigFoundError");
+
 // TRPC Errors
 interface TrpcErrorOptions {
   /** HTTP response code returned by TRPC */

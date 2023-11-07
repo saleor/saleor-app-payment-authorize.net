@@ -1,7 +1,7 @@
 fragment PaymentGatewayInitializeSessionEvent on PaymentGatewayInitializeSession {
   __typename
   recipient {
-    ...PaymentGatewayRecipient
+    ...WebhookRecipient
   }
   data
   amount
