@@ -1,4 +1,4 @@
-import { FullSchema } from "./authorize-net-config";
+import { AuthorizeProviderConfig } from "./authorize-net-config";
 import { env } from "@/lib/env.mjs";
 
 const mockedConfig = {
@@ -9,7 +9,7 @@ const mockedConfig = {
   id: "mocked-id",
 };
 
-const authorizeConfig = FullSchema.parse(mockedConfig);
+const authorizeConfig = AuthorizeProviderConfig.Schema.Full.parse(mockedConfig);
 
 export const mocked = {
   authorizeConfig,

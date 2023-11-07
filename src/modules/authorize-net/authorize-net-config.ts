@@ -7,7 +7,7 @@ const InputSchema = z.object({
   environment: z.enum(["sandbox", "production"]).default("sandbox"),
 });
 
-export const FullSchema = InputSchema.extend({
+const FullSchema = InputSchema.extend({
   id: z.string(),
 });
 
