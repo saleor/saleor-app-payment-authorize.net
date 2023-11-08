@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { type RootConfig } from "../configuration/app-configurator";
+import { type AppConfig } from "../configuration/app-configurator";
 import { ProvidersConfigurator } from "./provider-configurator";
 
-let rootData: RootConfig.Shape["providers"] = [];
+let rootData: AppConfig.Shape["providers"] = [];
 
 beforeEach(() => {
   rootData = [];

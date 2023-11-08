@@ -1,8 +1,8 @@
-import { type RootConfig } from "../configuration/app-configurator";
+import { type AppConfig } from "../configuration/app-configurator";
 import { ChannelConnection } from "./channel-connection.schema";
 import { generateId } from "@/lib/generate-id";
 
-type Connections = RootConfig.Shape["connections"];
+type Connections = AppConfig.Shape["connections"];
 
 export class ChannelConnectionConfigurator {
   private connections: Connections = [];

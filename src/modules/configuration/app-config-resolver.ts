@@ -1,12 +1,12 @@
 import { decrypt } from "@saleor/app-sdk/settings-manager";
 import { NoAppConfigFoundError } from "@/errors";
 import { env } from "@/lib/env.mjs";
-import { RootConfig } from "@/modules/configuration/app-configurator";
+import { AppConfig } from "@/modules/configuration/app-configurator";
 import { type WebhookRecipientFragment } from "generated/graphql";
 import { logger } from "@/lib/logger";
 import { generateId } from "@/lib/generate-id";
 
-function getAppConfigFromEnv(): RootConfig.Shape | undefined {
+function getAppConfigFromEnv(): AppConfig.Shape | undefined {
   logger.trace("Reading config from env");
   const provider = {
     id: generateId(),
@@ -21,7 +21,7 @@ function getAppConfigFromEnv(): RootConfig.Shape | undefined {
     connections: [],
   };
 
-  const parsed = RootConfig.Schema.safeParse(appConfigInput);
+  const parsed = AppConfig.Schema.safeParse(appConfigInput);
 
   if (!parsed.success) {
     logger.error({ error: parsed.error }, "Error parsing app configuration from env");
@@ -41,8 +41,8 @@ function getAppConfigFromEnv(): RootConfig.Shape | undefined {
  */
 export function resolveAppConfigFromMetadataOrEnv(
   appMetadata: WebhookRecipientFragment["privateMetadata"],
-): RootConfig.Shape {
-  let appConfig: RootConfig.Shape | undefined;
+): AppConfig.Shape {
+  let appConfig: AppConfig.Shape | undefined;
 
   const envConfig = getAppConfigFromEnv();
 
@@ -52,7 +52,7 @@ export function resolveAppConfigFromMetadataOrEnv(
   appMetadata.forEach((item) => {
     const decrypted = decrypt(item.value, env.SECRET_KEY);
     const parsedItem = JSON.parse(decrypted);
-    const appConfigParsed = RootConfig.Schema.safeParse(parsedItem);
+    const appConfigParsed = AppConfig.Schema.safeParse(parsedItem);
 
     if (appConfigParsed.success) {
       appConfig = appConfigParsed.data;

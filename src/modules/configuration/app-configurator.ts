@@ -4,7 +4,7 @@ import { ProvidersConfigurator } from "../provider/provider-configurator";
 import { ChannelConnectionConfigurator } from "../channel-connection/channel-connection-configurator";
 import { ChannelConnection } from "../channel-connection/channel-connection.schema";
 
-export namespace RootConfig {
+export namespace AppConfig {
   export const Schema = z.object({
     providers: z.array(AuthorizeProviderConfig.Schema.Full),
     connections: z.array(ChannelConnection.Schema.Full),
@@ -14,7 +14,7 @@ export namespace RootConfig {
 }
 
 export class AppConfigurator {
-  private rootData: RootConfig.Shape = {
+  private rootData: AppConfig.Shape = {
     providers: [],
     connections: [],
   };
@@ -22,7 +22,7 @@ export class AppConfigurator {
   providers: ProvidersConfigurator;
   connections: ChannelConnectionConfigurator;
 
-  constructor(initialData?: RootConfig.Shape) {
+  constructor(initialData?: AppConfig.Shape) {
     if (initialData) {
       this.rootData = initialData;
     }
@@ -33,7 +33,7 @@ export class AppConfigurator {
 
   static parse(serializedSchema: string) {
     const parsedSchema = JSON.parse(serializedSchema);
-    const configSchema = RootConfig.Schema.parse(parsedSchema);
+    const configSchema = AppConfig.Schema.parse(parsedSchema);
 
     return new AppConfigurator(configSchema);
   }

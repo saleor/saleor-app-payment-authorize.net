@@ -1,8 +1,8 @@
 import { AuthorizeProviderConfig } from "../authorize-net/authorize-net-config";
-import { type RootConfig } from "../configuration/app-configurator";
+import { type AppConfig } from "../configuration/app-configurator";
 import { generateId } from "@/lib/generate-id";
 
-type Providers = RootConfig.Shape["providers"];
+type Providers = AppConfig.Shape["providers"];
 
 export class ProvidersConfigurator {
   private providers: Providers;

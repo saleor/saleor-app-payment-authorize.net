@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { ActiveProviderResolver } from "./active-provider-resolver";
-import { type RootConfig } from "./app-configurator";
+import { type AppConfig } from "./app-configurator";
 
 describe("ActiveProviderResolver", () => {
   describe("resolve", () => {
     it("should return the provider for the given channel", () => {
-      const appConfig: RootConfig.Shape = {
+      const appConfig: AppConfig.Shape = {
         providers: [
           {
             id: "provider1",
@@ -43,7 +43,7 @@ describe("ActiveProviderResolver", () => {
       expect(provider).toEqual(appConfig.providers[0]);
     });
     it("should throw an error if the connection is not found", () => {
-      const appConfig: RootConfig.Shape = {
+      const appConfig: AppConfig.Shape = {
         connections: [],
         providers: [],
       };
@@ -52,7 +52,7 @@ describe("ActiveProviderResolver", () => {
       expect(() => activeProviderResolver.resolve("channel1")).toThrow();
     });
     it("should throw an error if the provider is not found", () => {
-      const appConfig: RootConfig.Shape = {
+      const appConfig: AppConfig.Shape = {
         connections: [
           {
             channelSlug: "channel1",

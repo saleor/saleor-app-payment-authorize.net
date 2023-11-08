@@ -1,11 +1,11 @@
 import { encrypt } from "@saleor/app-sdk/settings-manager";
 import { describe, expect, it } from "vitest";
 import { resolveAppConfigFromMetadataOrEnv } from "./app-config-resolver";
-import { type RootConfig } from "./app-configurator";
+import { type AppConfig } from "./app-configurator";
 import { type WebhookRecipientFragment } from "generated/graphql";
 import { env } from "@/lib/env.mjs";
 
-const appConfig: RootConfig.Shape = {
+const appConfig: AppConfig.Shape = {
   connections: [
     {
       channelSlug: "channel1",

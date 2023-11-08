@@ -1,9 +1,9 @@
 import { NoConnectionFoundError, NoProviderFoundError } from "@/errors";
 import { type ChannelConnection } from "@/modules/channel-connection/channel-connection.schema";
-import { type RootConfig } from "@/modules/configuration/app-configurator";
+import { type AppConfig } from "@/modules/configuration/app-configurator";
 
 export class ActiveProviderResolver {
-  constructor(private appConfig: RootConfig.Shape) {}
+  constructor(private appConfig: AppConfig.Shape) {}
 
   private resolveActiveConnection(channelSlug: string) {
     const channel = this.appConfig.connections.find((c) => c.channelSlug === channelSlug);

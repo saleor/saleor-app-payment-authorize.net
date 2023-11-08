@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { type RootConfig } from "../configuration/app-configurator";
+import { type AppConfig } from "../configuration/app-configurator";
 import { ChannelConnectionConfigurator } from "./channel-connection-configurator";
 
-let rootData: RootConfig.Shape["connections"] = [];
+let rootData: AppConfig.Shape["connections"] = [];
 
 beforeEach(() => {
   rootData = [];
