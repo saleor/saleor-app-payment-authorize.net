@@ -3,6 +3,7 @@ import * as Sentry from "@sentry/nextjs";
 import { ActiveProviderResolver } from "../../../modules/configuration/active-provider-resolver";
 import { createLogger } from "@/lib/logger";
 import { SynchronousWebhookResponseBuilder } from "@/lib/webhook-response-builder";
+import { resolveAppConfigFromMetadataOrEnv } from "@/modules/configuration/app-config-resolver";
 import { PaymentGatewayInitializeError } from "@/modules/webhooks/payment-gateway-initialize-session";
 import { WebhookManagerService } from "@/modules/webhooks/webhook-manager-service";
 import { saleorApp } from "@/saleor-app";
@@ -47,11 +48,13 @@ export default paymentGatewayInitializeSessionSyncWebhook.createHandler(async (r
   const channelSlug = ctx.payload.sourceObject.channel.slug;
 
   try {
-    const activeProviderResolver = new ActiveProviderResolver({ appMetadata, channelSlug });
-    const providerConfig = activeProviderResolver.resolve();
+    const appConfig = resolveAppConfigFromMetadataOrEnv(appMetadata);
+    const activeProviderResolver = new ActiveProviderResolver(appConfig);
+    const providerConfig = activeProviderResolver.resolve(channelSlug);
+
     const webhookManagerService = new WebhookManagerService(providerConfig);
 
-    const response = webhookManagerService.paymentGatewayInitializeSession(ctx.payload);
+    const response = webhookManagerService.paymentGatewayInitializeSession();
     return responseBuilder.ok(response);
   } catch (error) {
     Sentry.captureException(error);

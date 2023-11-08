@@ -24,6 +24,10 @@ export const env = createEnv({
     UPSTASH_TOKEN: z.string().optional(),
     REST_APL_ENDPOINT: z.string().optional(),
     REST_APL_TOKEN: z.string().optional(),
+    AUTHORIZE_API_LOGIN_ID: z.string().min(1).optional(),
+    AUTHORIZE_TRANSACTION_KEY: z.string().min(1).optional(),
+    AUTHORIZE_PUBLIC_CLIENT_KEY: z.string().min(1).optional(),
+    AUTHORIZE_ENVIRONMENT: z.enum(["sandbox", "production"]).optional(),
   },
 
   /*
@@ -55,5 +59,9 @@ export const env = createEnv({
     UPSTASH_TOKEN: process.env.UPSTASH_TOKEN,
     REST_APL_ENDPOINT: process.env.REST_APL_ENDPOINT,
     REST_APL_TOKEN: process.env.REST_APL_TOKEN,
+    AUTHORIZE_API_LOGIN_ID: process.env.AUTHORIZE_API_LOGIN_ID,
+    AUTHORIZE_TRANSACTION_KEY: process.env.AUTHORIZE_TRANSACTION_KEY,
+    AUTHORIZE_PUBLIC_CLIENT_KEY: process.env.AUTHORIZE_PUBLIC_CLIENT_KEY,
+    AUTHORIZE_ENVIRONMENT: process.env.AUTHORIZE_ENVIRONMENT,
   },
 });

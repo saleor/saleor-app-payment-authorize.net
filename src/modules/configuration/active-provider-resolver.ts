@@ -1,32 +1,15 @@
-import { decrypt } from "@saleor/app-sdk/settings-manager";
-import { NoAppConfigFoundError, NoConnectionFoundError, NoProviderFoundError } from "@/errors";
-import { env } from "@/lib/env.mjs";
+import { NoConnectionFoundError, NoProviderFoundError } from "@/errors";
 import { type ChannelConnection } from "@/modules/channel-connection/channel-connection.schema";
-import { RootConfig } from "@/modules/configuration/app-configurator";
-import { type WebhookRecipientFragment } from "generated/graphql";
+import { type RootConfig } from "@/modules/configuration/app-configurator";
 
 export class ActiveProviderResolver {
-  private readonly appConfig: RootConfig.Shape;
-  private readonly channelSlug: string;
+  constructor(private appConfig: RootConfig.Shape) {}
 
-  constructor({
-    appMetadata,
-    channelSlug,
-  }: {
-    appMetadata: WebhookRecipientFragment["privateMetadata"];
-    channelSlug: string;
-  }) {
-    const appConfig = this.resolveAppConfigFromMetadata(appMetadata);
-
-    this.appConfig = appConfig;
-    this.channelSlug = channelSlug;
-  }
-
-  private resolveActiveConnection() {
-    const channel = this.appConfig.connections.find((c) => c.channelSlug === this.channelSlug);
+  private resolveActiveConnection(channelSlug: string) {
+    const channel = this.appConfig.connections.find((c) => c.channelSlug === channelSlug);
 
     if (!channel) {
-      throw new NoConnectionFoundError(`Channel ${this.channelSlug} not found in the connections`);
+      throw new NoConnectionFoundError(`Channel ${channelSlug} not found in the connections`);
     }
 
     return channel;
@@ -44,30 +27,8 @@ export class ActiveProviderResolver {
     return provider;
   }
 
-  private resolveAppConfigFromMetadata(
-    appMetadata: WebhookRecipientFragment["privateMetadata"],
-  ): RootConfig.Shape {
-    let appConfig: RootConfig.Shape | undefined;
-
-    appMetadata.forEach((item) => {
-      const decrypted = decrypt(item.value, env.SECRET_KEY);
-      const parsedItem = JSON.parse(decrypted);
-      const appConfigParsed = RootConfig.Schema.safeParse(parsedItem);
-
-      if (appConfigParsed.success) {
-        appConfig = appConfigParsed.data;
-      }
-    });
-
-    if (!appConfig) {
-      throw new NoAppConfigFoundError("App config not found");
-    }
-
-    return appConfig;
-  }
-
-  public resolve() {
-    const connection = this.resolveActiveConnection();
+  public resolve(channelSlug: string) {
+    const connection = this.resolveActiveConnection(channelSlug);
     const provider = this.resolveProviderForConnection(connection);
 
     return provider;

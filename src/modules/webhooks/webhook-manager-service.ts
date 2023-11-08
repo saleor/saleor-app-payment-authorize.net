@@ -39,13 +39,11 @@ export class WebhookManagerService implements PaymentsWebhooks {
     return transactionInitializeSessionService.execute(payload);
   }
 
-  paymentGatewayInitializeSession(
-    payload: PaymentGatewayInitializeSessionEventFragment,
-  ): SyncWebhookResponse<"PAYMENT_GATEWAY_INITIALIZE_SESSION"> {
+  paymentGatewayInitializeSession(): SyncWebhookResponse<"PAYMENT_GATEWAY_INITIALIZE_SESSION"> {
     const paymentGatewayInitializeSessionService = new PaymentGatewayInitializeSessionService(
       this.config,
     );
 
-    return paymentGatewayInitializeSessionService.execute(payload);
+    return paymentGatewayInitializeSessionService.execute();
   }
 }
