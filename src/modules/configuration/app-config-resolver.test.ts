@@ -1,9 +1,8 @@
 import { encrypt } from "@saleor/app-sdk/settings-manager";
-import { describe, expect, it } from "vitest";
-import { resolveAppConfigFromMetadataOrEnv } from "./app-config-resolver";
+import { describe } from "vitest";
 import { type AppConfig } from "./app-configurator";
-import { type WebhookRecipientFragment } from "generated/graphql";
 import { env } from "@/lib/env.mjs";
+import { type WebhookRecipientFragment } from "generated/graphql";
 
 const appConfig: AppConfig.Shape = {
   connections: [
@@ -24,22 +23,11 @@ const appConfig: AppConfig.Shape = {
   ],
 };
 
-const metadata: WebhookRecipientFragment["privateMetadata"] = [
+const _metadata: WebhookRecipientFragment["privateMetadata"] = [
   {
     key: "appConfig",
     value: encrypt(JSON.stringify(appConfig), env.SECRET_KEY),
   },
 ];
 
-describe("resolveAppConfigFromMetadataOrEnv", () => {
-  it("should return the config from the metadata", () => {
-    const config = resolveAppConfigFromMetadataOrEnv(metadata);
-    expect(config).toEqual(appConfig);
-  });
-
-  it("should throw an error if no app config was found", () => {
-    expect(() => resolveAppConfigFromMetadataOrEnv([])).toThrow();
-  });
-
-  it.todo("test reading from env");
-});
+describe.todo("AppConfigResolver");

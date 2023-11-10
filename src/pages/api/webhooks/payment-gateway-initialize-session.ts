@@ -3,7 +3,8 @@ import * as Sentry from "@sentry/nextjs";
 import { ActiveProviderResolver } from "../../../modules/configuration/active-provider-resolver";
 import { createLogger } from "@/lib/logger";
 import { SynchronousWebhookResponseBuilder } from "@/lib/webhook-response-builder";
-import { resolveAppConfigFromMetadataOrEnv } from "@/modules/configuration/app-config-resolver";
+import { AppConfigMetadataManager } from "@/modules/configuration/app-config-metadata-manager";
+import { AppConfigResolver } from "@/modules/configuration/app-config-resolver";
 import { PaymentGatewayInitializeError } from "@/modules/webhooks/payment-gateway-initialize-session";
 import { WebhookManagerService } from "@/modules/webhooks/webhook-manager-service";
 import { saleorApp } from "@/saleor-app";
@@ -48,7 +49,10 @@ export default paymentGatewayInitializeSessionSyncWebhook.createHandler(async (r
   const channelSlug = ctx.payload.sourceObject.channel.slug;
 
   try {
-    const appConfig = resolveAppConfigFromMetadataOrEnv(appMetadata);
+    const appConfigMetadataManager = AppConfigMetadataManager.createFromAuthData(ctx.authData);
+    const appConfigResolver = new AppConfigResolver(appConfigMetadataManager);
+
+    const appConfig = await appConfigResolver.resolve({ metadata: appMetadata });
     const activeProviderResolver = new ActiveProviderResolver(appConfig);
     const providerConfig = activeProviderResolver.resolve(channelSlug);
 
