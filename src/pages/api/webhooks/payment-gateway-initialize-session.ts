@@ -1,15 +1,17 @@
-import * as Sentry from "@sentry/nextjs";
 import { SaleorSyncWebhook } from "@saleor/app-sdk/handlers/next";
+import * as Sentry from "@sentry/nextjs";
+import { ActiveProviderResolver } from "../../../modules/configuration/active-provider-resolver";
 import { createLogger } from "@/lib/logger";
 import { SynchronousWebhookResponseBuilder } from "@/lib/webhook-response-builder";
-import { authorizeMockedConfig } from "@/modules/authorize-net/authorize-net-config";
+import { AppConfigMetadataManager } from "@/modules/configuration/app-config-metadata-manager";
+import { AppConfigResolver } from "@/modules/configuration/app-config-resolver";
+import { PaymentGatewayInitializeError } from "@/modules/webhooks/payment-gateway-initialize-session";
 import { WebhookManagerService } from "@/modules/webhooks/webhook-manager-service";
 import { saleorApp } from "@/saleor-app";
 import {
   UntypedPaymentGatewayInitializeSessionDocument,
   type PaymentGatewayInitializeSessionEventFragment,
 } from "generated/graphql";
-import { PaymentGatewayInitializeError } from "@/modules/webhooks/payment-gateway-initialize-session";
 
 export const config = {
   api: {
@@ -32,8 +34,6 @@ const logger = createLogger({
 
 class WebhookResponseBuilder extends SynchronousWebhookResponseBuilder<"PAYMENT_GATEWAY_INITIALIZE_SESSION"> {}
 
-const webhookManagerService = new WebhookManagerService(authorizeMockedConfig);
-
 /**
  * Happens before the payment. Responds with all the data needed to initialize the payment process, e.g. the payment methods.
  */
@@ -45,8 +45,20 @@ export default paymentGatewayInitializeSessionSyncWebhook.createHandler(async (r
   );
   const responseBuilder = new WebhookResponseBuilder(res);
 
+  const appMetadata = ctx.payload.recipient?.privateMetadata ?? [];
+  const channelSlug = ctx.payload.sourceObject.channel.slug;
+
   try {
-    const response = webhookManagerService.paymentGatewayInitializeSession(ctx.payload);
+    const appConfigMetadataManager = AppConfigMetadataManager.createFromAuthData(ctx.authData);
+    const appConfigResolver = new AppConfigResolver(appConfigMetadataManager);
+
+    const appConfig = await appConfigResolver.resolve({ metadata: appMetadata });
+    const activeProviderResolver = new ActiveProviderResolver(appConfig);
+    const providerConfig = activeProviderResolver.resolve(channelSlug);
+
+    const webhookManagerService = new WebhookManagerService(providerConfig);
+
+    const response = webhookManagerService.paymentGatewayInitializeSession();
     return responseBuilder.ok(response);
   } catch (error) {
     Sentry.captureException(error);

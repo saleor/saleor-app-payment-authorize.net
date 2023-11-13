@@ -1,7 +1,7 @@
 fragment TransactionCancelationRequestedEvent on TransactionCancelationRequested {
   __typename
   recipient {
-    ...PaymentGatewayRecipient
+    ...WebhookRecipient
   }
   action {
     actionType

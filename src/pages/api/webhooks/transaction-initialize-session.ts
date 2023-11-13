@@ -1,15 +1,17 @@
 import { SaleorSyncWebhook } from "@saleor/app-sdk/handlers/next";
 import * as Sentry from "@sentry/nextjs";
+import { ActiveProviderResolver } from "../../../modules/configuration/active-provider-resolver";
 import { createLogger } from "@/lib/logger";
 import { SynchronousWebhookResponseBuilder } from "@/lib/webhook-response-builder";
-import { authorizeMockedConfig } from "@/modules/authorize-net/authorize-net-config";
+import { AppConfigMetadataManager } from "@/modules/configuration/app-config-metadata-manager";
+import { AppConfigResolver } from "@/modules/configuration/app-config-resolver";
+import { TransactionInitializeError } from "@/modules/webhooks/transaction-initialize-session";
 import { WebhookManagerService } from "@/modules/webhooks/webhook-manager-service";
 import { saleorApp } from "@/saleor-app";
 import {
   UntypedTransactionInitializeSessionDocument,
   type TransactionInitializeSessionEventFragment,
 } from "generated/graphql";
-import { TransactionInitializeError } from "@/modules/webhooks/transaction-initialize-session";
 
 export const config = {
   api: {
@@ -32,8 +34,6 @@ const logger = createLogger({
 
 class WebhookResponseBuilder extends SynchronousWebhookResponseBuilder<"TRANSACTION_INITIALIZE_SESSION"> {}
 
-const webhookManagerService = new WebhookManagerService(authorizeMockedConfig);
-
 /**
  * Initializes the payment processing. Based on the response, Saleor will create or update the transaction with the appropriate status and balance. The logic for whether the transaction is charged or cancelled is executed in different webhooks (`TRANSACTION_CANCELATION_REQUESTED`, `TRANSACTION_CHARGE_REQUESTED`)
  */
@@ -49,7 +49,19 @@ export default transactionInitializeSessionSyncWebhook.createHandler(async (req,
     "handler called",
   );
 
+  const appMetadata = ctx.payload.recipient?.privateMetadata ?? [];
+  const channelSlug = ctx.payload.sourceObject.channel.slug;
+
   try {
+    const appConfigMetadataManager = AppConfigMetadataManager.createFromAuthData(ctx.authData);
+    const appConfigResolver = new AppConfigResolver(appConfigMetadataManager);
+
+    const appConfig = await appConfigResolver.resolve({ metadata: appMetadata });
+    const activeProviderResolver = new ActiveProviderResolver(appConfig);
+    const providerConfig = activeProviderResolver.resolve(channelSlug);
+
+    const webhookManagerService = new WebhookManagerService(providerConfig);
+
     const response = await webhookManagerService.transactionInitializeSession(ctx.payload);
     return responseBuilder.ok(response);
   } catch (error) {

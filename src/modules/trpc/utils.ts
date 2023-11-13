@@ -1,13 +1,7 @@
-import { type TRPCClientErrorLike } from "@trpc/client";
-import {
-  type DeepPartial,
-  type FieldPath,
-  type FieldValues,
-  type UseFormSetError,
-} from "react-hook-form";
 import { type AppBridge } from "@saleor/app-sdk/app-bridge";
+import { type TRPCClientErrorLike } from "@trpc/client";
 import { type AppRouter } from "./trpc-app-router";
-import { BaseTrpcError, FieldError } from "@/errors";
+import { BaseTrpcError } from "@/errors";
 
 interface HandlerInput {
   message?: string;
@@ -37,46 +31,6 @@ export const getErrorHandler =
           actionId: input.actionId,
           status: "error",
         },
-      });
-    }
-  };
-
-interface FieldHandlerInput<TFieldValues extends FieldValues> extends HandlerInput {
-  fieldName: FieldPath<TFieldValues> | `root.${string}` | "root";
-  formFields: FieldPath<TFieldValues>[];
-  setError: UseFormSetError<TFieldValues>;
-}
-
-export const getFormFields = <TFieldValues extends FieldValues>(
-  defaultValues: Readonly<DeepPartial<TFieldValues>> | undefined,
-): FieldPath<TFieldValues>[] => {
-  if (!defaultValues) {
-    return [];
-  }
-  return Object.keys(defaultValues) as FieldPath<TFieldValues>[];
-};
-
-const isMatchingField = <TFieldValues extends FieldValues>(
-  fieldName: string,
-  formFields: FieldPath<TFieldValues>[],
-): fieldName is FieldPath<TFieldValues> => {
-  return formFields.some((field) => field === fieldName);
-};
-
-export const getFieldErrorHandler =
-  <TFieldValues extends FieldValues>(input: FieldHandlerInput<TFieldValues>) =>
-  <T extends TRPCClientErrorLike<AppRouter>>(error: T) => {
-    getErrorHandler(input)(error);
-    const parsedError = BaseTrpcError.parse(error.data?.serialized);
-
-    if (
-      parsedError instanceof FieldError &&
-      isMatchingField(parsedError.fieldName, input.formFields)
-    ) {
-      input.setError(parsedError.fieldName, { message: parsedError.message });
-    } else {
-      input.setError(input.fieldName, {
-        message: input.message,
       });
     }
   };

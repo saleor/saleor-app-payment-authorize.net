@@ -1,7 +1,7 @@
 fragment TransactionChargeRequestedEvent on TransactionChargeRequested {
   __typename
   recipient {
-    ...PaymentGatewayRecipient
+    ...WebhookRecipient
   }
   action {
     amount

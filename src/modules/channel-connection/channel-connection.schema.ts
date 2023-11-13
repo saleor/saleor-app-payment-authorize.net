@@ -1,17 +1,15 @@
 import { z } from "zod";
 
 const InputSchema = z.object({
-  apiLoginId: z.string().min(1),
-  publicClientKey: z.string().min(1),
-  transactionKey: z.string().min(1),
-  environment: z.enum(["sandbox", "production"]).default("sandbox"),
+  channelSlug: z.string().min(1),
+  providerId: z.string().min(1),
 });
 
 const FullSchema = InputSchema.extend({
   id: z.string(),
 });
 
-export namespace AuthorizeProviderConfig {
+export namespace ChannelConnection {
   export type InputShape = z.infer<typeof InputSchema>;
   export type FullShape = z.infer<typeof FullSchema>;
 

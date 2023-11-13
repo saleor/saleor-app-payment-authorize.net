@@ -5,7 +5,7 @@ import pino from "pino";
 import pinoPretty from "pino-pretty";
 import { isObject } from "./utils";
 import { BaseError, BaseTrpcError } from "@/errors";
-import { obfuscateValue } from "@/modules/app-configuration/utils";
+import { obfuscateValue } from "@/lib/obfuscate";
 
 const logLevel = process.env.APP_LOG_LEVEL ?? "silent";
 /* c8 ignore start */

@@ -1,9 +1,10 @@
-import { paymentAppConfigurationRouter } from "../payment-app-configuration/payment-app-configuration.router";
+import { channelConnectionRouter } from "../channel-connection/channel-connection.router";
+import { providerRouter } from "../provider/provider.router";
 import { router } from "./trpc-server";
 
 export const appRouter = router({
-  paymentAppConfigurationRouter,
-  // CHANGEME: Add additioal routers here
+  providers: providerRouter,
+  connections: channelConnectionRouter,
 });
 
 export type AppRouter = typeof appRouter;

@@ -1,7 +1,7 @@
 fragment TransactionInitializeSessionEvent on TransactionInitializeSession {
   __typename
   recipient {
-    ...PaymentGatewayRecipient
+    ...WebhookRecipient
   }
   data
   merchantReference

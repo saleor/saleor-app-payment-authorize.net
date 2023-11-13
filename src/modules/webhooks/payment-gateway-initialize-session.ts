@@ -1,11 +1,7 @@
-import {
-  authorizeNetConfigSchema,
-  type AuthorizeNetConfig,
-} from "../authorize-net/authorize-net-config";
+import { AuthorizeProviderConfig } from "../authorize-net/authorize-net-config";
 import { BaseError } from "@/errors";
 
 import { type SyncWebhookResponse } from "@/lib/webhook-response-builder";
-import { type PaymentGatewayInitializeSessionEventFragment } from "generated/graphql";
 
 export const PaymentGatewayInitializeError = BaseError.subclass("PaymentGatewayInitializeError");
 
@@ -13,22 +9,20 @@ const PaymentGatewayInitializeUnexpectedDataError = PaymentGatewayInitializeErro
   "PaymentGatewayInitializeUnexpectedDataError",
 );
 
-const paymentGatewayInitializeResponseDataSchema = authorizeNetConfigSchema.pick({
+const paymentGatewayInitializeResponseDataSchema = AuthorizeProviderConfig.Schema.Full.pick({
   apiLoginId: true,
   environment: true,
   publicClientKey: true,
 });
 
 export class PaymentGatewayInitializeSessionService {
-  private readonly config: AuthorizeNetConfig;
+  private readonly config: AuthorizeProviderConfig.FullShape;
 
-  constructor(config: AuthorizeNetConfig) {
+  constructor(config: AuthorizeProviderConfig.FullShape) {
     this.config = config;
   }
 
-  execute(
-    _payload: PaymentGatewayInitializeSessionEventFragment,
-  ): SyncWebhookResponse<"PAYMENT_GATEWAY_INITIALIZE_SESSION"> {
+  execute(): SyncWebhookResponse<"PAYMENT_GATEWAY_INITIALIZE_SESSION"> {
     const dataParseResult = paymentGatewayInitializeResponseDataSchema.safeParse({
       apiLoginId: this.config.apiLoginId,
       environment: this.config.environment,

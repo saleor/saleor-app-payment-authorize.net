@@ -14,13 +14,15 @@ export const BaseError = ModernError.subclass("BaseError", {
   props: {} as CommonProps,
 });
 export const UnknownError = BaseError.subclass("UnknownError");
-export const JsonParseError = ModernError.subclass("JsonParseError");
-export const JsonSchemaError = ModernError.subclass("JsonSchemaError");
-export const MissingSaleorApiUrlError = BaseError.subclass("MissingSaleorApiUrlError");
-export const MissingAuthDataError = BaseError.subclass("MissingAuthDataError");
+
+export const NoConnectionFoundError = BaseError.subclass("NoConnectionFoundError");
+
+export const NoProviderFoundError = BaseError.subclass("NoProviderFoundError");
+
+export const NoAppConfigFoundError = BaseError.subclass("NoAppConfigFoundError");
 
 // TRPC Errors
-export interface TrpcErrorOptions {
+interface TrpcErrorOptions {
   /** HTTP response code returned by TRPC */
   trpcCode?: TRPC_ERROR_CODE_KEY;
 }
@@ -45,12 +47,3 @@ export const ReqMissingTokenError = BaseTrpcError.subclass("ReqMissingTokenError
 export const ReqMissingAppIdError = BaseTrpcError.subclass("ReqMissingAppIdError", {
   props: { trpcCode: "BAD_REQUEST" } as TrpcErrorOptions,
 });
-
-// TRPC + react-hook-form errors
-export interface FieldErrorOptions extends TrpcErrorOptions {
-  fieldName: string;
-}
-export const FieldError = BaseTrpcError.subclass("FieldError", {
-  props: {} as FieldErrorOptions,
-});
-export const FileReaderError = BaseError.subclass("FileReaderError");

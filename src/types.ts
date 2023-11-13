@@ -5,12 +5,3 @@ export type JSONObject = {
 };
 
 type JSONArray = readonly JSONValue[];
-
-export type StrictRequired<T> = {
-  [P in keyof T]-?: NonNullable<T[P]>;
-};
-
-export type Channel = {
-  readonly id: string;
-  readonly name: string;
-};
