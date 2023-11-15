@@ -1,4 +1,5 @@
 import { AuthorizeProviderConfig } from "../authorize-net/authorize-net-config";
+import { type AuthorizeNetClient } from "../authorize-net/authorize-net-client";
 import { BaseError } from "@/errors";
 
 import { type SyncWebhookResponse } from "@/lib/webhook-response-builder";
@@ -16,17 +17,13 @@ const paymentGatewayInitializeResponseDataSchema = AuthorizeProviderConfig.Schem
 });
 
 export class PaymentGatewayInitializeSessionService {
-  private readonly config: AuthorizeProviderConfig.FullShape;
-
-  constructor(config: AuthorizeProviderConfig.FullShape) {
-    this.config = config;
-  }
+  constructor(private client: AuthorizeNetClient) {}
 
   execute(): SyncWebhookResponse<"PAYMENT_GATEWAY_INITIALIZE_SESSION"> {
     const dataParseResult = paymentGatewayInitializeResponseDataSchema.safeParse({
-      apiLoginId: this.config.apiLoginId,
-      environment: this.config.environment,
-      publicClientKey: this.config.publicClientKey,
+      apiLoginId: this.client.config.apiLoginId,
+      environment: this.client.config.environment,
+      publicClientKey: this.client.config.publicClientKey,
     });
 
     if (!dataParseResult.success) {
