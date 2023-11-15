@@ -16,7 +16,7 @@ interface PaymentsWebhooks {
   ) => Promise<SyncWebhookResponse<"TRANSACTION_INITIALIZE_SESSION">>;
   paymentGatewayInitializeSession: (
     payload: PaymentGatewayInitializeSessionEventFragment,
-  ) => SyncWebhookResponse<"PAYMENT_GATEWAY_INITIALIZE_SESSION">;
+  ) => Promise<SyncWebhookResponse<"PAYMENT_GATEWAY_INITIALIZE_SESSION">>;
 }
 
 export class WebhookManagerService implements PaymentsWebhooks {
@@ -39,11 +39,13 @@ export class WebhookManagerService implements PaymentsWebhooks {
     return transactionInitializeSessionService.execute(payload);
   }
 
-  paymentGatewayInitializeSession(): SyncWebhookResponse<"PAYMENT_GATEWAY_INITIALIZE_SESSION"> {
+  paymentGatewayInitializeSession(
+    payload: PaymentGatewayInitializeSessionEventFragment,
+  ): Promise<SyncWebhookResponse<"PAYMENT_GATEWAY_INITIALIZE_SESSION">> {
     const paymentGatewayInitializeSessionService = new PaymentGatewayInitializeSessionService(
       this.client,
     );
 
-    return paymentGatewayInitializeSessionService.execute();
+    return paymentGatewayInitializeSessionService.execute(payload);
   }
 }

@@ -58,7 +58,7 @@ export default paymentGatewayInitializeSessionSyncWebhook.createHandler(async (r
 
     const webhookManagerService = new WebhookManagerService(providerConfig);
 
-    const response = webhookManagerService.paymentGatewayInitializeSession();
+    const response = await webhookManagerService.paymentGatewayInitializeSession(ctx.payload);
     return responseBuilder.ok(response);
   } catch (error) {
     Sentry.captureException(error);

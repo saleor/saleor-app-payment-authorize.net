@@ -1,8 +1,12 @@
-import { AuthorizeProviderConfig } from "../authorize-net/authorize-net-config";
+import { z } from "zod";
+import AuthorizeNet from "authorizenet";
 import { type AuthorizeNetClient } from "../authorize-net/authorize-net-client";
 import { BaseError } from "@/errors";
 
 import { type SyncWebhookResponse } from "@/lib/webhook-response-builder";
+import { type PaymentGatewayInitializeSessionEventFragment } from "generated/graphql";
+
+const ApiContracts = AuthorizeNet.APIContracts;
 
 export const PaymentGatewayInitializeError = BaseError.subclass("PaymentGatewayInitializeError");
 
@@ -10,20 +14,37 @@ const PaymentGatewayInitializeUnexpectedDataError = PaymentGatewayInitializeErro
   "PaymentGatewayInitializeUnexpectedDataError",
 );
 
-const paymentGatewayInitializeResponseDataSchema = AuthorizeProviderConfig.Schema.Full.pick({
-  apiLoginId: true,
-  environment: true,
-  publicClientKey: true,
+/**
+ * Authorize.net's payment form called Accept Hosted has to be initialized with `formToken`.
+ * Read more: https://developer.authorize.net/api/reference/features/accept-hosted.html#Requesting_the_Form_Token
+ */
+const paymentGatewayInitializeResponseDataSchema = z.object({
+  formToken: z.string().min(1),
 });
+
+function buildTransactionFromPayload(
+  payload: PaymentGatewayInitializeSessionEventFragment,
+): AuthorizeNet.APIContracts.TransactionRequestType {
+  const transactionRequest = new ApiContracts.TransactionRequestType();
+  transactionRequest.setTransactionType(ApiContracts.TransactionTypeEnum.AUTHONLYTRANSACTION);
+  transactionRequest.setAmount(payload.amount);
+
+  return transactionRequest;
+}
 
 export class PaymentGatewayInitializeSessionService {
   constructor(private client: AuthorizeNetClient) {}
 
-  execute(): SyncWebhookResponse<"PAYMENT_GATEWAY_INITIALIZE_SESSION"> {
+  async execute(
+    payload: PaymentGatewayInitializeSessionEventFragment,
+  ): Promise<SyncWebhookResponse<"PAYMENT_GATEWAY_INITIALIZE_SESSION">> {
+    const transactionInput = buildTransactionFromPayload(payload);
+    const hostedPaymentPageRequest =
+      await this.client.getHostedPaymentPageRequest(transactionInput);
+
+    const formToken = hostedPaymentPageRequest.token;
     const dataParseResult = paymentGatewayInitializeResponseDataSchema.safeParse({
-      apiLoginId: this.client.config.apiLoginId,
-      environment: this.client.config.environment,
-      publicClientKey: this.client.config.publicClientKey,
+      formToken,
     });
 
     if (!dataParseResult.success) {

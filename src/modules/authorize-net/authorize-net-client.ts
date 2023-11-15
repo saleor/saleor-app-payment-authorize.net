@@ -64,7 +64,7 @@ type CreateTransactionResponse = z.infer<typeof createTransactionResponseSchema>
 
 const getHostedPaymentPageResponseSchema = z.object({
   messages: messagesSchema,
-  token: z.string(),
+  token: z.string().min(1),
 });
 
 type GetHostedPaymentPageResponse = z.infer<typeof getHostedPaymentPageResponseSchema>;
