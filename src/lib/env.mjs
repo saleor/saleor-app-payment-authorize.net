@@ -28,6 +28,7 @@ export const env = createEnv({
     AUTHORIZE_TRANSACTION_KEY: z.string().min(1).optional(),
     AUTHORIZE_PUBLIC_CLIENT_KEY: z.string().min(1).optional(),
     AUTHORIZE_ENVIRONMENT: z.enum(["sandbox", "production"]).optional(),
+    AUTHORIZE_SALEOR_CHANNEL_SLUG: z.string().min(1).optional(),
   },
 
   /*
@@ -63,5 +64,6 @@ export const env = createEnv({
     AUTHORIZE_TRANSACTION_KEY: process.env.AUTHORIZE_TRANSACTION_KEY,
     AUTHORIZE_PUBLIC_CLIENT_KEY: process.env.AUTHORIZE_PUBLIC_CLIENT_KEY,
     AUTHORIZE_ENVIRONMENT: process.env.AUTHORIZE_ENVIRONMENT,
+    AUTHORIZE_SALEOR_CHANNEL_SLUG: process.env.AUTHORIZE_SALEOR_CHANNEL_SLUG,
   },
 });
