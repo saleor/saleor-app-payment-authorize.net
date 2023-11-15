@@ -1,12 +1,11 @@
 import { decrypt } from "@saleor/app-sdk/settings-manager";
-import { AuthorizeProviderConfig } from "../authorize-net/authorize-net-config";
 import { type AppConfigMetadataManager } from "./app-config-metadata-manager";
 import { NoAppConfigFoundError } from "@/errors";
 import { env } from "@/lib/env.mjs";
+import { generateId } from "@/lib/generate-id";
+import { logger } from "@/lib/logger";
 import { AppConfig, AppConfigurator } from "@/modules/configuration/app-configurator";
 import { type WebhookRecipientFragment } from "generated/graphql";
-import { logger } from "@/lib/logger";
-import { generateId } from "@/lib/generate-id";
 
 /**
  * This function looks for AppConfig in the webhook recipient metadata. If it's not found, it looks for it in the env.
@@ -18,7 +17,7 @@ import { generateId } from "@/lib/generate-id";
 export class AppConfigResolver {
   constructor(private appConfigMetadataManager: AppConfigMetadataManager) {}
 
-  private getProviderFromEnv(): AuthorizeProviderConfig.FullShape | undefined {
+  private getAppConfigFromEnv(): AppConfig.Shape | undefined {
     logger.trace("Reading provider from env");
     const providerInput = {
       id: generateId(),
@@ -28,21 +27,32 @@ export class AppConfigResolver {
       environment: env.AUTHORIZE_ENVIRONMENT,
     };
 
-    const parsed = AuthorizeProviderConfig.Schema.Full.safeParse(providerInput);
+    const connectionInput = {
+      id: generateId(),
+      providerId: providerInput.id,
+      channelSlug: env.AUTHORIZE_SALEOR_CHANNEL_SLUG,
+    };
+
+    const appConfigInput = {
+      providers: [providerInput],
+      connections: [connectionInput],
+    };
+
+    const parsed = AppConfig.Schema.safeParse(appConfigInput);
 
     if (!parsed.success) {
-      logger.error({ error: parsed.error }, "Error parsing provider configuration from env");
+      logger.error({ error: parsed.error }, "Error parsing app configuration from env");
       return undefined;
     }
 
-    logger.trace("Successfully parsed provider configuration from env");
+    logger.trace("Successfully parsed app configuration from env");
 
     return parsed.data;
   }
 
   private async injectEnvProviderIfFound(
     appConfig: AppConfig.Shape,
-    envConfig: AuthorizeProviderConfig.FullShape | undefined,
+    envConfig: AppConfig.Shape | undefined,
   ) {
     if (!envConfig) {
       // nothing to inject
@@ -50,15 +60,15 @@ export class AppConfigResolver {
     }
 
     // check if appConfig providers contain envConfig (by id)
-    const isEnvProviderInConfig = appConfig.providers.some(
-      (provider) => provider.id === envConfig?.id,
+    const isEnvConfigInjected = appConfig.providers.some((provider) =>
+      envConfig.providers.some((envProvider) => envProvider.id === provider.id),
     );
 
     // if not, add it
-    if (!isEnvProviderInConfig) {
+    if (!isEnvConfigInjected) {
       appConfig = {
-        ...appConfig,
-        providers: [...appConfig.providers, envConfig],
+        connections: [...appConfig.connections, ...envConfig.connections],
+        providers: [...appConfig.providers, ...envConfig.providers],
       };
 
       const appConfigurator = new AppConfigurator(appConfig);
@@ -90,7 +100,7 @@ export class AppConfigResolver {
       throw new NoAppConfigFoundError("App config not found");
     }
 
-    const envConfig = this.getProviderFromEnv();
+    const envConfig = this.getAppConfigFromEnv();
 
     return this.injectEnvProviderIfFound(appConfig, envConfig);
   }
