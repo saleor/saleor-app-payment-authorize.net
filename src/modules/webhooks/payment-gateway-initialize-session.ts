@@ -1,6 +1,7 @@
-import { z } from "zod";
 import AuthorizeNet from "authorizenet";
+import { z } from "zod";
 import { type AuthorizeNetClient } from "../authorize-net/authorize-net-client";
+import { authorizeEnvironmentSchema } from "../authorize-net/authorize-net-config";
 import { BaseError } from "@/errors";
 
 import { type SyncWebhookResponse } from "@/lib/webhook-response-builder";
@@ -20,6 +21,7 @@ const PaymentGatewayInitializeUnexpectedDataError = PaymentGatewayInitializeErro
  */
 const paymentGatewayInitializeResponseDataSchema = z.object({
   formToken: z.string().min(1),
+  environment: authorizeEnvironmentSchema,
 });
 
 function buildTransactionFromPayload(
@@ -43,8 +45,11 @@ export class PaymentGatewayInitializeSessionService {
       await this.client.getHostedPaymentPageRequest(transactionInput);
 
     const formToken = hostedPaymentPageRequest.token;
+    const environment = this.client.config.environment;
+
     const dataParseResult = paymentGatewayInitializeResponseDataSchema.safeParse({
       formToken,
+      environment,
     });
 
     if (!dataParseResult.success) {
