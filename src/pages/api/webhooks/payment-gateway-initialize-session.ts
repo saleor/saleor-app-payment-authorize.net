@@ -34,8 +34,35 @@ const logger = createLogger({
 
 class WebhookResponseBuilder extends SynchronousWebhookResponseBuilder<"PAYMENT_GATEWAY_INITIALIZE_SESSION"> {}
 
+type WebhookContext = Parameters<
+  Parameters<(typeof paymentGatewayInitializeSessionSyncWebhook)["createHandler"]>[0]
+>[2];
+
 /**
- * Happens before the payment. Responds with all the data needed to initialize the payment process, e.g. the payment methods.
+ * 1. Resolve appConfig from either webhook app metadata or environment variables.
+ * 2. Resolve active provider config from appConfig and channel slug.
+ * 3. Return webhook manager service created with the active provider config.
+ */
+async function getWebhookManagerServiceFromCtx(ctx: WebhookContext) {
+  const appMetadata = ctx.payload.recipient?.privateMetadata ?? [];
+  const channelSlug = ctx.payload.sourceObject.channel.slug;
+
+  const appConfigMetadataManager = AppConfigMetadataManager.createFromAuthData(ctx.authData);
+  const appConfigResolver = new AppConfigResolver(appConfigMetadataManager);
+
+  const appConfig = await appConfigResolver.resolve({ metadata: appMetadata });
+  const activeProviderResolver = new ActiveProviderResolver(appConfig);
+  const providerConfig = activeProviderResolver.resolve(channelSlug);
+
+  const webhookManagerService = new WebhookManagerService(providerConfig);
+
+  return webhookManagerService;
+}
+
+/**
+ * Happens before the payment. Responds with all the data needed to initialize the payment process.
+ * In the case of Authorize.net's payment form Accept Hosted - it's `formToken`.
+ * Read more: https://developer.authorize.net/api/reference/features/accept-hosted.html
  */
 export default paymentGatewayInitializeSessionSyncWebhook.createHandler(async (req, res, ctx) => {
   // todo: add more extensive logs
@@ -45,18 +72,8 @@ export default paymentGatewayInitializeSessionSyncWebhook.createHandler(async (r
   );
   const responseBuilder = new WebhookResponseBuilder(res);
 
-  const appMetadata = ctx.payload.recipient?.privateMetadata ?? [];
-  const channelSlug = ctx.payload.sourceObject.channel.slug;
-
   try {
-    const appConfigMetadataManager = AppConfigMetadataManager.createFromAuthData(ctx.authData);
-    const appConfigResolver = new AppConfigResolver(appConfigMetadataManager);
-
-    const appConfig = await appConfigResolver.resolve({ metadata: appMetadata });
-    const activeProviderResolver = new ActiveProviderResolver(appConfig);
-    const providerConfig = activeProviderResolver.resolve(channelSlug);
-
-    const webhookManagerService = new WebhookManagerService(providerConfig);
+    const webhookManagerService = await getWebhookManagerServiceFromCtx(ctx);
 
     const response = await webhookManagerService.paymentGatewayInitializeSession(ctx.payload);
     return responseBuilder.ok(response);

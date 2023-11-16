@@ -34,8 +34,35 @@ const logger = createLogger({
 
 class WebhookResponseBuilder extends SynchronousWebhookResponseBuilder<"TRANSACTION_INITIALIZE_SESSION"> {}
 
+type WebhookContext = Parameters<
+  Parameters<(typeof transactionInitializeSessionSyncWebhook)["createHandler"]>[0]
+>[2];
+
 /**
- * Initializes the payment processing. Based on the response, Saleor will create or update the transaction with the appropriate status and balance. The logic for whether the transaction is charged or cancelled is executed in different webhooks (`TRANSACTION_CANCELATION_REQUESTED`, `TRANSACTION_CHARGE_REQUESTED`)
+ * 1. Resolve appConfig from either webhook app metadata or environment variables.
+ * 2. Resolve active provider config from appConfig and channel slug.
+ * 3. Return webhook manager service created with the active provider config.
+ */
+async function getWebhookManagerServiceFromCtx(ctx: WebhookContext) {
+  const appMetadata = ctx.payload.recipient?.privateMetadata ?? [];
+  const channelSlug = ctx.payload.sourceObject.channel.slug;
+
+  const appConfigMetadataManager = AppConfigMetadataManager.createFromAuthData(ctx.authData);
+  const appConfigResolver = new AppConfigResolver(appConfigMetadataManager);
+
+  const appConfig = await appConfigResolver.resolve({ metadata: appMetadata });
+  const activeProviderResolver = new ActiveProviderResolver(appConfig);
+  const providerConfig = activeProviderResolver.resolve(channelSlug);
+
+  const webhookManagerService = new WebhookManagerService(providerConfig);
+
+  return webhookManagerService;
+}
+
+/**
+ * Initializes the payment processing in Saleor.
+ * In the Authorize.net Accept Hosted flow, this webhook is called after the transaction is created in Authorize.net.
+ * The webhook handler analyzes the response from Authorize.net and returns the transaction status.
  */
 export default transactionInitializeSessionSyncWebhook.createHandler(async (req, res, ctx) => {
   const responseBuilder = new WebhookResponseBuilder(res);
@@ -49,18 +76,8 @@ export default transactionInitializeSessionSyncWebhook.createHandler(async (req,
     "handler called",
   );
 
-  const appMetadata = ctx.payload.recipient?.privateMetadata ?? [];
-  const channelSlug = ctx.payload.sourceObject.channel.slug;
-
   try {
-    const appConfigMetadataManager = AppConfigMetadataManager.createFromAuthData(ctx.authData);
-    const appConfigResolver = new AppConfigResolver(appConfigMetadataManager);
-
-    const appConfig = await appConfigResolver.resolve({ metadata: appMetadata });
-    const activeProviderResolver = new ActiveProviderResolver(appConfig);
-    const providerConfig = activeProviderResolver.resolve(channelSlug);
-
-    const webhookManagerService = new WebhookManagerService(providerConfig);
+    const webhookManagerService = await getWebhookManagerServiceFromCtx(ctx);
 
     const response = await webhookManagerService.transactionInitializeSession(ctx.payload);
     return responseBuilder.ok(response);
