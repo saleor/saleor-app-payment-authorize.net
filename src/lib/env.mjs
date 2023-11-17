@@ -24,11 +24,13 @@ export const env = createEnv({
     UPSTASH_TOKEN: z.string().optional(),
     REST_APL_ENDPOINT: z.string().optional(),
     REST_APL_TOKEN: z.string().optional(),
+
     AUTHORIZE_API_LOGIN_ID: z.string().min(1).optional(),
     AUTHORIZE_TRANSACTION_KEY: z.string().min(1).optional(),
     AUTHORIZE_PUBLIC_CLIENT_KEY: z.string().min(1).optional(),
     AUTHORIZE_ENVIRONMENT: z.enum(["sandbox", "production"]).optional(),
     AUTHORIZE_SALEOR_CHANNEL_SLUG: z.string().min(1).optional(),
+    AUTHORIZE_PAYMENT_FORM_URL: z.string().min(1).optional(),
   },
 
   /*
@@ -65,5 +67,6 @@ export const env = createEnv({
     AUTHORIZE_PUBLIC_CLIENT_KEY: process.env.AUTHORIZE_PUBLIC_CLIENT_KEY,
     AUTHORIZE_ENVIRONMENT: process.env.AUTHORIZE_ENVIRONMENT,
     AUTHORIZE_SALEOR_CHANNEL_SLUG: process.env.AUTHORIZE_SALEOR_CHANNEL_SLUG,
+    AUTHORIZE_PAYMENT_FORM_URL: process.env.AUTHORIZE_PAYMENT_FORM_URL,
   },
 });

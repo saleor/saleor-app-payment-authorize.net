@@ -3,6 +3,7 @@ import { z } from "zod";
 import { type AuthorizeProviderConfig } from "./authorize-net-config";
 import { AuthorizeNetError } from "./authorize-net-error";
 import { createLogger } from "@/lib/logger";
+import { env } from "@/lib/env.mjs";
 
 const ApiContracts = AuthorizeNet.APIContracts;
 const ApiControllers = AuthorizeNet.APIControllers;
@@ -151,13 +152,31 @@ export class AuthorizeNetClient {
     createRequest.setMerchantAuthentication(this.merchantAuthenticationType);
     createRequest.setTransactionRequest(transactionInput);
 
-    // Authorize API needs at least one setting 🤷
     const setting1 = new ApiContracts.SettingType();
-    setting1.setSettingName("hostedPaymentButtonOptions");
-    setting1.setSettingValue('{"text": "Pay"}');
+    setting1.setSettingName("hostedPaymentReturnOptions");
+
+    const hostedPaymentReturnOptions = {
+      showReceipt: true, // must be false if we want to receive the transaction response in the payment form iframe
+      url: `${env.AUTHORIZE_PAYMENT_FORM_URL}/success`,
+      urlText: "Continue",
+      cancelUrl: `${env.AUTHORIZE_PAYMENT_FORM_URL}/failure`,
+      cancelUrlText: "Cancel",
+    };
+
+    setting1.setSettingValue(JSON.stringify(hostedPaymentReturnOptions));
+
+    const setting2 = new ApiContracts.SettingType();
+    setting2.setSettingName("hostedPaymentIFrameCommunicatorUrl");
+
+    const hostedPaymentIFrameCommunicatorUrlSetting = {
+      url: env.AUTHORIZE_PAYMENT_FORM_URL,
+    };
+
+    setting2.setSettingValue(JSON.stringify(hostedPaymentIFrameCommunicatorUrlSetting));
 
     const settingList = [];
     settingList.push(setting1);
+    settingList.push(setting2);
 
     const alist = new ApiContracts.ArrayOfSetting();
     alist.setSetting(settingList);
@@ -172,11 +191,17 @@ export class AuthorizeNetClient {
     return new Promise((resolve, reject) => {
       try {
         transactionController.execute(() => {
+          this.logger.info(
+            {
+              hostedPaymentReturnOptions,
+            },
+            "Executing getHostedPaymentPageRequest with the following settings:",
+          );
+
           // eslint disabled because of insufficient types
           // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           const apiResponse = transactionController.getResponse();
           const response = new ApiContracts.GetHostedPaymentPageResponse(apiResponse);
-
           this.logger.debug({ response }, "getHostedPaymentPageRequest");
           const parsedResponse = getHostedPaymentPageResponseSchema.parse(response);
 

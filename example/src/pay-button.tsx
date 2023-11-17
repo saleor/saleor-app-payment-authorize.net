@@ -1,4 +1,4 @@
-import { AuthNetEnvironment, HostedForm, HostedFormDispatchDataResponse } from "react-acceptjs";
+import { AcceptHosted, AcceptHostedTransactionResponse, AuthNetEnvironment } from "react-acceptjs";
 
 import { gql, useMutation, useQuery } from "@apollo/client";
 import { useRouter } from "next/router";
@@ -17,21 +17,14 @@ import {
 import { authorizeNetAppId } from "./lib/common";
 
 type AcceptData = {
-	apiLoginId: string;
 	environment: AuthNetEnvironment;
-	publicClientKey: string;
+	formToken: string;
 };
 
 export function PayButton() {
 	const [isError, setIsError] = useState(false);
-	const [acceptData, setAcceptData] = useState<AcceptData>({
-		apiLoginId: "",
-		environment: "SANDBOX",
-		publicClientKey: "",
-	});
-
-	const { environment, apiLoginId, publicClientKey } = acceptData;
-	const authData = { apiLoginID: apiLoginId, clientKey: publicClientKey };
+	const [isLoading, setIsLoading] = useState(false);
+	const [acceptData, setAcceptData] = useState<AcceptData>();
 
 	const router = useRouter();
 	const checkoutId = typeof sessionStorage === "undefined" ? undefined : sessionStorage.getItem("checkoutId");
@@ -61,6 +54,7 @@ export function PayButton() {
 
 	const getAcceptData = React.useCallback(async () => {
 		if (checkoutId) {
+			setIsLoading(true);
 			const response = await initializePaymentGateway({
 				variables: {
 					checkoutId,
@@ -80,13 +74,9 @@ export function PayButton() {
 				throw new Error("Failed to get payment gateway data");
 			}
 
-			const rawAcceptData = data as AcceptData;
+			const nextAcceptData = data as AcceptData;
 
-			const nextAcceptData = {
-				...data,
-				environment: rawAcceptData.environment.toUpperCase() as AuthNetEnvironment, // Accept.js expects environment to be uppercase
-			} as AcceptData;
-
+			setIsLoading(false);
 			setAcceptData(nextAcceptData);
 		}
 	}, [checkoutId, initializePaymentGateway]);
@@ -95,17 +85,19 @@ export function PayButton() {
 		getAcceptData();
 	}, [getAcceptData]);
 
-	const handleSubmit = async (response: HostedFormDispatchDataResponse) => {
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	const transactionResponseHandler = async (response: AcceptHostedTransactionResponse) => {
+		console.log(response);
 		if (checkoutResponse?.checkout) {
 			try {
-				const opaqueData = response.opaqueData;
+				const isSuccess = response.messages.resultCode === "Ok";
 
 				const saleorTransactionResponse = await createTransaction({
 					variables: {
 						checkoutId: checkoutResponse.checkout.id,
 						paymentGateway: authorizeNetAppId,
 						data: {
-							...opaqueData,
+							result: isSuccess ? "success" : "failure",
 						},
 					},
 				});
@@ -144,13 +136,17 @@ export function PayButton() {
 
 	return (
 		<div>
-			{authData.apiLoginID.length > 0 && (
-				<HostedForm
-					buttonClassName="mt-2 rounded-md border bg-slate-900 px-8 py-2 text-lg text-white hover:bg-slate-800"
-					environment={environment}
-					authData={authData}
-					onSubmit={handleSubmit}
-				/>
+			{isLoading && <p>Loading...</p>}
+			{acceptData && (
+				<AcceptHosted
+					integration="redirect"
+					formToken={acceptData.formToken}
+					environment={acceptData.environment}
+				>
+					<button className="mt-2 rounded-md border bg-slate-900 px-8 py-2 text-lg text-white hover:bg-slate-800">
+						Pay
+					</button>
+				</AcceptHosted>
 			)}
 		</div>
 	);
