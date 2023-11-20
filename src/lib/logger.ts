@@ -21,6 +21,7 @@ const logLevel = process.env.APP_LOG_LEVEL ?? "silent";
 export const logger = pino(
   {
     level: logLevel,
+    redact: ["response.data.formToken"],
   },
   // stream,
   process.env.NODE_ENV === "development"

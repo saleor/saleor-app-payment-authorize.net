@@ -1,9 +1,8 @@
 import { decrypt } from "@saleor/app-sdk/settings-manager";
 import { type AppConfigMetadataManager } from "./app-config-metadata-manager";
-import { NoAppConfigFoundError } from "@/errors";
 import { env } from "@/lib/env.mjs";
 import { generateId } from "@/lib/generate-id";
-import { logger } from "@/lib/logger";
+import { createLogger, logger } from "@/lib/logger";
 import { AppConfig, AppConfigurator } from "@/modules/configuration/app-configurator";
 import { type WebhookRecipientFragment } from "generated/graphql";
 
@@ -14,7 +13,15 @@ import { type WebhookRecipientFragment } from "generated/graphql";
  * @returns App config from the metadata or env
  */
 
+const defaultAppConfig: AppConfig.Shape = {
+  connections: [],
+  providers: [],
+};
+
 export class AppConfigResolver {
+  private logger = createLogger({
+    name: "AppConfigResolver",
+  });
   constructor(private appConfigMetadataManager: AppConfigMetadataManager) {}
 
   private getAppConfigFromEnv(): AppConfig.Shape | undefined {
@@ -84,7 +91,7 @@ export class AppConfigResolver {
   }: {
     metadata: WebhookRecipientFragment["privateMetadata"];
   }): Promise<AppConfig.Shape> {
-    let appConfig: AppConfig.Shape | undefined;
+    let appConfig = defaultAppConfig;
 
     metadata.forEach((item) => {
       const decrypted = decrypt(item.value, env.SECRET_KEY);
@@ -95,10 +102,6 @@ export class AppConfigResolver {
         appConfig = appConfigParsed.data;
       }
     });
-
-    if (!appConfig) {
-      throw new NoAppConfigFoundError("App config not found");
-    }
 
     const envConfig = this.getAppConfigFromEnv();
 

@@ -156,11 +156,7 @@ export class AuthorizeNetClient {
     setting1.setSettingName("hostedPaymentReturnOptions");
 
     const hostedPaymentReturnOptions = {
-      showReceipt: true, // must be false if we want to receive the transaction response in the payment form iframe
-      url: `${env.AUTHORIZE_PAYMENT_FORM_URL}/success`,
-      urlText: "Continue",
-      cancelUrl: `${env.AUTHORIZE_PAYMENT_FORM_URL}/failure`,
-      cancelUrlText: "Cancel",
+      showReceipt: false, // must be false if we want to receive the transaction response in the payment form iframe
     };
 
     setting1.setSettingValue(JSON.stringify(hostedPaymentReturnOptions));
@@ -169,7 +165,7 @@ export class AuthorizeNetClient {
     setting2.setSettingName("hostedPaymentIFrameCommunicatorUrl");
 
     const hostedPaymentIFrameCommunicatorUrlSetting = {
-      url: env.AUTHORIZE_PAYMENT_FORM_URL,
+      url: `${env.AUTHORIZE_PAYMENT_FORM_URL}/accept-hosted.html`,
     };
 
     setting2.setSettingValue(JSON.stringify(hostedPaymentIFrameCommunicatorUrlSetting));
@@ -191,21 +187,11 @@ export class AuthorizeNetClient {
     return new Promise((resolve, reject) => {
       try {
         transactionController.execute(() => {
-          this.logger.info(
-            {
-              hostedPaymentReturnOptions,
-            },
-            "Executing getHostedPaymentPageRequest with the following settings:",
-          );
-
           // eslint disabled because of insufficient types
           // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           const apiResponse = transactionController.getResponse();
           const response = new ApiContracts.GetHostedPaymentPageResponse(apiResponse);
-          this.logger.debug({ response }, "getHostedPaymentPageRequest");
           const parsedResponse = getHostedPaymentPageResponseSchema.parse(response);
-
-          this.logger.debug({ parsedResponse });
 
           if (parsedResponse.messages.resultCode === "Error") {
             const message = formatAuthorizeErrors(parsedResponse.messages);

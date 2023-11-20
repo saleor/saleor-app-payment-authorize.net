@@ -5,12 +5,12 @@ import { createLogger } from "@/lib/logger";
 import { SynchronousWebhookResponseBuilder } from "@/lib/webhook-response-builder";
 import { AppConfigMetadataManager } from "@/modules/configuration/app-config-metadata-manager";
 import { AppConfigResolver } from "@/modules/configuration/app-config-resolver";
-import { TransactionInitializeError } from "@/modules/webhooks/transaction-initialize-session";
+import { TransactionProcessError } from "@/modules/webhooks/transaction-process-session";
 import { WebhookManagerService } from "@/modules/webhooks/webhook-manager-service";
 import { saleorApp } from "@/saleor-app";
 import {
-  UntypedTransactionInitializeSessionDocument,
-  type TransactionInitializeSessionEventFragment,
+  UntypedTransactionProcessSessionDocument,
+  type TransactionProcessSessionEventFragment,
 } from "generated/graphql";
 
 export const config = {
@@ -19,23 +19,23 @@ export const config = {
   },
 };
 
-export const transactionInitializeSessionSyncWebhook =
-  new SaleorSyncWebhook<TransactionInitializeSessionEventFragment>({
-    name: "TransactionInitializeSession",
+export const transactionProcessSessionSyncWebhook =
+  new SaleorSyncWebhook<TransactionProcessSessionEventFragment>({
+    name: "TransactionProcessSession",
     apl: saleorApp.apl,
-    event: "TRANSACTION_INITIALIZE_SESSION",
-    query: UntypedTransactionInitializeSessionDocument,
-    webhookPath: "/api/webhooks/transaction-initialize-session",
+    event: "TRANSACTION_PROCESS_SESSION",
+    query: UntypedTransactionProcessSessionDocument,
+    webhookPath: "/api/webhooks/transaction-process-session",
   });
 
 const logger = createLogger({
-  name: "transactionInitializeSessionSyncWebhook",
+  name: "transactionProcessSessionSyncWebhook",
 });
 
-class WebhookResponseBuilder extends SynchronousWebhookResponseBuilder<"TRANSACTION_INITIALIZE_SESSION"> {}
+class WebhookResponseBuilder extends SynchronousWebhookResponseBuilder<"TRANSACTION_PROCESS_SESSION"> {}
 
 type WebhookContext = Parameters<
-  Parameters<(typeof transactionInitializeSessionSyncWebhook)["createHandler"]>[0]
+  Parameters<(typeof transactionProcessSessionSyncWebhook)["createHandler"]>[0]
 >[2];
 
 /**
@@ -60,10 +60,10 @@ async function getWebhookManagerServiceFromCtx(ctx: WebhookContext) {
 }
 
 /**
- * Initializes the transaction lifecycle in the Authorize app by returning payload with { result: `AUTHORIZATION_ACTION_REQUIRED` }.
+ * Processs the transaction lifecycle in the Authorize app by returning payload with { result: `AUTHORIZATION_ACTION_REQUIRED` }.
  * In the Authorize.net Accept Hosted flow, this webhook is called before the Authorize.net payment form is displayed to the user.
  */
-export default transactionInitializeSessionSyncWebhook.createHandler(async (req, res, ctx) => {
+export default transactionProcessSessionSyncWebhook.createHandler(async (req, res, ctx) => {
   const responseBuilder = new WebhookResponseBuilder(res);
   // todo: add more extensive logs
   logger.debug(
@@ -78,12 +78,12 @@ export default transactionInitializeSessionSyncWebhook.createHandler(async (req,
   try {
     const webhookManagerService = await getWebhookManagerServiceFromCtx(ctx);
 
-    const response = webhookManagerService.transactionInitializeSession(ctx.payload);
+    const response = webhookManagerService.transactionProcessSession(ctx.payload);
     return responseBuilder.ok(response);
   } catch (error) {
     Sentry.captureException(error);
 
-    const normalizedError = TransactionInitializeError.normalize(error);
+    const normalizedError = TransactionProcessError.normalize(error);
     return responseBuilder.ok({
       amount: 0, // 0 or real amount?
       result: "AUTHORIZATION_FAILURE",
