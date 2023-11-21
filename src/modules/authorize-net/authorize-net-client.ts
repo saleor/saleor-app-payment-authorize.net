@@ -145,6 +145,31 @@ export class AuthorizeNetClient {
     });
   }
 
+  private getHostedPaymentPageSettings(): AuthorizeNet.APIContracts.ArrayOfSetting {
+    const settings = {
+      hostedPaymentReturnOptions: {
+        showReceipt: false, // must be false if we want to receive the transaction response in the payment form iframe
+      },
+      hostedPaymentIFrameCommunicatorUrl: {
+        url: `${env.AUTHORIZE_PAYMENT_FORM_URL}/accept-hosted.html`, // url where the payment form iframe will be hosted,
+      },
+    };
+
+    const settingsArray: AuthorizeNet.APIContracts.SettingType[] = [];
+
+    Object.entries(settings).forEach(([settingName, settingValue]) => {
+      const setting = new ApiContracts.SettingType();
+      setting.setSettingName(settingName);
+      setting.setSettingValue(JSON.stringify(settingValue));
+      settingsArray.push(setting);
+    });
+
+    const arrayOfSettings = new ApiContracts.ArrayOfSetting();
+    arrayOfSettings.setSetting(settingsArray);
+
+    return arrayOfSettings;
+  }
+
   async getHostedPaymentPageRequest(
     transactionInput: AuthorizeNet.APIContracts.TransactionRequestType,
   ): Promise<GetHostedPaymentPageResponse> {
@@ -152,31 +177,9 @@ export class AuthorizeNetClient {
     createRequest.setMerchantAuthentication(this.merchantAuthenticationType);
     createRequest.setTransactionRequest(transactionInput);
 
-    const setting1 = new ApiContracts.SettingType();
-    setting1.setSettingName("hostedPaymentReturnOptions");
+    const settings = this.getHostedPaymentPageSettings();
 
-    const hostedPaymentReturnOptions = {
-      showReceipt: false, // must be false if we want to receive the transaction response in the payment form iframe
-    };
-
-    setting1.setSettingValue(JSON.stringify(hostedPaymentReturnOptions));
-
-    const setting2 = new ApiContracts.SettingType();
-    setting2.setSettingName("hostedPaymentIFrameCommunicatorUrl");
-
-    const hostedPaymentIFrameCommunicatorUrlSetting = {
-      url: `${env.AUTHORIZE_PAYMENT_FORM_URL}/accept-hosted.html`,
-    };
-
-    setting2.setSettingValue(JSON.stringify(hostedPaymentIFrameCommunicatorUrlSetting));
-
-    const settingList = [];
-    settingList.push(setting1);
-    settingList.push(setting2);
-
-    const alist = new ApiContracts.ArrayOfSetting();
-    alist.setSetting(settingList);
-    createRequest.setHostedPaymentSettings(alist);
+    createRequest.setHostedPaymentSettings(settings);
 
     const transactionController = new ApiControllers.GetHostedPaymentPageController(
       createRequest.getJSON(),
