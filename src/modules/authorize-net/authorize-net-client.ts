@@ -68,7 +68,7 @@ const getHostedPaymentPageResponseSchema = z.object({
   token: z.string().min(1),
 });
 
-type GetHostedPaymentPageResponse = z.infer<typeof getHostedPaymentPageResponseSchema>;
+export type GetHostedPaymentPageResponse = z.infer<typeof getHostedPaymentPageResponseSchema>;
 
 type ResponseMessages = z.infer<typeof messagesSchema>;
 

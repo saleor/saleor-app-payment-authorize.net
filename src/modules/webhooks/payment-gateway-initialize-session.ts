@@ -1,6 +1,9 @@
 import AuthorizeNet from "authorizenet";
 import { z } from "zod";
-import { type AuthorizeNetClient } from "../authorize-net/authorize-net-client";
+import {
+  type AuthorizeNetClient,
+  type GetHostedPaymentPageResponse,
+} from "../authorize-net/authorize-net-client";
 import { authorizeEnvironmentSchema } from "../authorize-net/authorize-net-config";
 import { BaseError } from "@/errors";
 
@@ -24,6 +27,10 @@ const paymentGatewayInitializeResponseDataSchema = z.object({
   environment: authorizeEnvironmentSchema,
 });
 
+type PaymentGatewayInitializeResponseData = z.infer<
+  typeof paymentGatewayInitializeResponseDataSchema
+>;
+
 function buildTransactionFromPayload(
   payload: PaymentGatewayInitializeSessionEventFragment,
 ): AuthorizeNet.APIContracts.TransactionRequestType {
@@ -37,19 +44,12 @@ function buildTransactionFromPayload(
 export class PaymentGatewayInitializeSessionService {
   constructor(private client: AuthorizeNetClient) {}
 
-  async execute(
-    payload: PaymentGatewayInitializeSessionEventFragment,
-  ): Promise<SyncWebhookResponse<"PAYMENT_GATEWAY_INITIALIZE_SESSION">> {
-    const transactionInput = buildTransactionFromPayload(payload);
-    const hostedPaymentPageRequest =
-      await this.client.getHostedPaymentPageRequest(transactionInput);
-
-    const formToken = hostedPaymentPageRequest.token;
-    const environment = this.client.config.environment;
-
+  private resolveResponseData(
+    response: GetHostedPaymentPageResponse,
+  ): PaymentGatewayInitializeResponseData {
     const dataParseResult = paymentGatewayInitializeResponseDataSchema.safeParse({
-      formToken,
-      environment,
+      formToken: response.token,
+      environment: this.client.config.environment,
     });
 
     if (!dataParseResult.success) {
@@ -63,7 +63,17 @@ export class PaymentGatewayInitializeSessionService {
       );
     }
 
-    const data = dataParseResult.data;
+    return dataParseResult.data;
+  }
+
+  async execute(
+    payload: PaymentGatewayInitializeSessionEventFragment,
+  ): Promise<SyncWebhookResponse<"PAYMENT_GATEWAY_INITIALIZE_SESSION">> {
+    const transactionInput = buildTransactionFromPayload(payload);
+    const hostedPaymentPageResponse =
+      await this.client.getHostedPaymentPageRequest(transactionInput);
+
+    const data = this.resolveResponseData(hostedPaymentPageResponse);
 
     return {
       data,
