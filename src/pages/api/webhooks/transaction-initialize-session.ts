@@ -78,7 +78,7 @@ export default transactionInitializeSessionSyncWebhook.createHandler(async (req,
   try {
     const webhookManagerService = await getWebhookManagerServiceFromCtx(ctx);
 
-    const response = webhookManagerService.transactionInitializeSession(ctx.payload);
+    const response = await webhookManagerService.transactionInitializeSession(ctx.payload);
     return responseBuilder.ok(response);
   } catch (error) {
     Sentry.captureException(error);
