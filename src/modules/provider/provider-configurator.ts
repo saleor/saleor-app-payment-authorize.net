@@ -5,11 +5,7 @@ import { generateId } from "@/lib/generate-id";
 type Providers = AppConfig.Shape["providers"];
 
 export class ProvidersConfigurator {
-  private providers: Providers;
-
-  constructor(rootData: Providers) {
-    this.providers = rootData;
-  }
+  constructor(private providers: Providers) {}
 
   getProviders() {
     return this.providers;

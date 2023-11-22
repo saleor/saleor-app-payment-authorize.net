@@ -9,11 +9,12 @@ export const TransactionProcessUnexpectedDataError = TransactionProcessError.sub
   "TransactionProcessUnexpectedDataError",
 );
 
+// todo: use transactionId to verify the state of transaction in Authorize
+// todo: if customerProfileId is there, update the stored customerProfileId x userEmail mapping
 const transactionProcessPayloadDataSchema = z.object({
-  result: z.enum(["AUTORIZATION_SUCCESS", "AUTHORIZATION_FAILURE"]),
+  transactionId: z.string().min(1),
+  customerProfileId: z.string().min(1).optional(),
 });
-
-type WebhookResult = SyncWebhookResponse<"TRANSACTION_PROCESS_SESSION">["result"];
 
 export class TransactionProcessSessionService {
   execute(
@@ -29,11 +30,11 @@ export class TransactionProcessSessionService {
       });
     }
 
-    const { result } = dataParseResult.data;
+    // todo: implement
 
     return {
       amount: payload.action.amount,
-      result: result as WebhookResult,
+      result: "AUTHORIZATION_FAILURE",
       data: {},
     };
   }

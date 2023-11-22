@@ -16,6 +16,7 @@ import { type WebhookRecipientFragment } from "generated/graphql";
 const defaultAppConfig: AppConfig.Shape = {
   connections: [],
   providers: [],
+  customerProfiles: [],
 };
 
 export class AppConfigResolver {
@@ -76,6 +77,7 @@ export class AppConfigResolver {
       appConfig = {
         connections: [...appConfig.connections, ...envConfig.connections],
         providers: [...appConfig.providers, ...envConfig.providers],
+        customerProfiles: [],
       };
 
       const appConfigurator = new AppConfigurator(appConfig);
