@@ -10,7 +10,7 @@ const ApiControllers = AuthorizeNet.APIControllers;
 const SDKConstants = AuthorizeNet.Constants;
 
 const messagesSchema = z.object({
-  resultCode: z.string(),
+  resultCode: z.enum(["Ok", "Error"]),
   message: z.array(
     z.object({
       code: z.string(),
@@ -19,58 +19,33 @@ const messagesSchema = z.object({
   ),
 });
 
-// AuthorizeNet types don't contain the response
-const createTransactionResponseSchema = z.object({
+type ResponseMessages = z.infer<typeof messagesSchema>;
+
+const baseAuthorizeObjectSchema = z.object({
   messages: messagesSchema,
-  transactionResponse: z
-    .object({
-      responseCode: z.string(),
-      authCode: z.string(),
-      avsResultCode: z.string(),
-      cvvResultCode: z.string(),
-      cavvResultCode: z.string(),
-      transId: z.string(),
-      refTransID: z.string(),
-      transHash: z.string(),
-      testRequest: z.string(),
-      accountNumber: z.string(),
-      accountType: z.string(),
-      errors: z
-        .object({
-          error: z.array(
-            z.object({
-              errorCode: z.string(),
-              errorText: z.string(),
-            }),
-          ),
-        })
-        .optional(),
-      messages: z
-        .object({
-          message: z.array(
-            z.object({
-              code: z.string(),
-              description: z.string(),
-            }),
-          ),
-        })
-        .optional(),
-      transHashSha2: z.string(),
-      networkTransId: z.string().optional(),
-    })
-    .optional(),
 });
 
-type CreateTransactionResponse = z.infer<typeof createTransactionResponseSchema>;
+type BaseAuthorizeObjectResponse = z.infer<typeof baseAuthorizeObjectSchema>;
 
-const getHostedPaymentPageResponseSchema = z.object({
-  messages: messagesSchema,
-  token: z.string().min(1),
-});
+const getHostedPaymentPageResponseSchema = baseAuthorizeObjectSchema.and(
+  z.object({
+    token: z.string().min(1),
+  }),
+);
 
 export type GetHostedPaymentPageResponse = z.infer<typeof getHostedPaymentPageResponseSchema>;
 
-type ResponseMessages = z.infer<typeof messagesSchema>;
+const getTransactionDetailsSchema = baseAuthorizeObjectSchema.and(
+  z.object({
+    batch: z.object({
+      settlementState: z.enum(["settledSuccessfully", "settlementError", "pendingSettlement"]),
+    }),
+  }),
+);
+
+type GetTransactionDetailsResponse = z.infer<typeof getTransactionDetailsSchema>;
+
+export type AuthorizeSettlementState = GetTransactionDetailsResponse["batch"]["settlementState"];
 
 // todo: test
 function formatAuthorizeErrors(messages: ResponseMessages) {
@@ -102,47 +77,12 @@ export class AuthorizeNetClient {
     return SDKConstants.endpoint[this.config.environment];
   }
 
-  /*
-    https://developer.authorize.net/api/reference/features/credit_card_tutorial.html
-    https://developer.authorize.net/hello_world.html
-  */
-  async createTransaction(
-    transactionInput: AuthorizeNet.APIContracts.TransactionRequestType,
-  ): Promise<CreateTransactionResponse> {
-    const createRequest = new ApiContracts.CreateTransactionRequest();
-    createRequest.setMerchantAuthentication(this.merchantAuthenticationType);
-    createRequest.setTransactionRequest(transactionInput);
+  private resolveResponseErrors(response: BaseAuthorizeObjectResponse) {
+    if (response.messages.resultCode === "Error") {
+      const message = formatAuthorizeErrors(response.messages);
 
-    const transactionController = new ApiControllers.CreateTransactionController(
-      createRequest.getJSON(),
-    );
-
-    transactionController.setEnvironment(this.getEnvironment());
-
-    return new Promise((resolve, reject) => {
-      try {
-        transactionController.execute(() => {
-          // eslint disabled because of insufficient types
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-          const apiResponse = transactionController.getResponse();
-          const response = new ApiContracts.CreateTransactionResponse(apiResponse);
-          const parsedResponse = createTransactionResponseSchema.parse(response);
-
-          if (parsedResponse.messages.resultCode === "Error") {
-            const message = formatAuthorizeErrors(parsedResponse.messages);
-
-            throw new AuthorizeNetError(message);
-          }
-
-          resolve(parsedResponse);
-        });
-      } catch (error) {
-        if (error instanceof z.ZodError) {
-          reject(error.format());
-        }
-        reject(error);
-      }
-    });
+      throw new AuthorizeNetError(message);
+    }
   }
 
   private getHostedPaymentPageSettings(): AuthorizeNet.APIContracts.ArrayOfSetting {
@@ -196,11 +136,44 @@ export class AuthorizeNetClient {
           const response = new ApiContracts.GetHostedPaymentPageResponse(apiResponse);
           const parsedResponse = getHostedPaymentPageResponseSchema.parse(response);
 
-          if (parsedResponse.messages.resultCode === "Error") {
-            const message = formatAuthorizeErrors(parsedResponse.messages);
+          this.resolveResponseErrors(parsedResponse);
 
-            throw new AuthorizeNetError(message);
-          }
+          resolve(parsedResponse);
+        });
+      } catch (error) {
+        if (error instanceof z.ZodError) {
+          reject(error.format());
+        }
+        reject(error);
+      }
+    });
+  }
+
+  async getTransactionDetailsRequest({
+    transactionId,
+  }: {
+    transactionId: string;
+  }): Promise<GetTransactionDetailsResponse> {
+    const createRequest = new ApiContracts.GetTransactionDetailsRequest();
+    createRequest.setMerchantAuthentication(this.merchantAuthenticationType);
+    createRequest.setTransId(transactionId);
+
+    const transactionController = new ApiControllers.GetTransactionDetailsController(
+      createRequest.getJSON(),
+    );
+
+    transactionController.setEnvironment(this.getEnvironment());
+
+    return new Promise((resolve, reject) => {
+      try {
+        transactionController.execute(() => {
+          // eslint disabled because of insufficient types
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          const apiResponse = transactionController.getResponse();
+          const response = new ApiContracts.GetTransactionDetailsResponse(apiResponse);
+          const parsedResponse = getTransactionDetailsSchema.parse(response);
+
+          this.resolveResponseErrors(parsedResponse);
 
           resolve(parsedResponse);
         });

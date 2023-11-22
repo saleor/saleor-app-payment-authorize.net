@@ -49,6 +49,7 @@ export class WebhookManagerService implements PaymentsWebhooks {
   ): Promise<SyncWebhookResponse<"TRANSACTION_PROCESS_SESSION">> {
     const transactionProcessSessionService = new TransactionProcessSessionService({
       appConfigMetadataManager: this.appConfigMetadataManager,
+      authorizeNetClient: this.authorizeNetClient,
     });
 
     return transactionProcessSessionService.execute(payload);

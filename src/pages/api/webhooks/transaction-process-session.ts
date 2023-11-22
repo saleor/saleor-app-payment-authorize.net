@@ -68,9 +68,9 @@ async function getWebhookManagerServiceFromCtx(ctx: WebhookContext) {
 /**
  * In the Authorize.net Accept Hosted flow, this webhook is called after the Accept Hosted payment form was submitted.
  * This webhook handler does the following:
- * 1. Checks the `data` for the transaction id to call the Authorize.net API to get the transaction status.
- * 2. Checks the `data` for information regarding whether to store payment methods or not.
- * 3. Returns to Saleor the transaction result: `AUTHORIZATION_SUCCESS` or `AUTHORIZATION_FAILURE`.
+ * 1. Checks the `data` for the `transactionId` to call the Authorize.net API to get the transaction status.
+ * 2. Checks the `data` for the `customerProfileId`. If the customerProfileId was passed from Accept Hosted form, updates the stored customerProfileId x userEmail mapping.
+ * 3. Returns to Saleor the transaction result: `AUTHORIZATION_SUCCESS`, `AUTHORIZATION_FAILURE` or `AUTHORIZATION_REQUESTED`.
  */
 export default transactionProcessSessionSyncWebhook.createHandler(async (req, res, ctx) => {
   const responseBuilder = new WebhookResponseBuilder(res);
