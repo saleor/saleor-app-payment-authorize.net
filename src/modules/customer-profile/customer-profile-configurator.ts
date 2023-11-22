@@ -8,7 +8,7 @@ export class CustomerProfileConfigurator {
 
   constructor(private customerProfiles: CustomerProfile.Shape[]) {}
 
-  getCustomerProfileByuserEmail(userEmail: string) {
+  getCustomerProfileByUserEmail({ userEmail }: { userEmail: string }) {
     const customerProfile = this.customerProfiles.find((p) => p.saleorUserEmail === userEmail);
 
     if (!customerProfile) {
@@ -16,31 +16,30 @@ export class CustomerProfileConfigurator {
       return undefined;
     }
 
-    this.logger.trace(
-      `Found "${customerProfile.saleorUserEmail} x ${customerProfile.authorizeCustomerProfileId}" pair`,
-    );
     return customerProfile.authorizeCustomerProfileId;
   }
 
   upsertCustomerProfile({
-    userEmail,
+    saleorUserEmail,
     authorizeCustomerProfileId,
   }: {
-    userEmail: string;
+    saleorUserEmail: string;
     authorizeCustomerProfileId: string;
   }) {
-    const customerProfile = this.customerProfiles.find((p) => p.saleorUserEmail === userEmail);
+    const customerProfile = this.customerProfiles.find(
+      (p) => p.saleorUserEmail === saleorUserEmail,
+    );
 
     if (customerProfile) {
       customerProfile.authorizeCustomerProfileId = authorizeCustomerProfileId;
       this.logger.trace({ customerProfile }, "Updated existing customer profile with:");
     } else {
       this.logger.trace(
-        { userEmail, authorizeCustomerProfileId },
+        { saleorUserEmail, authorizeCustomerProfileId },
         "Created new customer profile with:",
       );
       this.customerProfiles.push({
-        saleorUserEmail: userEmail,
+        saleorUserEmail,
         authorizeCustomerProfileId,
       });
     }

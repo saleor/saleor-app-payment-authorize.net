@@ -12,6 +12,7 @@ import {
   UntypedTransactionProcessSessionDocument,
   type TransactionProcessSessionEventFragment,
 } from "generated/graphql";
+import { AuthorizeNetClient } from "@/modules/authorize-net/authorize-net-client";
 
 export const config = {
   api: {
@@ -54,7 +55,12 @@ async function getWebhookManagerServiceFromCtx(ctx: WebhookContext) {
   const activeProviderResolver = new ActiveProviderResolver(appConfig);
   const providerConfig = activeProviderResolver.resolve(channelSlug);
 
-  const webhookManagerService = new WebhookManagerService(providerConfig);
+  const authorizeNetClient = new AuthorizeNetClient(providerConfig);
+
+  const webhookManagerService = new WebhookManagerService({
+    authorizeNetClient,
+    appConfigMetadataManager,
+  });
 
   return webhookManagerService;
 }
@@ -81,7 +87,7 @@ export default transactionProcessSessionSyncWebhook.createHandler(async (req, re
   try {
     const webhookManagerService = await getWebhookManagerServiceFromCtx(ctx);
 
-    const response = webhookManagerService.transactionProcessSession(ctx.payload);
+    const response = await webhookManagerService.transactionProcessSession(ctx.payload);
     return responseBuilder.ok(response);
   } catch (error) {
     Sentry.captureException(error);

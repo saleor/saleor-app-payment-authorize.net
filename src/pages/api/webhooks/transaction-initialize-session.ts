@@ -12,6 +12,7 @@ import {
   UntypedTransactionInitializeSessionDocument,
   type TransactionInitializeSessionEventFragment,
 } from "generated/graphql";
+import { AuthorizeNetClient } from "@/modules/authorize-net/authorize-net-client";
 
 export const config = {
   api: {
@@ -54,7 +55,12 @@ async function getWebhookManagerServiceFromCtx(ctx: WebhookContext) {
   const activeProviderResolver = new ActiveProviderResolver(appConfig);
   const providerConfig = activeProviderResolver.resolve(channelSlug);
 
-  const webhookManagerService = new WebhookManagerService(providerConfig);
+  const authorizeNetClient = new AuthorizeNetClient(providerConfig);
+
+  const webhookManagerService = new WebhookManagerService({
+    authorizeNetClient,
+    appConfigMetadataManager,
+  });
 
   return webhookManagerService;
 }

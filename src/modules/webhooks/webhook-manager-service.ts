@@ -1,5 +1,5 @@
-import { AuthorizeNetClient } from "../authorize-net/authorize-net-client";
-import { type AuthorizeProviderConfig } from "../authorize-net/authorize-net-config";
+import { type AuthorizeNetClient } from "../authorize-net/authorize-net-client";
+import { type AppConfigMetadataManager } from "../configuration/app-config-metadata-manager";
 
 import { TransactionInitializeSessionService } from "./transaction-initialize-session";
 import { TransactionProcessSessionService } from "./transaction-process-session";
@@ -15,30 +15,41 @@ export interface PaymentsWebhooks {
   ) => Promise<SyncWebhookResponse<"TRANSACTION_INITIALIZE_SESSION">>;
   transactionProcessSession: (
     payload: TransactionProcessSessionEventFragment,
-  ) => SyncWebhookResponse<"TRANSACTION_PROCESS_SESSION">;
+  ) => Promise<SyncWebhookResponse<"TRANSACTION_PROCESS_SESSION">>;
 }
 
 export class WebhookManagerService implements PaymentsWebhooks {
-  private client: AuthorizeNetClient;
+  private authorizeNetClient: AuthorizeNetClient;
+  private appConfigMetadataManager: AppConfigMetadataManager;
 
-  constructor(private config: AuthorizeProviderConfig.FullShape) {
-    this.client = new AuthorizeNetClient(config);
+  constructor({
+    authorizeNetClient,
+    appConfigMetadataManager,
+  }: {
+    authorizeNetClient: AuthorizeNetClient;
+    appConfigMetadataManager: AppConfigMetadataManager;
+  }) {
+    this.authorizeNetClient = authorizeNetClient;
+    this.appConfigMetadataManager = appConfigMetadataManager;
   }
 
   async transactionInitializeSession(
     payload: TransactionInitializeSessionEventFragment,
   ): Promise<SyncWebhookResponse<"TRANSACTION_INITIALIZE_SESSION">> {
-    const transactionInitializeSessionService = new TransactionInitializeSessionService(
-      this.client,
-    );
+    const transactionInitializeSessionService = new TransactionInitializeSessionService({
+      authorizeNetClient: this.authorizeNetClient,
+      appConfigMetadataManager: this.appConfigMetadataManager,
+    });
 
     return transactionInitializeSessionService.execute(payload);
   }
 
-  transactionProcessSession(
+  async transactionProcessSession(
     payload: TransactionProcessSessionEventFragment,
-  ): SyncWebhookResponse<"TRANSACTION_PROCESS_SESSION"> {
-    const transactionProcessSessionService = new TransactionProcessSessionService();
+  ): Promise<SyncWebhookResponse<"TRANSACTION_PROCESS_SESSION">> {
+    const transactionProcessSessionService = new TransactionProcessSessionService({
+      appConfigMetadataManager: this.appConfigMetadataManager,
+    });
 
     return transactionProcessSessionService.execute(payload);
   }

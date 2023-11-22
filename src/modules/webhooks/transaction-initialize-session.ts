@@ -5,9 +5,11 @@ import {
   type AuthorizeNetClient,
   type GetHostedPaymentPageResponse,
 } from "../authorize-net/authorize-net-client";
+import { type AppConfigMetadataManager } from "../configuration/app-config-metadata-manager";
 import { BaseError } from "@/errors";
 import { type SyncWebhookResponse } from "@/lib/webhook-response-builder";
 import { type TransactionInitializeSessionEventFragment } from "generated/graphql";
+import { createLogger } from "@/lib/logger";
 
 const ApiContracts = AuthorizeNet.APIContracts;
 
@@ -31,23 +33,36 @@ type TransactionInitializeSessionResponseData = z.infer<
 >;
 
 export class TransactionInitializeSessionService {
-  constructor(private client: AuthorizeNetClient) {}
+  private authorizeNetClient: AuthorizeNetClient;
+  private appConfigMetadataManager: AppConfigMetadataManager;
+  private logger = createLogger({
+    name: "TransactionInitializeSessionService",
+  });
+
+  constructor({
+    authorizeNetClient,
+    appConfigMetadataManager,
+  }: {
+    authorizeNetClient: AuthorizeNetClient;
+    appConfigMetadataManager: AppConfigMetadataManager;
+  }) {
+    this.authorizeNetClient = authorizeNetClient;
+    this.appConfigMetadataManager = appConfigMetadataManager;
+  }
 
   private resolveResponseData(
     response: GetHostedPaymentPageResponse,
   ): TransactionInitializeSessionResponseData {
     const dataParseResult = transactionInitializeSessionResponseDataSchema.safeParse({
       formToken: response.token,
-      environment: this.client.config.environment,
+      environment: this.authorizeNetClient.config.environment,
     });
 
     if (!dataParseResult.success) {
       throw new TransactionInitializeUnexpectedDataError(
         "`data` object has unexpected structure.",
         {
-          props: {
-            detail: dataParseResult.error,
-          },
+          cause: dataParseResult.error,
         },
       );
     }
@@ -56,28 +71,31 @@ export class TransactionInitializeSessionService {
   }
 
   // todo: make sure the email logic is correct
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  private getStoredCustomerProfileId({
+  private async getStoredCustomerProfileId({
     userEmail,
   }: {
-    userEmail: string | undefined | null;
-  }): string | undefined {
-    if (!userEmail) {
-      return undefined;
-    }
-    // todo: fetch the app metadata for userEmail x customerProfileId pairs
-    return undefined;
+    userEmail: string;
+  }): Promise<string | undefined> {
+    const appConfigurator = await this.appConfigMetadataManager.get();
+    return appConfigurator.customerProfiles.getCustomerProfileByUserEmail({ userEmail });
   }
 
-  private buildTransactionFromPayload(
+  private async buildTransactionFromPayload(
     payload: TransactionInitializeSessionEventFragment,
-  ): AuthorizeNet.APIContracts.TransactionRequestType {
+  ): Promise<AuthorizeNet.APIContracts.TransactionRequestType> {
     const transactionRequest = new ApiContracts.TransactionRequestType();
     transactionRequest.setTransactionType(ApiContracts.TransactionTypeEnum.AUTHONLYTRANSACTION);
     transactionRequest.setAmount(payload.action.amount);
 
     const userEmail = payload.sourceObject.userEmail;
-    const customerProfileId = this.getStoredCustomerProfileId({ userEmail });
+
+    if (!userEmail) {
+      this.logger.trace("No user email found in payload, skipping customer profile id lookup.");
+
+      return transactionRequest;
+    }
+
+    const customerProfileId = await this.getStoredCustomerProfileId({ userEmail });
 
     if (customerProfileId) {
       const profile = new ApiContracts.CustomerProfileIdType();
@@ -91,9 +109,9 @@ export class TransactionInitializeSessionService {
   async execute(
     payload: TransactionInitializeSessionEventFragment,
   ): Promise<SyncWebhookResponse<"TRANSACTION_INITIALIZE_SESSION">> {
-    const transactionInput = this.buildTransactionFromPayload(payload);
+    const transactionInput = await this.buildTransactionFromPayload(payload);
     const hostedPaymentPageResponse =
-      await this.client.getHostedPaymentPageRequest(transactionInput);
+      await this.authorizeNetClient.getHostedPaymentPageRequest(transactionInput);
 
     const data = this.resolveResponseData(hostedPaymentPageResponse);
 
