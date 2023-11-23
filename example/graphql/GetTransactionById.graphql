@@ -1,0 +1,8 @@
+query GetTransactionById($id: ID!) {
+	transaction(id: $id) {
+		id
+		events {
+			type
+		}
+	}
+}

@@ -6,8 +6,11 @@ import {
 } from "../../../generated/graphql";
 import { authorizeNetAppId } from "../../lib/common";
 import { PayButton } from "../../pay-button";
+import { useState } from "react";
 
 export default function CartPage() {
+	const [transactionStatus, setTransactionStatus] = useState<string>();
+
 	const checkoutId = typeof sessionStorage === "undefined" ? undefined : sessionStorage.getItem("checkoutId");
 
 	if (!checkoutId) {
@@ -36,13 +39,17 @@ export default function CartPage() {
 		);
 	}
 
+	if (transactionStatus) {
+		return <div>Transaction status: {transactionStatus}</div>;
+	}
+
 	return (
 		<div>
 			<h1 className="text-3xl font-semibold text-slate-900">Cart:</h1>
 			<ul className="my-4 ml-4 list-disc">
 				{checkoutResponse.checkout?.lines.map((line) => <li key={line.id}>{line.variant.product.name}</li>)}
 			</ul>
-			<PayButton />
+			{!transactionStatus && <PayButton setTransactionStatus={setTransactionStatus} />}
 		</div>
 	);
 }

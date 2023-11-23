@@ -5,6 +5,7 @@ mutation TransactionProcess($transactionId: ID!, $data: JSON) {
 		}
 		transactionEvent {
 			id
+			type
 		}
 		data
 		errors {

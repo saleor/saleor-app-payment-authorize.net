@@ -1,9 +1,6 @@
 import { z } from "zod";
 import { type AppConfigMetadataManager } from "../configuration/app-config-metadata-manager";
-import {
-  type AuthorizeSettlementState,
-  type AuthorizeNetClient,
-} from "../authorize-net/authorize-net-client";
+import { type AuthorizeNetClient } from "../authorize-net/authorize-net-client";
 import { BaseError } from "@/errors";
 import { type SyncWebhookResponse } from "@/lib/webhook-response-builder";
 import { type TransactionProcessSessionEventFragment } from "generated/graphql";
@@ -18,22 +15,13 @@ type TransactionProcessWebhookResponse = SyncWebhookResponse<"TRANSACTION_PROCES
 
 type PossibleTransactionResult = Extract<
   TransactionProcessWebhookResponse["result"],
-  "AUTHORIZATION_SUCCESS" | "AUTHORIZATION_FAILURE" | "AUTHORIZATION_REQUESTED"
+  "AUTHORIZATION_ACTION_REQUIRED" | "AUTHORIZATION_REQUESTED"
 >;
 
 const transactionProcessPayloadDataSchema = z.object({
   transactionId: z.string().min(1),
   customerProfileId: z.string().min(1).optional(),
 });
-
-const settlementStateToTransactionResultMap: Record<
-  AuthorizeSettlementState,
-  PossibleTransactionResult
-> = {
-  pendingSettlement: "AUTHORIZATION_REQUESTED",
-  settledSuccessfully: "AUTHORIZATION_SUCCESS",
-  settlementError: "AUTHORIZATION_FAILURE",
-};
 
 export class TransactionProcessSessionService {
   private appConfigMetadataManager: AppConfigMetadataManager;
@@ -71,7 +59,6 @@ export class TransactionProcessSessionService {
     await this.appConfigMetadataManager.set(appConfigurator);
   }
 
-  // todo: confirm if this is the correct way to do so
   /**
    * @description Calls the Authorize.net API to get the transaction status. Maps Authorize settlement state to Saleor transaction result.
    * @param transactionId - Authorize.net transactionId
@@ -86,9 +73,18 @@ export class TransactionProcessSessionService {
       transactionId,
     });
 
-    const { settlementState } = transactionDetails.batch;
+    const { transactionStatus } = transactionDetails.transaction;
 
-    return settlementStateToTransactionResultMap[settlementState];
+    // todo: confirm if this is the correct mapping
+    if (transactionStatus === "authorizedPendingCapture") {
+      return "AUTHORIZATION_REQUESTED";
+    }
+
+    if (transactionStatus === "FDSPendingReview") {
+      return "AUTHORIZATION_ACTION_REQUIRED";
+    }
+
+    throw new TransactionProcessError(`Unexpected transaction status: ${transactionStatus}`);
   }
 
   async execute(

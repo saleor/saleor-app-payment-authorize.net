@@ -1,11 +1,7 @@
-import { AuthNetEnvironment } from "react-acceptjs";
-
 import { gql, useMutation } from "@apollo/client";
 import React, { useState } from "react";
+import { z } from "zod";
 import {
-	PaymentGatewayInitializeDocument,
-	PaymentGatewayInitializeMutation,
-	PaymentGatewayInitializeMutationVariables,
 	TransactionInitializeDocument,
 	TransactionInitializeMutation,
 	TransactionInitializeMutationVariables,
@@ -13,10 +9,12 @@ import {
 import { authorizeNetAppId } from "./lib/common";
 import { PaymentForm } from "./payment-form";
 
-export type AcceptData = {
-	environment: AuthNetEnvironment;
-	formToken: string;
-};
+const acceptDataSchema = z.object({
+	environment: z.enum(["sandbox", "production"]),
+	formToken: z.string(),
+});
+
+export type AcceptData = z.infer<typeof acceptDataSchema>;
 
 function getCheckoutId() {
 	const checkoutId = typeof sessionStorage === "undefined" ? undefined : sessionStorage.getItem("checkoutId");
@@ -28,17 +26,16 @@ function getCheckoutId() {
 	return checkoutId;
 }
 
-export function PayButton() {
+export function PayButton({
+	setTransactionStatus,
+}: {
+	setTransactionStatus: React.Dispatch<React.SetStateAction<string | undefined>>;
+}) {
 	const [isLoading, setIsLoading] = useState(false);
 	const [acceptData, setAcceptData] = useState<AcceptData>();
 	const [transactionId, setTransactionId] = useState<string>();
 
 	const checkoutId = getCheckoutId();
-
-	const [initializePaymentGateway] = useMutation<
-		PaymentGatewayInitializeMutation,
-		PaymentGatewayInitializeMutationVariables
-	>(gql(PaymentGatewayInitializeDocument.toString()));
 
 	const [initializeTransaction] = useMutation<
 		TransactionInitializeMutation,
@@ -49,28 +46,7 @@ export function PayButton() {
 		console.log("🔄 getAcceptData called");
 		setIsLoading(true);
 
-		const initializePaymentGatewayResponse = await initializePaymentGateway({
-			variables: {
-				checkoutId,
-				paymentGateway: authorizeNetAppId,
-			},
-		});
-
-		if (initializePaymentGatewayResponse.data?.paymentGatewayInitialize?.errors.length) {
-			throw new Error("Failed to initialize payment gateway");
-		}
-
-		const data = initializePaymentGatewayResponse.data?.paymentGatewayInitialize?.gatewayConfigs?.find(
-			(config) => config.id === authorizeNetAppId,
-		)?.data;
-
-		if (!data) {
-			throw new Error("Failed to get payment gateway data");
-		}
-
-		const nextAcceptData = data as AcceptData;
-
-		const saleorTransactionResponse = await initializeTransaction({
+		const response = await initializeTransaction({
 			variables: {
 				checkoutId,
 				paymentGateway: authorizeNetAppId,
@@ -78,19 +54,20 @@ export function PayButton() {
 			},
 		});
 
-		if (
-			saleorTransactionResponse.data?.transactionInitialize?.errors?.length &&
-			saleorTransactionResponse.data?.transactionInitialize?.errors?.length > 0
-		) {
+		const data = response?.data?.transactionInitialize;
+		const isError = (response?.errors?.length ?? 0) > 0;
+
+		if (!data || isError) {
 			throw new Error("Failed to initialize transaction");
 		}
 
-		const nextTransactionId = saleorTransactionResponse.data?.transactionInitialize?.transaction?.id;
+		const nextTransactionId = data.transaction?.id;
 
 		setIsLoading(false);
+		const nextAcceptData = acceptDataSchema.parse(data.data);
 		setAcceptData(nextAcceptData);
 		setTransactionId(nextTransactionId);
-	}, [checkoutId, initializePaymentGateway, initializeTransaction]);
+	}, [checkoutId, initializeTransaction]);
 
 	React.useEffect(() => {
 		if (!acceptData) {
@@ -101,7 +78,9 @@ export function PayButton() {
 	return (
 		<div>
 			{isLoading && <p>Loading...</p>}
-			{acceptData && transactionId && <PaymentForm acceptData={acceptData} transactionId={transactionId} />}
+			{acceptData && transactionId && (
+				<PaymentForm setStatus={setTransactionStatus} acceptData={acceptData} transactionId={transactionId} />
+			)}
 		</div>
 	);
 }

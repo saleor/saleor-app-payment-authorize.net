@@ -44,6 +44,7 @@ export class AppConfigResolver {
     const appConfigInput = {
       providers: [providerInput],
       connections: [connectionInput],
+      customerProfiles: [],
     };
 
     const parsed = AppConfig.Schema.safeParse(appConfigInput);
@@ -58,42 +59,12 @@ export class AppConfigResolver {
     return parsed.data;
   }
 
-  private async injectEnvProviderIfFound(
-    appConfig: AppConfig.Shape,
-    envConfig: AppConfig.Shape | undefined,
-  ) {
-    if (!envConfig) {
-      // nothing to inject
-      return appConfig;
-    }
-
-    // check if appConfig providers contain envConfig (by id)
-    const isEnvConfigInjected = appConfig.providers.some((provider) =>
-      envConfig.providers.some((envProvider) => envProvider.id === provider.id),
-    );
-
-    // if not, add it
-    if (!isEnvConfigInjected) {
-      appConfig = {
-        connections: [...appConfig.connections, ...envConfig.connections],
-        providers: [...appConfig.providers, ...envConfig.providers],
-        customerProfiles: [],
-      };
-
-      const appConfigurator = new AppConfigurator(appConfig);
-      // save the updated appConfig to the metadata
-      await this.appConfigMetadataManager.set(appConfigurator);
-    }
-
-    return appConfig;
-  }
-
-  resolve({
+  async resolve({
     metadata,
   }: {
     metadata: WebhookRecipientFragment["privateMetadata"];
   }): Promise<AppConfig.Shape> {
-    let appConfig = defaultAppConfig;
+    let appConfig: AppConfig.Shape | undefined = undefined;
 
     metadata.forEach((item) => {
       const decrypted = decrypt(item.value, env.SECRET_KEY);
@@ -105,8 +76,20 @@ export class AppConfigResolver {
       }
     });
 
+    if (appConfig) {
+      return appConfig;
+    }
+
     const envConfig = this.getAppConfigFromEnv();
 
-    return this.injectEnvProviderIfFound(appConfig, envConfig);
+    if (!envConfig) {
+      return defaultAppConfig;
+    }
+
+    const appConfigurator = new AppConfigurator(envConfig);
+    // save the updated appConfig to the metadata
+    await this.appConfigMetadataManager.set(appConfigurator);
+
+    return envConfig;
   }
 }

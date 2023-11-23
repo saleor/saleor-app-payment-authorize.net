@@ -37,15 +37,16 @@ export type GetHostedPaymentPageResponse = z.infer<typeof getHostedPaymentPageRe
 
 const getTransactionDetailsSchema = baseAuthorizeObjectSchema.and(
   z.object({
-    batch: z.object({
-      settlementState: z.enum(["settledSuccessfully", "settlementError", "pendingSettlement"]),
+    transaction: z.object({
+      transactionStatus: z.string().min(1),
     }),
   }),
 );
 
 type GetTransactionDetailsResponse = z.infer<typeof getTransactionDetailsSchema>;
 
-export type AuthorizeSettlementState = GetTransactionDetailsResponse["batch"]["settlementState"];
+export type AuthorizeTransactionStatus =
+  GetTransactionDetailsResponse["transaction"]["transactionStatus"];
 
 // todo: test
 function formatAuthorizeErrors(messages: ResponseMessages) {
@@ -171,6 +172,7 @@ export class AuthorizeNetClient {
           // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           const apiResponse = transactionController.getResponse();
           const response = new ApiContracts.GetTransactionDetailsResponse(apiResponse);
+          this.logger.trace({ response }, "getTransactionDetailsRequest response");
           const parsedResponse = getTransactionDetailsSchema.parse(response);
 
           this.resolveResponseErrors(parsedResponse);

@@ -50,7 +50,7 @@ export class TransactionInitializeSessionService {
     this.appConfigMetadataManager = appConfigMetadataManager;
   }
 
-  private resolveResponseData(
+  private getWebhookResponseData(
     response: GetHostedPaymentPageResponse,
   ): TransactionInitializeSessionResponseData {
     const dataParseResult = transactionInitializeSessionResponseDataSchema.safeParse({
@@ -113,7 +113,7 @@ export class TransactionInitializeSessionService {
     const hostedPaymentPageResponse =
       await this.authorizeNetClient.getHostedPaymentPageRequest(transactionInput);
 
-    const data = this.resolveResponseData(hostedPaymentPageResponse);
+    const data = this.getWebhookResponseData(hostedPaymentPageResponse);
 
     return {
       amount: payload.action.amount,
