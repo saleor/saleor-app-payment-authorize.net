@@ -9,12 +9,25 @@ import {
 import { authorizeNetAppId } from "./lib/common";
 import { PaymentForm } from "./payment-form";
 
-const acceptDataSchema = z.object({
+const responseDataSchema = z.object({
 	environment: z.enum(["sandbox", "production"]),
 	formToken: z.string(),
 });
 
-export type AcceptData = z.infer<typeof acceptDataSchema>;
+const payloadDataSchema = z.object({
+	shouldCreateCustomerProfile: z.boolean(),
+});
+
+const payloadData = payloadDataSchema.parse({
+	/**
+	 * This controls whether or not the customer profile is created.
+	 * For the Accept Hosted form to display the "save payment method" checkbox, you need to have a customer profile created before.
+	 * If this is set to true, the app wil create a customer profile before initializing the transaction.
+	 */
+	shouldCreateCustomerProfile: true,
+});
+
+export type AcceptData = z.infer<typeof responseDataSchema>;
 
 function getCheckoutId() {
 	const checkoutId = typeof sessionStorage === "undefined" ? undefined : sessionStorage.getItem("checkoutId");
@@ -50,21 +63,21 @@ export function PayButton({
 			variables: {
 				checkoutId,
 				paymentGateway: authorizeNetAppId,
-				data: {},
+				data: payloadData,
 			},
 		});
 
-		const data = response?.data?.transactionInitialize;
+		const responseData = response?.data?.transactionInitialize;
 		const isError = (response?.errors?.length ?? 0) > 0;
 
-		if (!data || isError) {
+		if (!responseData || isError) {
 			throw new Error("Failed to initialize transaction");
 		}
 
-		const nextTransactionId = data.transaction?.id;
+		const nextTransactionId = responseData.transaction?.id;
 
 		setIsLoading(false);
-		const nextAcceptData = acceptDataSchema.parse(data.data);
+		const nextAcceptData = responseDataSchema.parse(responseData.data);
 		setAcceptData(nextAcceptData);
 		setTransactionId(nextTransactionId);
 	}, [checkoutId, initializeTransaction]);

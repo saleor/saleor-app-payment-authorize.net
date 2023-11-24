@@ -1,7 +1,7 @@
 import AuthorizeNet from "authorizenet";
 
 import { z } from "zod";
-import { AuthorizeNetClient, baseAuthorizeObjectSchema } from "../authorize-net-client";
+import { AuthorizeNetClient, baseAuthorizeObjectSchema } from "./authorize-net-client";
 
 const ApiContracts = AuthorizeNet.APIContracts;
 const ApiControllers = AuthorizeNet.APIControllers;
@@ -38,8 +38,8 @@ export class TransactionDetailsClient extends AuthorizeNetClient {
     transactionController.setEnvironment(this.getEnvironment());
 
     return new Promise((resolve, reject) => {
-      try {
-        transactionController.execute(() => {
+      transactionController.execute(() => {
+        try {
           // eslint disabled because of insufficient types
           // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           const apiResponse = transactionController.getResponse();
@@ -50,13 +50,13 @@ export class TransactionDetailsClient extends AuthorizeNetClient {
           this.resolveResponseErrors(parsedResponse);
 
           resolve(parsedResponse);
-        });
-      } catch (error) {
-        if (error instanceof z.ZodError) {
-          reject(error.format());
+        } catch (error) {
+          if (error instanceof z.ZodError) {
+            reject(error.format());
+          }
+          reject(error);
         }
-        reject(error);
-      }
+      });
     });
   }
 }

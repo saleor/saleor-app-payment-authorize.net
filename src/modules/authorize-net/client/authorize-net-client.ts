@@ -1,7 +1,7 @@
 import AuthorizeNet from "authorizenet";
 import { z } from "zod";
-import { type AuthorizeProviderConfig } from "./authorize-net-config";
-import { AuthorizeNetError } from "./authorize-net-error";
+import { type AuthorizeProviderConfig } from "../authorize-net-config";
+import { AuthorizeNetError } from "../authorize-net-error";
 import { createLogger } from "@/lib/logger";
 
 const ApiContracts = AuthorizeNet.APIContracts;

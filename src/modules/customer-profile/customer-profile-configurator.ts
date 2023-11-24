@@ -19,6 +19,12 @@ export class CustomerProfileConfigurator {
     return customerProfile.authorizeCustomerProfileId;
   }
 
+  removeCustomerProfile({ saleorUserEmail }: { saleorUserEmail: string }) {
+    this.customerProfiles = this.customerProfiles.filter(
+      (p) => p.saleorUserEmail !== saleorUserEmail,
+    );
+  }
+
   upsertCustomerProfile({
     saleorUserEmail,
     authorizeCustomerProfileId,

@@ -55,6 +55,8 @@ async function getWebhookManagerServiceFromCtx(ctx: WebhookContext) {
   const activeProviderResolver = new ActiveProviderResolver(appConfig);
   const authorizeConfig = activeProviderResolver.resolve(channelSlug);
 
+  logger.debug(`Found authorizeConfig for channel ${channelSlug}`);
+
   const webhookManagerService = new WebhookManagerService({
     authorizeConfig,
     appConfigMetadataManager,
@@ -72,15 +74,7 @@ async function getWebhookManagerServiceFromCtx(ctx: WebhookContext) {
  */
 export default transactionInitializeSessionSyncWebhook.createHandler(async (req, res, ctx) => {
   const responseBuilder = new WebhookResponseBuilder(res);
-  // todo: add more extensive logs
-  logger.debug(
-    {
-      action: ctx.payload.action,
-      channelSlug: ctx.payload.sourceObject.channel.slug,
-      transaction: ctx.payload.transaction,
-    },
-    "handler called",
-  );
+  logger.debug("handler called");
 
   try {
     const webhookManagerService = await getWebhookManagerServiceFromCtx(ctx);

@@ -2,7 +2,7 @@ import { env } from "process";
 import AuthorizeNet from "authorizenet";
 
 import { z } from "zod";
-import { AuthorizeNetClient, baseAuthorizeObjectSchema } from "../authorize-net-client";
+import { AuthorizeNetClient, baseAuthorizeObjectSchema } from "./authorize-net-client";
 
 const ApiContracts = AuthorizeNet.APIContracts;
 const ApiControllers = AuthorizeNet.APIControllers;
@@ -24,16 +24,10 @@ export class HostedPaymentPageClient extends AuthorizeNetClient {
       hostedPaymentIFrameCommunicatorUrl: {
         url: `${env.AUTHORIZE_PAYMENT_FORM_URL}/accept-hosted.html`, // url where the payment form iframe will be hosted,
       },
-      hostedPaymentPaymentOptions: {
-        cardCodeRequired: false,
-        showCreditCard: true,
-        showBankAccount: true,
-        customerProfileId: true,
-      },
       hostedPaymentCustomerOptions: {
         showEmail: false,
         requiredEmail: false,
-        addPaymentProfile: false,
+        addPaymentProfile: true,
       },
     };
 
@@ -70,8 +64,8 @@ export class HostedPaymentPageClient extends AuthorizeNetClient {
     transactionController.setEnvironment(this.getEnvironment());
 
     return new Promise((resolve, reject) => {
-      try {
-        transactionController.execute(() => {
+      transactionController.execute(() => {
+        try {
           this.logger.debug(
             { settings },
             "Calling getHostedPaymentPageRequest with the following settings:",
@@ -90,13 +84,13 @@ export class HostedPaymentPageClient extends AuthorizeNetClient {
           this.logger.info("getHostedPaymentPageRequest response parsed successfully");
 
           resolve(parsedResponse);
-        });
-      } catch (error) {
-        if (error instanceof z.ZodError) {
-          reject(error.format());
+        } catch (error) {
+          if (error instanceof z.ZodError) {
+            reject(error.format());
+          }
+          reject(error);
         }
-        reject(error);
-      }
+      });
     });
   }
 }
