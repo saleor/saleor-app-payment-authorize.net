@@ -10,11 +10,13 @@ const getTransactionDetailsSchema = baseAuthorizeObjectSchema.and(
   z.object({
     transaction: z.object({
       transactionStatus: z.string().min(1),
+      authAmount: z.number(),
+      responseReasonDescription: z.string().min(1),
     }),
   }),
 );
 
-type GetTransactionDetailsResponse = z.infer<typeof getTransactionDetailsSchema>;
+export type GetTransactionDetailsResponse = z.infer<typeof getTransactionDetailsSchema>;
 
 export type AuthorizeTransactionStatus =
   GetTransactionDetailsResponse["transaction"]["transactionStatus"];

@@ -10,9 +10,10 @@ import {
 } from "../authorize-net/client/hosted-payment-page-client";
 import { type AppConfigMetadataManager } from "../configuration/app-config-metadata-manager";
 import { type TransactionInitializeSessionEventFragment } from "generated/graphql";
-import { type SyncWebhookResponse } from "@/lib/webhook-response-builder";
+
 import { createLogger } from "@/lib/logger";
 import { BaseError } from "@/errors";
+import { type TransactionInitializeSessionResponse } from "@/schemas/TransactionInitializeSession/TransactionInitializeSessionResponse.mjs";
 
 const ApiContracts = AuthorizeNet.APIContracts;
 
@@ -111,7 +112,7 @@ export class TransactionInitializeSessionService {
 
   async execute(
     payload: TransactionInitializeSessionEventFragment,
-  ): Promise<SyncWebhookResponse<"TRANSACTION_INITIALIZE_SESSION">> {
+  ): Promise<TransactionInitializeSessionResponse> {
     const transactionInput = await this.buildTransactionFromPayload(payload);
     const hostedPaymentPageClient = new HostedPaymentPageClient(this.authorizeConfig);
     const hostedPaymentPageResponse =

@@ -1,11 +1,7 @@
-import { type SyncWebhookResponsesMap } from "@saleor/app-sdk/handlers/next";
 import { type NextApiResponse } from "next";
-import { type Logger, createLogger } from "@/lib/logger";
+import { createLogger, type Logger } from "@/lib/logger";
 
-export type SyncWebhookResponse<TWebhookName extends keyof SyncWebhookResponsesMap> =
-  SyncWebhookResponsesMap[TWebhookName];
-
-export class SynchronousWebhookResponseBuilder<TWebhookName extends keyof SyncWebhookResponsesMap> {
+export class SynchronousWebhookResponseBuilder<TResponse extends object> {
   private logger: Logger;
 
   private getWebhookName(res: NextApiResponse) {
@@ -21,7 +17,7 @@ export class SynchronousWebhookResponseBuilder<TWebhookName extends keyof SyncWe
     });
   }
 
-  ok(response: SyncWebhookResponse<TWebhookName>) {
+  ok(response: TResponse) {
     this.logger.debug({ response }, "responding with JSON:");
     this.res.status(200).json(response);
   }

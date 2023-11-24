@@ -1,9 +1,12 @@
 import { z } from "zod";
 import { type AuthorizeProviderConfig } from "../authorize-net/authorize-net-config";
-import { TransactionDetailsClient } from "../authorize-net/client/transaction-details-client";
+import {
+  TransactionDetailsClient,
+  type GetTransactionDetailsResponse,
+} from "../authorize-net/client/transaction-details-client";
 import { type AppConfigMetadataManager } from "../configuration/app-config-metadata-manager";
 import { type TransactionProcessSessionEventFragment } from "generated/graphql";
-import { type SyncWebhookResponse } from "@/lib/webhook-response-builder";
+import { type TransactionProcessSessionResponse } from "@/schemas/TransactionProcessSession/TransactionProcessSessionResponse.mjs";
 import { BaseError } from "@/errors";
 
 export const TransactionProcessError = BaseError.subclass("TransactionProcessError");
@@ -12,11 +15,9 @@ export const TransactionProcessUnexpectedDataError = TransactionProcessError.sub
   "TransactionProcessUnexpectedDataError",
 );
 
-type TransactionProcessWebhookResponse = SyncWebhookResponse<"TRANSACTION_PROCESS_SESSION">;
-
 type PossibleTransactionResult = Extract<
-  TransactionProcessWebhookResponse["result"],
-  "AUTHORIZATION_ACTION_REQUIRED" | "AUTHORIZATION_REQUESTED"
+  TransactionProcessSessionResponse["result"],
+  "AUTHORIZATION_ACTION_REQUIRED" | "AUTHORIZATION_REQUEST"
 >;
 
 const transactionProcessPayloadDataSchema = z.object({
@@ -65,20 +66,13 @@ export class TransactionProcessSessionService {
    * @param transactionId - Authorize.net transactionId
    * @returns Possible transaction result
    */
-  private async resolveTransactionResult({
-    transactionId,
-  }: {
-    transactionId: string;
-  }): Promise<PossibleTransactionResult> {
-    const transactionDetailsClient = new TransactionDetailsClient(this.authorizeConfig);
-    const transactionDetails = await transactionDetailsClient.getTransactionDetailsRequest({
-      transactionId,
-    });
+  private mapTransactionResult(
+    transactionDetails: GetTransactionDetailsResponse,
+  ): PossibleTransactionResult {
     const { transactionStatus } = transactionDetails.transaction;
 
-    // todo: confirm if this is the correct mapping
     if (transactionStatus === "authorizedPendingCapture") {
-      return "AUTHORIZATION_REQUESTED";
+      return "AUTHORIZATION_REQUEST";
     }
 
     if (transactionStatus === "FDSPendingReview") {
@@ -90,7 +84,7 @@ export class TransactionProcessSessionService {
 
   async execute(
     payload: TransactionProcessSessionEventFragment,
-  ): Promise<TransactionProcessWebhookResponse> {
+  ): Promise<TransactionProcessSessionResponse> {
     const dataParseResult = transactionProcessPayloadDataSchema.safeParse(payload.data);
 
     if (!dataParseResult.success) {
@@ -99,7 +93,7 @@ export class TransactionProcessSessionService {
       });
     }
 
-    const { customerProfileId } = dataParseResult.data;
+    const { customerProfileId, transactionId } = dataParseResult.data;
     const userEmail = payload.sourceObject.userEmail;
 
     if (customerProfileId && userEmail) {
@@ -109,14 +103,21 @@ export class TransactionProcessSessionService {
       });
     }
 
-    const result = await this.resolveTransactionResult({
-      transactionId: dataParseResult.data.transactionId,
+    const transactionDetailsClient = new TransactionDetailsClient(this.authorizeConfig);
+    const details = await transactionDetailsClient.getTransactionDetailsRequest({
+      transactionId,
     });
 
+    const result = this.mapTransactionResult(details);
+
     return {
-      amount: payload.action.amount,
+      amount: details.transaction.authAmount,
       result,
-      data: {},
+      data: {
+        foo: "bar",
+      },
+      message: details.transaction.responseReasonDescription,
+      pspReference: transactionId,
     };
   }
 }

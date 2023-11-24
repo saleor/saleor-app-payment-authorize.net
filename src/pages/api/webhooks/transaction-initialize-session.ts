@@ -12,6 +12,7 @@ import {
   UntypedTransactionInitializeSessionDocument,
   type TransactionInitializeSessionEventFragment,
 } from "generated/graphql";
+import { type TransactionInitializeSessionResponse } from "@/schemas/TransactionInitializeSession/TransactionInitializeSessionResponse.mjs";
 
 export const config = {
   api: {
@@ -32,7 +33,7 @@ const logger = createLogger({
   name: "transactionInitializeSessionSyncWebhook",
 });
 
-class WebhookResponseBuilder extends SynchronousWebhookResponseBuilder<"TRANSACTION_INITIALIZE_SESSION"> {}
+class WebhookResponseBuilder extends SynchronousWebhookResponseBuilder<TransactionInitializeSessionResponse> {}
 
 type WebhookContext = Parameters<
   Parameters<(typeof transactionInitializeSessionSyncWebhook)["createHandler"]>[0]

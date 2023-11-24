@@ -3,19 +3,21 @@ import { type AppConfigMetadataManager } from "../configuration/app-config-metad
 
 import { TransactionInitializeSessionService } from "./transaction-initialize-session";
 import { TransactionProcessSessionService } from "./transaction-process-session";
-import { type SyncWebhookResponse } from "@/lib/webhook-response-builder";
+import { type TransactionInitializeSessionResponse } from "@/schemas/TransactionInitializeSession/TransactionInitializeSessionResponse.mjs";
+
 import {
   type TransactionInitializeSessionEventFragment,
   type TransactionProcessSessionEventFragment,
 } from "generated/graphql";
+import { type TransactionProcessSessionResponse } from "@/schemas/TransactionProcessSession/TransactionProcessSessionResponse.mjs";
 
 export interface PaymentsWebhooks {
   transactionInitializeSession: (
     payload: TransactionInitializeSessionEventFragment,
-  ) => Promise<SyncWebhookResponse<"TRANSACTION_INITIALIZE_SESSION">>;
+  ) => Promise<TransactionInitializeSessionResponse>;
   transactionProcessSession: (
     payload: TransactionProcessSessionEventFragment,
-  ) => Promise<SyncWebhookResponse<"TRANSACTION_PROCESS_SESSION">>;
+  ) => Promise<TransactionProcessSessionResponse>;
 }
 
 export class WebhookManagerService implements PaymentsWebhooks {
@@ -35,7 +37,7 @@ export class WebhookManagerService implements PaymentsWebhooks {
 
   async transactionInitializeSession(
     payload: TransactionInitializeSessionEventFragment,
-  ): Promise<SyncWebhookResponse<"TRANSACTION_INITIALIZE_SESSION">> {
+  ): Promise<TransactionInitializeSessionResponse> {
     const transactionInitializeSessionService = new TransactionInitializeSessionService({
       authorizeConfig: this.authorizeConfig,
       appConfigMetadataManager: this.appConfigMetadataManager,
@@ -46,7 +48,7 @@ export class WebhookManagerService implements PaymentsWebhooks {
 
   async transactionProcessSession(
     payload: TransactionProcessSessionEventFragment,
-  ): Promise<SyncWebhookResponse<"TRANSACTION_PROCESS_SESSION">> {
+  ): Promise<TransactionProcessSessionResponse> {
     const transactionProcessSessionService = new TransactionProcessSessionService({
       appConfigMetadataManager: this.appConfigMetadataManager,
       authorizeConfig: this.authorizeConfig,

@@ -48,7 +48,6 @@ export function PaymentForm({
 	const transactionResponseHandler = React.useCallback(
 		async (rawResponse: unknown) => {
 			console.log("✅ transactionResponseHandler called");
-			console.log("initializedTransactionId: ", transactionId);
 
 			const authorizeResponse = acceptHostedTransactionResponseSchema.parse(rawResponse);
 
