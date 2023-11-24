@@ -1,4 +1,4 @@
-import { type AuthorizeNetClient } from "../authorize-net/authorize-net-client";
+import { type AuthorizeProviderConfig } from "../authorize-net/authorize-net-config";
 import { type AppConfigMetadataManager } from "../configuration/app-config-metadata-manager";
 
 import { TransactionInitializeSessionService } from "./transaction-initialize-session";
@@ -19,17 +19,17 @@ export interface PaymentsWebhooks {
 }
 
 export class WebhookManagerService implements PaymentsWebhooks {
-  private authorizeNetClient: AuthorizeNetClient;
+  private authorizeConfig: AuthorizeProviderConfig.FullShape;
   private appConfigMetadataManager: AppConfigMetadataManager;
 
   constructor({
-    authorizeNetClient,
+    authorizeConfig,
     appConfigMetadataManager,
   }: {
-    authorizeNetClient: AuthorizeNetClient;
+    authorizeConfig: AuthorizeProviderConfig.FullShape;
     appConfigMetadataManager: AppConfigMetadataManager;
   }) {
-    this.authorizeNetClient = authorizeNetClient;
+    this.authorizeConfig = authorizeConfig;
     this.appConfigMetadataManager = appConfigMetadataManager;
   }
 
@@ -37,7 +37,7 @@ export class WebhookManagerService implements PaymentsWebhooks {
     payload: TransactionInitializeSessionEventFragment,
   ): Promise<SyncWebhookResponse<"TRANSACTION_INITIALIZE_SESSION">> {
     const transactionInitializeSessionService = new TransactionInitializeSessionService({
-      authorizeNetClient: this.authorizeNetClient,
+      authorizeConfig: this.authorizeConfig,
       appConfigMetadataManager: this.appConfigMetadataManager,
     });
 
@@ -49,7 +49,7 @@ export class WebhookManagerService implements PaymentsWebhooks {
   ): Promise<SyncWebhookResponse<"TRANSACTION_PROCESS_SESSION">> {
     const transactionProcessSessionService = new TransactionProcessSessionService({
       appConfigMetadataManager: this.appConfigMetadataManager,
-      authorizeNetClient: this.authorizeNetClient,
+      authorizeConfig: this.authorizeConfig,
     });
 
     return transactionProcessSessionService.execute(payload);

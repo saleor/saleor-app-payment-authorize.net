@@ -1,15 +1,18 @@
 import AuthorizeNet from "authorizenet";
 import { z } from "zod";
-import { authorizeEnvironmentSchema } from "../authorize-net/authorize-net-config";
 import {
-  type AuthorizeNetClient,
+  authorizeEnvironmentSchema,
+  type AuthorizeProviderConfig,
+} from "../authorize-net/authorize-net-config";
+import {
+  HostedPaymentPageClient,
   type GetHostedPaymentPageResponse,
-} from "../authorize-net/authorize-net-client";
+} from "../authorize-net/client/hosted-payment-page-client";
 import { type AppConfigMetadataManager } from "../configuration/app-config-metadata-manager";
-import { BaseError } from "@/errors";
-import { type SyncWebhookResponse } from "@/lib/webhook-response-builder";
 import { type TransactionInitializeSessionEventFragment } from "generated/graphql";
+import { type SyncWebhookResponse } from "@/lib/webhook-response-builder";
 import { createLogger } from "@/lib/logger";
+import { BaseError } from "@/errors";
 
 const ApiContracts = AuthorizeNet.APIContracts;
 
@@ -33,20 +36,20 @@ type TransactionInitializeSessionResponseData = z.infer<
 >;
 
 export class TransactionInitializeSessionService {
-  private authorizeNetClient: AuthorizeNetClient;
+  private authorizeConfig: AuthorizeProviderConfig.FullShape;
   private appConfigMetadataManager: AppConfigMetadataManager;
   private logger = createLogger({
     name: "TransactionInitializeSessionService",
   });
 
   constructor({
-    authorizeNetClient,
+    authorizeConfig,
     appConfigMetadataManager,
   }: {
-    authorizeNetClient: AuthorizeNetClient;
+    authorizeConfig: AuthorizeProviderConfig.FullShape;
     appConfigMetadataManager: AppConfigMetadataManager;
   }) {
-    this.authorizeNetClient = authorizeNetClient;
+    this.authorizeConfig = authorizeConfig;
     this.appConfigMetadataManager = appConfigMetadataManager;
   }
 
@@ -55,7 +58,7 @@ export class TransactionInitializeSessionService {
   ): TransactionInitializeSessionResponseData {
     const dataParseResult = transactionInitializeSessionResponseDataSchema.safeParse({
       formToken: response.token,
-      environment: this.authorizeNetClient.config.environment,
+      environment: this.authorizeConfig.environment,
     });
 
     if (!dataParseResult.success) {
@@ -110,8 +113,9 @@ export class TransactionInitializeSessionService {
     payload: TransactionInitializeSessionEventFragment,
   ): Promise<SyncWebhookResponse<"TRANSACTION_INITIALIZE_SESSION">> {
     const transactionInput = await this.buildTransactionFromPayload(payload);
+    const hostedPaymentPageClient = new HostedPaymentPageClient(this.authorizeConfig);
     const hostedPaymentPageResponse =
-      await this.authorizeNetClient.getHostedPaymentPageRequest(transactionInput);
+      await hostedPaymentPageClient.getHostedPaymentPageRequest(transactionInput);
 
     const data = this.getWebhookResponseData(hostedPaymentPageResponse);
 

@@ -1,9 +1,10 @@
 import { z } from "zod";
+import { type AuthorizeProviderConfig } from "../authorize-net/authorize-net-config";
+import { TransactionDetailsClient } from "../authorize-net/client/transaction-details-client";
 import { type AppConfigMetadataManager } from "../configuration/app-config-metadata-manager";
-import { type AuthorizeNetClient } from "../authorize-net/authorize-net-client";
-import { BaseError } from "@/errors";
-import { type SyncWebhookResponse } from "@/lib/webhook-response-builder";
 import { type TransactionProcessSessionEventFragment } from "generated/graphql";
+import { type SyncWebhookResponse } from "@/lib/webhook-response-builder";
+import { BaseError } from "@/errors";
 
 export const TransactionProcessError = BaseError.subclass("TransactionProcessError");
 
@@ -25,17 +26,17 @@ const transactionProcessPayloadDataSchema = z.object({
 
 export class TransactionProcessSessionService {
   private appConfigMetadataManager: AppConfigMetadataManager;
-  private authorizeNetClient: AuthorizeNetClient;
+  private authorizeConfig: AuthorizeProviderConfig.FullShape;
 
   constructor({
     appConfigMetadataManager,
-    authorizeNetClient,
+    authorizeConfig,
   }: {
     appConfigMetadataManager: AppConfigMetadataManager;
-    authorizeNetClient: AuthorizeNetClient;
+    authorizeConfig: AuthorizeProviderConfig.FullShape;
   }) {
     this.appConfigMetadataManager = appConfigMetadataManager;
-    this.authorizeNetClient = authorizeNetClient;
+    this.authorizeConfig = authorizeConfig;
   }
 
   /**
@@ -69,10 +70,10 @@ export class TransactionProcessSessionService {
   }: {
     transactionId: string;
   }): Promise<PossibleTransactionResult> {
-    const transactionDetails = await this.authorizeNetClient.getTransactionDetailsRequest({
+    const transactionDetailsClient = new TransactionDetailsClient(this.authorizeConfig);
+    const transactionDetails = await transactionDetailsClient.getTransactionDetailsRequest({
       transactionId,
     });
-
     const { transactionStatus } = transactionDetails.transaction;
 
     // todo: confirm if this is the correct mapping
