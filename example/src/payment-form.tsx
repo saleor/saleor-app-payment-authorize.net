@@ -11,8 +11,6 @@ import { AcceptData } from "./pay-button";
 
 const processTransactionRequestDataSchema = z.object({
 	transactionId: z.string(),
-	// todo: bring back once I find out why there is no customerProfileId in the response
-	// customerProfileId: z.string().optional(),
 });
 
 const acceptHostedTransactionResponseSchema = z.object({
@@ -25,10 +23,6 @@ type AcceptHostedTransactionResponse = z.infer<typeof acceptHostedTransactionRes
 function resolveProcessTransactionRequestData(authorizeResponse: AcceptHostedTransactionResponse) {
 	return processTransactionRequestDataSchema.parse({
 		transactionId: authorizeResponse.transId,
-		// todo: bring back once I find out why there is no customerProfileId in the response
-		// ...(authorizeResponse.profileResponse.customerProfileId && {
-		// 	customerProfileId: authorizeResponse.profileResponse.customerProfileId,
-		// }),
 	});
 }
 

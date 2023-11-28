@@ -50,7 +50,6 @@ export class WebhookManagerService implements PaymentsWebhooks {
     payload: TransactionProcessSessionEventFragment,
   ): Promise<TransactionProcessSessionResponse> {
     const transactionProcessSessionService = new TransactionProcessSessionService({
-      appConfigMetadataManager: this.appConfigMetadataManager,
       authorizeConfig: this.authorizeConfig,
     });
 
