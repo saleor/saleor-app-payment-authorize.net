@@ -66,11 +66,7 @@ async function getWebhookManagerServiceFromCtx(ctx: WebhookContext) {
 }
 
 /**
- * In the Authorize.net Accept Hosted flow, this webhook is called before the Authorize.net payment form is displayed to the user.
- * This webhook does the following:
- * 1. Looks for stored payment methods for the user. If there are any, they are passed to `getHostedPaymentPageRequest` to be displayed in the payment form.
- * 2. Call Authorize.net's `getHostedPaymentPageRequest` to get `formToken` needed to display the Accept Hosted form.
- * 3. Initializes the Saleor transaction by returning "AUTHORIZATION_ACTION_REQUIRED" result if everything was successful.
+    @description This handler is called when a Saleor transaction is canceled. It changes the status of the transaction in Authorize to "void".
  */
 export default transactionCancelationRequestedSyncWebhook.createHandler(async (req, res, ctx) => {
   const responseBuilder = new WebhookResponseBuilder(res);
