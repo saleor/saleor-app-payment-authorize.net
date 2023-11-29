@@ -1,4 +1,4 @@
-import { NoConnectionFoundError, NoProviderFoundError } from "@/errors";
+import { NoChannelSlugFoundError, NoConnectionFoundError, NoProviderFoundError } from "@/errors";
 import { type ChannelConnection } from "@/modules/channel-connection/channel-connection.schema";
 import { type AppConfig } from "@/modules/configuration/app-configurator";
 
@@ -27,7 +27,11 @@ export class ActiveProviderResolver {
     return provider;
   }
 
-  public resolve(channelSlug: string) {
+  public resolve(channelSlug: string | null | undefined) {
+    if (!channelSlug) {
+      throw new NoChannelSlugFoundError(`Channel ${channelSlug} not found in the connections`);
+    }
+
     const connection = this.resolveActiveConnection(channelSlug);
     const provider = this.resolveProviderForConnection(connection);
 

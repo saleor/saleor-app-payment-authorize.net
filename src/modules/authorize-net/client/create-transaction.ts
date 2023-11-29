@@ -11,7 +11,7 @@ const createTransactionSchema = baseAuthorizeObjectSchema.and(z.unknown());
 type CreateTransactionResponse = z.infer<typeof createTransactionSchema>;
 
 export class CreateTransactionClient extends AuthorizeNetClient {
-  async execute(
+  async createTransaction(
     transactionInput: AuthorizeNet.APIContracts.TransactionRequestType,
   ): Promise<CreateTransactionResponse> {
     const createRequest = new ApiContracts.CreateTransactionRequest();

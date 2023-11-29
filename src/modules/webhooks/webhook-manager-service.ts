@@ -2,13 +2,16 @@ import { type AuthorizeProviderConfig } from "../authorize-net/authorize-net-con
 
 import { TransactionInitializeSessionService } from "./transaction-initialize-session";
 import { TransactionProcessSessionService } from "./transaction-process-session";
+import { TransactionCancelationRequestedService } from "./transaction-cancelation-requested";
 import { type TransactionInitializeSessionResponse } from "@/schemas/TransactionInitializeSession/TransactionInitializeSessionResponse.mjs";
 
-import { type TransactionProcessSessionResponse } from "@/schemas/TransactionProcessSession/TransactionProcessSessionResponse.mjs";
 import {
+  type TransactionCancelationRequestedEventFragment,
   type TransactionInitializeSessionEventFragment,
   type TransactionProcessSessionEventFragment,
 } from "generated/graphql";
+import { type TransactionProcessSessionResponse } from "@/schemas/TransactionProcessSession/TransactionProcessSessionResponse.mjs";
+import { type TransactionCancelationRequestedResponse } from "@/schemas/TransactionCancelationRequested/TransactionCancelationRequestedResponse.mjs";
 
 export interface PaymentsWebhooks {
   transactionInitializeSession: (
@@ -17,6 +20,9 @@ export interface PaymentsWebhooks {
   transactionProcessSession: (
     payload: TransactionProcessSessionEventFragment,
   ) => Promise<TransactionProcessSessionResponse>;
+  transactionCancelationRequested: (
+    payload: TransactionCancelationRequestedEventFragment,
+  ) => Promise<TransactionCancelationRequestedResponse>;
 }
 
 export class WebhookManagerService implements PaymentsWebhooks {
@@ -29,20 +35,30 @@ export class WebhookManagerService implements PaymentsWebhooks {
   async transactionInitializeSession(
     payload: TransactionInitializeSessionEventFragment,
   ): Promise<TransactionInitializeSessionResponse> {
-    const transactionInitializeSessionService = new TransactionInitializeSessionService({
+    const service = new TransactionInitializeSessionService({
       authorizeConfig: this.authorizeConfig,
     });
 
-    return transactionInitializeSessionService.execute(payload);
+    return service.execute(payload);
   }
 
   async transactionProcessSession(
     payload: TransactionProcessSessionEventFragment,
   ): Promise<TransactionProcessSessionResponse> {
-    const transactionProcessSessionService = new TransactionProcessSessionService({
+    const service = new TransactionProcessSessionService({
       authorizeConfig: this.authorizeConfig,
     });
 
-    return transactionProcessSessionService.execute(payload);
+    return service.execute(payload);
+  }
+
+  async transactionCancelationRequested(
+    payload: TransactionCancelationRequestedEventFragment,
+  ): Promise<TransactionCancelationRequestedResponse> {
+    const service = new TransactionCancelationRequestedService({
+      authorizeConfig: this.authorizeConfig,
+    });
+
+    return service.execute(payload);
   }
 }

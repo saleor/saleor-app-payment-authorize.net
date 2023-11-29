@@ -19,6 +19,8 @@ export const NoConnectionFoundError = BaseError.subclass("NoConnectionFoundError
 
 export const NoProviderFoundError = BaseError.subclass("NoProviderFoundError");
 
+export const NoChannelSlugFoundError = BaseError.subclass("NoChannelSlugFoundError");
+
 export const NoAppConfigFoundError = BaseError.subclass("NoAppConfigFoundError");
 
 // TRPC Errors
