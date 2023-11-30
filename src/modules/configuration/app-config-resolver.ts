@@ -43,7 +43,6 @@ export class AppConfigResolver {
     const appConfigInput = {
       providers: [providerInput],
       connections: [connectionInput],
-      customerProfiles: [],
     };
 
     const parsed = AppConfig.Schema.safeParse(appConfigInput);

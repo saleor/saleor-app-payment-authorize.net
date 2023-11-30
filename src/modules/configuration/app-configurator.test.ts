@@ -26,7 +26,6 @@ describe("AppConfigurator", () => {
           },
         ],
         connections: [],
-        customerProfiles: [],
       });
     });
 
@@ -49,7 +48,6 @@ describe("AppConfigurator", () => {
             providerId: "1",
           },
         ],
-        customerProfiles: [],
       });
     });
   });
