@@ -21,7 +21,6 @@ const appConfig: AppConfig.Shape = {
       transactionKey: "transactionKey1",
     },
   ],
-  customerProfiles: [],
 };
 
 const _metadata: WebhookRecipientFragment["privateMetadata"] = [

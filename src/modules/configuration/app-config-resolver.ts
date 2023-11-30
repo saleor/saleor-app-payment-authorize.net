@@ -16,7 +16,6 @@ import { type WebhookRecipientFragment } from "generated/graphql";
 const defaultAppConfig: AppConfig.Shape = {
   connections: [],
   providers: [],
-  customerProfiles: [],
 };
 
 export class AppConfigResolver {

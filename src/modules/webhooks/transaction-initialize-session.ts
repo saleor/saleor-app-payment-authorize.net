@@ -8,12 +8,11 @@ import {
   HostedPaymentPageClient,
   type GetHostedPaymentPageResponse,
 } from "../authorize-net/client/hosted-payment-page-client";
-import { type AppConfigMetadataManager } from "../configuration/app-config-metadata-manager";
 import { CustomerProfileManager } from "../customer-profile/customer-profile-manager";
 import { type TransactionInitializeSessionEventFragment } from "generated/graphql";
 
-import { createLogger } from "@/lib/logger";
 import { BaseError } from "@/errors";
+import { createLogger } from "@/lib/logger";
 import { type TransactionInitializeSessionResponse } from "@/schemas/TransactionInitializeSession/TransactionInitializeSessionResponse.mjs";
 
 const ApiContracts = AuthorizeNet.APIContracts;
@@ -49,17 +48,10 @@ export class TransactionInitializeSessionService {
     name: "TransactionInitializeSessionService",
   });
 
-  constructor({
-    authorizeConfig,
-    appConfigMetadataManager,
-  }: {
-    authorizeConfig: AuthorizeProviderConfig.FullShape;
-    appConfigMetadataManager: AppConfigMetadataManager;
-  }) {
+  constructor({ authorizeConfig }: { authorizeConfig: AuthorizeProviderConfig.FullShape }) {
     this.authorizeConfig = authorizeConfig;
     this.customerProfileManager = new CustomerProfileManager({
       authorizeConfig,
-      appConfigMetadataManager,
     });
   }
 

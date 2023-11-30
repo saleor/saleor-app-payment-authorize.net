@@ -59,7 +59,6 @@ async function getWebhookManagerServiceFromCtx(ctx: WebhookContext) {
 
   const webhookManagerService = new WebhookManagerService({
     authorizeConfig,
-    appConfigMetadataManager,
   });
 
   return webhookManagerService;
@@ -74,7 +73,7 @@ async function getWebhookManagerServiceFromCtx(ctx: WebhookContext) {
  */
 export default transactionInitializeSessionSyncWebhook.createHandler(async (req, res, ctx) => {
   const responseBuilder = new WebhookResponseBuilder(res);
-  logger.debug("handler called");
+  logger.debug("Handler called");
 
   try {
     const webhookManagerService = await getWebhookManagerServiceFromCtx(ctx);

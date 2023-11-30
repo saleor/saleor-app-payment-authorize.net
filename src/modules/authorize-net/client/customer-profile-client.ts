@@ -13,7 +13,13 @@ const createCustomerProfileSchema = baseAuthorizeObjectSchema.and(
 
 type CreateCustomerProfileResponse = z.infer<typeof createCustomerProfileSchema>;
 
-const getCustomerProfileSchema = baseAuthorizeObjectSchema.and(z.object({}));
+const getCustomerProfileSchema = baseAuthorizeObjectSchema.and(
+  z.object({
+    profile: z.object({
+      customerProfileId: z.string().min(1),
+    }),
+  }),
+);
 
 type GetCustomerProfileResponse = z.infer<typeof getCustomerProfileSchema>;
 
@@ -62,14 +68,10 @@ export class CustomerProfileClient extends AuthorizeNetClient {
     });
   }
 
-  getCustomerProfile({
-    customerProfileId,
-  }: {
-    customerProfileId: string;
-  }): Promise<GetCustomerProfileResponse> {
+  getCustomerProfileByEmail({ email }: { email: string }): Promise<GetCustomerProfileResponse> {
     const createRequest = new ApiContracts.GetCustomerProfileRequest();
     createRequest.setMerchantAuthentication(this.merchantAuthenticationType);
-    createRequest.setCustomerProfileId(customerProfileId);
+    createRequest.setEmail(email);
 
     const customerProfileController = new ApiControllers.GetCustomerProfileController(
       createRequest.getJSON(),

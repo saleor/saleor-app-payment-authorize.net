@@ -57,7 +57,6 @@ async function getWebhookManagerServiceFromCtx(ctx: WebhookContext) {
 
   const webhookManagerService = new WebhookManagerService({
     authorizeConfig,
-    appConfigMetadataManager,
   });
 
   return webhookManagerService;
@@ -79,7 +78,7 @@ export default transactionProcessSessionSyncWebhook.createHandler(async (req, re
       channelSlug: ctx.payload.sourceObject.channel.slug,
       transaction: ctx.payload.transaction,
     },
-    "handler called",
+    "Handler called",
   );
 
   try {

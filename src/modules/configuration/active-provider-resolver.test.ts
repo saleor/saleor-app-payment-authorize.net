@@ -34,7 +34,6 @@ describe("ActiveProviderResolver", () => {
             id: "connection2",
           },
         ],
-        customerProfiles: [],
       };
 
       const activeProviderResolver = new ActiveProviderResolver(appConfig);
@@ -47,7 +46,6 @@ describe("ActiveProviderResolver", () => {
       const appConfig: AppConfig.Shape = {
         connections: [],
         providers: [],
-        customerProfiles: [],
       };
 
       const activeProviderResolver = new ActiveProviderResolver(appConfig);
@@ -63,7 +61,6 @@ describe("ActiveProviderResolver", () => {
           },
         ],
         providers: [],
-        customerProfiles: [],
       };
 
       const activeProviderResolver = new ActiveProviderResolver(appConfig);
