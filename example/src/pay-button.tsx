@@ -68,7 +68,7 @@ export function PayButton({
 		});
 
 		const responseData = response?.data?.transactionInitialize;
-		const isError = (response?.errors?.length ?? 0) > 0;
+		const isError = !!response?.errors?.length;
 
 		if (!responseData || isError) {
 			throw new Error("Failed to initialize transaction");
