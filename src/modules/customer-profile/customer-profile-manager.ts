@@ -39,9 +39,10 @@ export class CustomerProfileManager {
     userEmail: string;
   }): Promise<string | undefined> {
     const appConfigurator = await this.appConfigMetadataManager.get();
-    const saleorCustomerProfileId = appConfigurator.customerProfiles.getCustomerProfileByUserEmail({
-      userEmail,
-    });
+    const saleorCustomerProfileId =
+      appConfigurator.customerProfiles.getCustomerProfileIdByUserEmail({
+        userEmail,
+      });
 
     // if the customer profile is not stored in metadata, return undefined
     if (!saleorCustomerProfileId) {

@@ -8,7 +8,7 @@ export class CustomerProfileConfigurator {
 
   constructor(private customerProfiles: CustomerProfile.Shape[]) {}
 
-  getCustomerProfileByUserEmail({ userEmail }: { userEmail: string }) {
+  getCustomerProfileIdByUserEmail({ userEmail }: { userEmail: string }) {
     const customerProfile = this.customerProfiles.find((p) => p.saleorUserEmail === userEmail);
 
     if (!customerProfile) {
