@@ -71,6 +71,8 @@ export function PayButton({
 		const isError = !!response?.errors?.length;
 
 		if (!responseData || isError) {
+			console.log("❌ getAcceptData failed");
+			console.log(response.errors);
 			throw new Error("Failed to initialize transaction");
 		}
 
