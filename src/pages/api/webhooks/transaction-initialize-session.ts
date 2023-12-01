@@ -55,7 +55,7 @@ async function getWebhookManagerServiceFromCtx(ctx: WebhookContext) {
   const activeProviderResolver = new ActiveProviderResolver(appConfig);
   const authorizeConfig = activeProviderResolver.resolve(channelSlug);
 
-  logger.debug(`Found authorizeConfig for channel ${channelSlug}`);
+  logger.trace(`Found authorizeConfig for channel ${channelSlug}`);
 
   const webhookManagerService = new WebhookManagerService({
     authorizeConfig,
@@ -73,12 +73,15 @@ async function getWebhookManagerServiceFromCtx(ctx: WebhookContext) {
  */
 export default transactionInitializeSessionSyncWebhook.createHandler(async (req, res, ctx) => {
   const responseBuilder = new WebhookResponseBuilder(res);
-  logger.debug("Handler called");
+  logger.info({ action: ctx.payload.action }, "called with:");
 
   try {
     const webhookManagerService = await getWebhookManagerServiceFromCtx(ctx);
 
     const response = await webhookManagerService.transactionInitializeSession(ctx.payload);
+
+    // eslint-disable-next-line @saleor/saleor-app/logger-leak
+    logger.info({ response }, "Responding with:");
     return responseBuilder.ok(response);
   } catch (error) {
     Sentry.captureException(error);

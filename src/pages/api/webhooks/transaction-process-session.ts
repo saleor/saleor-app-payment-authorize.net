@@ -85,6 +85,9 @@ export default transactionProcessSessionSyncWebhook.createHandler(async (req, re
     const webhookManagerService = await getWebhookManagerServiceFromCtx(ctx);
 
     const response = await webhookManagerService.transactionProcessSession(ctx.payload);
+
+    // eslint-disable-next-line @saleor/saleor-app/logger-leak
+    logger.info({ response }, "Responding with:");
     return responseBuilder.ok(response);
   } catch (error) {
     Sentry.captureException(error);

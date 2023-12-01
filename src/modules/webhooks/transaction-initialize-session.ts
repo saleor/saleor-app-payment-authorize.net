@@ -133,7 +133,7 @@ export class TransactionInitializeSessionService {
   async execute(
     payload: TransactionInitializeSessionEventFragment,
   ): Promise<TransactionInitializeSessionResponse> {
-    this.logger.debug("Called execute");
+    this.logger.debug({ id: payload.transaction?.id }, "Called execute with");
 
     const transactionInput = await this.buildTransactionFromPayload(payload);
 

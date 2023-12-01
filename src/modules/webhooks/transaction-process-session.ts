@@ -7,6 +7,7 @@ import {
 import { type TransactionProcessSessionEventFragment } from "generated/graphql";
 import { type TransactionProcessSessionResponse } from "@/schemas/TransactionProcessSession/TransactionProcessSessionResponse.mjs";
 import { BaseError } from "@/errors";
+import { createLogger } from "@/lib/logger";
 
 export const TransactionProcessError = BaseError.subclass("TransactionProcessError");
 
@@ -26,13 +27,22 @@ const transactionProcessPayloadDataSchema = z.object({
 export class TransactionProcessSessionService {
   private authorizeConfig: AuthorizeProviderConfig.FullShape;
 
+  private logger = createLogger({
+    name: "TransactionProcessSessionService",
+  });
+
   constructor({ authorizeConfig }: { authorizeConfig: AuthorizeProviderConfig.FullShape }) {
     this.authorizeConfig = authorizeConfig;
   }
 
   /**
+   * @description Saves transaction ID in metadata for future usage in other operations (e.g. `transaction-cancelation-requested`).
+   * @param transactionId - Transaction ID from Authorize.net
+   */
+  private saveTransactionIdInMetadata(_transactionId: string) {}
+
+  /**
    * @description Calls the Authorize.net API to get the transaction status. Maps Authorize settlement state to Saleor transaction result.
-   * @param transactionId - Authorize.net transactionId
    * @returns Possible transaction result
    */
   private mapTransactionResult(
@@ -54,6 +64,7 @@ export class TransactionProcessSessionService {
   async execute(
     payload: TransactionProcessSessionEventFragment,
   ): Promise<TransactionProcessSessionResponse> {
+    this.logger.debug({ id: payload.transaction?.id }, "Called execute with");
     const dataParseResult = transactionProcessPayloadDataSchema.safeParse(payload.data);
 
     if (!dataParseResult.success) {
@@ -63,6 +74,8 @@ export class TransactionProcessSessionService {
     }
 
     const { transactionId } = dataParseResult.data;
+
+    this.saveTransactionIdInMetadata(transactionId);
 
     const transactionDetailsClient = new TransactionDetailsClient(this.authorizeConfig);
     const details = await transactionDetailsClient.getTransactionDetailsRequest({

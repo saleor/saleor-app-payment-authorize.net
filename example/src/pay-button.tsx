@@ -8,6 +8,7 @@ import {
 } from "../generated/graphql";
 import { authorizeNetAppId } from "./lib/common";
 import { PaymentForm } from "./payment-form";
+import { Status } from "./pages/cart";
 
 const responseDataSchema = z.object({
 	environment: z.enum(["sandbox", "production"]),
@@ -29,7 +30,7 @@ const payloadData = payloadDataSchema.parse({
 
 export type AcceptData = z.infer<typeof responseDataSchema>;
 
-function getCheckoutId() {
+export function getCheckoutId() {
 	const checkoutId = typeof sessionStorage === "undefined" ? undefined : sessionStorage.getItem("checkoutId");
 
 	if (!checkoutId) {
@@ -40,9 +41,11 @@ function getCheckoutId() {
 }
 
 export function PayButton({
-	setTransactionStatus,
+	setStatus,
+	status,
 }: {
-	setTransactionStatus: React.Dispatch<React.SetStateAction<string | undefined>>;
+	setStatus: React.Dispatch<React.SetStateAction<Status>>;
+	status: Status;
 }) {
 	const [isLoading, setIsLoading] = useState(false);
 	const [acceptData, setAcceptData] = useState<AcceptData>();
@@ -94,7 +97,12 @@ export function PayButton({
 		<div>
 			{isLoading && <p>Loading...</p>}
 			{acceptData && transactionId && (
-				<PaymentForm setStatus={setTransactionStatus} acceptData={acceptData} transactionId={transactionId} />
+				<PaymentForm
+					acceptData={acceptData}
+					transactionId={transactionId}
+					setStatus={setStatus}
+					status={status}
+				/>
 			)}
 		</div>
 	);

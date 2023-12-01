@@ -6,12 +6,24 @@ import {
 } from "../../../generated/graphql";
 import { authorizeNetAppId } from "../../lib/common";
 import { PayButton } from "../../pay-button";
-import { useState } from "react";
+import React from "react";
+
+export type Status =
+	| {
+			type: "payment";
+	  }
+	| {
+			type: "transaction_status";
+			status: string;
+	  }
+	| {
+			type: "complete_checkout";
+	  };
 
 export default function CartPage() {
-	const [transactionStatus, setTransactionStatus] = useState<string>();
-
 	const checkoutId = typeof sessionStorage === "undefined" ? undefined : sessionStorage.getItem("checkoutId");
+
+	const [status, setStatus] = React.useState<Status>({ type: "payment" });
 
 	if (!checkoutId) {
 		throw new Error("Checkout ID not found in sessionStorage");
@@ -39,17 +51,19 @@ export default function CartPage() {
 		);
 	}
 
-	if (transactionStatus) {
-		return <div>Transaction status: {transactionStatus}</div>;
-	}
-
 	return (
 		<div>
-			<h1 className="text-3xl font-semibold text-slate-900">Cart:</h1>
-			<ul className="my-4 ml-4 list-disc">
-				{checkoutResponse.checkout?.lines.map((line) => <li key={line.id}>{line.variant.product.name}</li>)}
-			</ul>
-			{!transactionStatus && <PayButton setTransactionStatus={setTransactionStatus} />}
+			{status.type === "payment" && (
+				<>
+					<h1 className="text-3xl font-semibold text-slate-900">Cart:</h1>
+					<ul className="my-4 ml-4 list-disc">
+						{checkoutResponse.checkout?.lines.map((line) => (
+							<li key={line.id}>{line.variant.product.name}</li>
+						))}
+					</ul>
+				</>
+			)}
+			<PayButton setStatus={setStatus} status={status} />
 		</div>
 	);
 }

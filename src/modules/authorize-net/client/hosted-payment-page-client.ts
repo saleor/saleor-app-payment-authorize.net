@@ -81,7 +81,7 @@ export class HostedPaymentPageClient extends AuthorizeNetClient {
 
           this.resolveResponseErrors(parsedResponse);
 
-          this.logger.info("getHostedPaymentPageRequest response parsed successfully");
+          this.logger.debug("getHostedPaymentPageRequest response parsed successfully");
 
           resolve(parsedResponse);
         } catch (error) {
