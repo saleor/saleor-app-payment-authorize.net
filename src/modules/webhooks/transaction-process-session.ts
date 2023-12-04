@@ -66,9 +66,8 @@ export class TransactionProcessSessionService {
   ): Pick<TransactionProcessSessionResponse, "result" | "actions"> {
     const { transactionStatus } = response.transaction;
 
-    // todo: add actions
     if (transactionStatus === "authorizedPendingCapture") {
-      return { result: "AUTHORIZATION_SUCCESS", actions: [] };
+      return { result: "AUTHORIZATION_SUCCESS", actions: ["CANCEL"] };
     }
 
     if (transactionStatus === "FDSPendingReview") {

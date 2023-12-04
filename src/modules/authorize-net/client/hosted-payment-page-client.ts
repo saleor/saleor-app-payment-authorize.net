@@ -76,12 +76,12 @@ export class HostedPaymentPageClient extends AuthorizeNetClient {
           const apiResponse = transactionController.getResponse();
           const response = new ApiContracts.GetHostedPaymentPageResponse(apiResponse);
 
-          this.logger.debug({ response }, "getHostedPaymentPageRequest response");
+          this.logger.trace({ response }, "getHostedPaymentPageRequest response");
           const parsedResponse = getHostedPaymentPageResponseSchema.parse(response);
 
           this.resolveResponseErrors(parsedResponse);
 
-          this.logger.debug("getHostedPaymentPageRequest response parsed successfully");
+          this.logger.debug("Returning response from getHostedPaymentPageRequest");
 
           resolve(parsedResponse);
         } catch (error) {

@@ -37,7 +37,7 @@ class WebhookResponseBuilder extends SynchronousWebhookResponseBuilder<Transacti
  */
 export default transactionCancelationRequestedSyncWebhook.createHandler(async (req, res, ctx) => {
   const responseBuilder = new WebhookResponseBuilder(res);
-  logger.debug("handler called");
+  logger.debug({ metadata: ctx.payload.transaction }, "handler called");
 
   try {
     const webhookManagerService = await getWebhookManagerServiceFromCtx({
