@@ -20,7 +20,7 @@ const ConfigPage: NextPage = () => {
 
   return (
     <AppLayout title="">
-      <h1>Hello World</h1>
+      <h1>All systems operational 🤖</h1>
     </AppLayout>
   );
 };

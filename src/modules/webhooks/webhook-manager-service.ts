@@ -1,49 +1,48 @@
-import { AuthorizeNetClient } from "../authorize-net/authorize-net-client";
 import { type AuthorizeProviderConfig } from "../authorize-net/authorize-net-config";
-import { PaymentGatewayInitializeSessionService } from "./payment-gateway-initialize-session";
 
 import { TransactionInitializeSessionService } from "./transaction-initialize-session";
-import {
-  type PaymentGatewayInitializeSessionEventFragment,
-  type TransactionInitializeSessionEventFragment,
-} from "generated/graphql";
-import { type SyncWebhookResponse } from "@/lib/webhook-response-builder";
-import { createLogger } from "@/lib/logger";
+import { TransactionProcessSessionService } from "./transaction-process-session";
+import { type TransactionInitializeSessionResponse } from "@/schemas/TransactionInitializeSession/TransactionInitializeSessionResponse.mjs";
 
-interface PaymentsWebhooks {
+import { type TransactionProcessSessionResponse } from "@/schemas/TransactionProcessSession/TransactionProcessSessionResponse.mjs";
+import {
+  type TransactionInitializeSessionEventFragment,
+  type TransactionProcessSessionEventFragment,
+} from "generated/graphql";
+
+export interface PaymentsWebhooks {
   transactionInitializeSession: (
     payload: TransactionInitializeSessionEventFragment,
-  ) => Promise<SyncWebhookResponse<"TRANSACTION_INITIALIZE_SESSION">>;
-  paymentGatewayInitializeSession: (
-    payload: PaymentGatewayInitializeSessionEventFragment,
-  ) => SyncWebhookResponse<"PAYMENT_GATEWAY_INITIALIZE_SESSION">;
+  ) => Promise<TransactionInitializeSessionResponse>;
+  transactionProcessSession: (
+    payload: TransactionProcessSessionEventFragment,
+  ) => Promise<TransactionProcessSessionResponse>;
 }
 
 export class WebhookManagerService implements PaymentsWebhooks {
-  private client: AuthorizeNetClient;
-  private logger = createLogger({
-    name: "WebhookManagerService",
-  });
+  private authorizeConfig: AuthorizeProviderConfig.FullShape;
 
-  constructor(private config: AuthorizeProviderConfig.FullShape) {
-    this.client = new AuthorizeNetClient(config);
+  constructor({ authorizeConfig }: { authorizeConfig: AuthorizeProviderConfig.FullShape }) {
+    this.authorizeConfig = authorizeConfig;
   }
 
   async transactionInitializeSession(
     payload: TransactionInitializeSessionEventFragment,
-  ): Promise<SyncWebhookResponse<"TRANSACTION_INITIALIZE_SESSION">> {
-    const transactionInitializeSessionService = new TransactionInitializeSessionService(
-      this.client,
-    );
+  ): Promise<TransactionInitializeSessionResponse> {
+    const transactionInitializeSessionService = new TransactionInitializeSessionService({
+      authorizeConfig: this.authorizeConfig,
+    });
 
     return transactionInitializeSessionService.execute(payload);
   }
 
-  paymentGatewayInitializeSession(): SyncWebhookResponse<"PAYMENT_GATEWAY_INITIALIZE_SESSION"> {
-    const paymentGatewayInitializeSessionService = new PaymentGatewayInitializeSessionService(
-      this.config,
-    );
+  async transactionProcessSession(
+    payload: TransactionProcessSessionEventFragment,
+  ): Promise<TransactionProcessSessionResponse> {
+    const transactionProcessSessionService = new TransactionProcessSessionService({
+      authorizeConfig: this.authorizeConfig,
+    });
 
-    return paymentGatewayInitializeSessionService.execute();
+    return transactionProcessSessionService.execute(payload);
   }
 }

@@ -1,156 +1,100 @@
-import { AuthNetEnvironment, HostedForm, HostedFormDispatchDataResponse } from "react-acceptjs";
-
-import { gql, useMutation, useQuery } from "@apollo/client";
-import { useRouter } from "next/router";
+import { gql, useMutation } from "@apollo/client";
 import React, { useState } from "react";
+import { z } from "zod";
 import {
-	GetCheckoutByIdDocument,
-	GetCheckoutByIdQuery,
-	GetCheckoutByIdQueryVariables,
-	PaymentGatewayInitializeDocument,
-	PaymentGatewayInitializeMutation,
-	PaymentGatewayInitializeMutationVariables,
 	TransactionInitializeDocument,
 	TransactionInitializeMutation,
 	TransactionInitializeMutationVariables,
 } from "../generated/graphql";
 import { authorizeNetAppId } from "./lib/common";
+import { PaymentForm } from "./payment-form";
 
-type AcceptData = {
-	apiLoginId: string;
-	environment: AuthNetEnvironment;
-	publicClientKey: string;
-};
+const responseDataSchema = z.object({
+	environment: z.enum(["sandbox", "production"]),
+	formToken: z.string(),
+});
 
-export function PayButton() {
-	const [isError, setIsError] = useState(false);
-	const [acceptData, setAcceptData] = useState<AcceptData>({
-		apiLoginId: "",
-		environment: "SANDBOX",
-		publicClientKey: "",
-	});
+const payloadDataSchema = z.object({
+	shouldCreateCustomerProfile: z.boolean(),
+});
 
-	const { environment, apiLoginId, publicClientKey } = acceptData;
-	const authData = { apiLoginID: apiLoginId, clientKey: publicClientKey };
+const payloadData = payloadDataSchema.parse({
+	/**
+	 * This controls whether or not the customer profile is created.
+	 * For the Accept Hosted form to display the "save payment method" checkbox, you need to have a customer profile created before.
+	 * If this is set to true, the app wil create a customer profile before initializing the transaction.
+	 */
+	shouldCreateCustomerProfile: true,
+});
 
-	const router = useRouter();
+export type AcceptData = z.infer<typeof responseDataSchema>;
+
+function getCheckoutId() {
 	const checkoutId = typeof sessionStorage === "undefined" ? undefined : sessionStorage.getItem("checkoutId");
 
 	if (!checkoutId) {
 		throw new Error("Checkout ID not found in sessionStorage");
 	}
 
-	const { data: checkoutResponse, loading: isCheckoutLoading } = useQuery<
-		GetCheckoutByIdQuery,
-		GetCheckoutByIdQueryVariables
-	>(gql(GetCheckoutByIdDocument.toString()), { variables: { id: checkoutId } });
+	return checkoutId;
+}
 
-	const [initializePaymentGateway] = useMutation<
-		PaymentGatewayInitializeMutation,
-		PaymentGatewayInitializeMutationVariables
-	>(gql(PaymentGatewayInitializeDocument.toString()));
+export function PayButton({
+	setTransactionStatus,
+}: {
+	setTransactionStatus: React.Dispatch<React.SetStateAction<string | undefined>>;
+}) {
+	const [isLoading, setIsLoading] = useState(false);
+	const [acceptData, setAcceptData] = useState<AcceptData>();
+	const [transactionId, setTransactionId] = useState<string>();
 
-	const [createTransaction] = useMutation<
+	const checkoutId = getCheckoutId();
+
+	const [initializeTransaction] = useMutation<
 		TransactionInitializeMutation,
 		TransactionInitializeMutationVariables
 	>(gql(TransactionInitializeDocument.toString()));
 
-	const isAuthorizeAppInstalled = checkoutResponse?.checkout?.availablePaymentGateways.some(
-		(gateway) => gateway.id === authorizeNetAppId,
-	);
-
 	const getAcceptData = React.useCallback(async () => {
-		if (checkoutId) {
-			const response = await initializePaymentGateway({
-				variables: {
-					checkoutId,
-					paymentGateway: authorizeNetAppId,
-				},
-			});
+		console.log("🔄 getAcceptData called");
+		setIsLoading(true);
 
-			if (response.data?.paymentGatewayInitialize?.errors.length) {
-				throw new Error("Failed to initialize payment gateway");
-			}
+		const response = await initializeTransaction({
+			variables: {
+				checkoutId,
+				paymentGateway: authorizeNetAppId,
+				data: payloadData,
+			},
+		});
 
-			const data = response.data?.paymentGatewayInitialize?.gatewayConfigs?.find(
-				(config) => config.id === authorizeNetAppId,
-			)?.data;
+		const responseData = response?.data?.transactionInitialize;
+		const isError = !!response?.errors?.length;
 
-			if (!data) {
-				throw new Error("Failed to get payment gateway data");
-			}
-
-			const rawAcceptData = data as AcceptData;
-
-			const nextAcceptData = {
-				...data,
-				environment: rawAcceptData.environment.toUpperCase() as AuthNetEnvironment, // Accept.js expects environment to be uppercase
-			} as AcceptData;
-
-			setAcceptData(nextAcceptData);
+		if (!responseData || isError) {
+			console.log("❌ getAcceptData failed");
+			console.log(response.errors);
+			throw new Error("Failed to initialize transaction");
 		}
-	}, [checkoutId, initializePaymentGateway]);
+
+		const nextTransactionId = responseData.transaction?.id;
+
+		setIsLoading(false);
+		const nextAcceptData = responseDataSchema.parse(responseData.data);
+		setAcceptData(nextAcceptData);
+		setTransactionId(nextTransactionId);
+	}, [checkoutId, initializeTransaction]);
 
 	React.useEffect(() => {
-		getAcceptData();
-	}, [getAcceptData]);
-
-	const handleSubmit = async (response: HostedFormDispatchDataResponse) => {
-		if (checkoutResponse?.checkout) {
-			try {
-				const opaqueData = response.opaqueData;
-
-				const saleorTransactionResponse = await createTransaction({
-					variables: {
-						checkoutId: checkoutResponse.checkout.id,
-						paymentGateway: authorizeNetAppId,
-						data: {
-							...opaqueData,
-						},
-					},
-				});
-
-				if (
-					saleorTransactionResponse.data?.transactionInitialize?.errors?.length &&
-					saleorTransactionResponse.data?.transactionInitialize?.errors?.length > 0
-				) {
-					throw new Error("Failed to initialize transaction");
-				}
-
-				router.push("/success");
-			} catch (error) {
-				console.error(error);
-				setIsError(true);
-			}
+		if (!acceptData) {
+			getAcceptData();
 		}
-	};
-
-	if (!checkoutResponse || isCheckoutLoading) {
-		return <div>Loading…</div>;
-	}
-
-	if (!isAuthorizeAppInstalled) {
-		return (
-			<div className="text-red-500">
-				Authorize.net App was not installed in this Saleor Cloud instance. Go to{" "}
-				<a href="https://authorize.saleor.app/">authorize.saleor.app</a> and follow the instructions.
-			</div>
-		);
-	}
-
-	if (isError) {
-		return <div className="text-red-500">Error while creating a transaction</div>;
-	}
+	}, [acceptData, getAcceptData]);
 
 	return (
 		<div>
-			{authData.apiLoginID.length > 0 && (
-				<HostedForm
-					buttonClassName="mt-2 rounded-md border bg-slate-900 px-8 py-2 text-lg text-white hover:bg-slate-800"
-					environment={environment}
-					authData={authData}
-					onSubmit={handleSubmit}
-				/>
+			{isLoading && <p>Loading...</p>}
+			{acceptData && transactionId && (
+				<PaymentForm setStatus={setTransactionStatus} acceptData={acceptData} transactionId={transactionId} />
 			)}
 		</div>
 	);

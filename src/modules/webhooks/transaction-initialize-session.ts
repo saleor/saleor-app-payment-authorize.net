@@ -1,90 +1,157 @@
 import AuthorizeNet from "authorizenet";
 import { z } from "zod";
-import { type AuthorizeNetClient } from "../authorize-net/authorize-net-client";
-import { BaseError } from "@/errors";
-import { type SyncWebhookResponse } from "@/lib/webhook-response-builder";
+import {
+  authorizeEnvironmentSchema,
+  type AuthorizeProviderConfig,
+} from "../authorize-net/authorize-net-config";
+import {
+  HostedPaymentPageClient,
+  type GetHostedPaymentPageResponse,
+} from "../authorize-net/client/hosted-payment-page-client";
+import { CustomerProfileManager } from "../customer-profile/customer-profile-manager";
 import { type TransactionInitializeSessionEventFragment } from "generated/graphql";
+
+import { BaseError } from "@/errors";
+import { createLogger } from "@/lib/logger";
+import { type TransactionInitializeSessionResponse } from "@/schemas/TransactionInitializeSession/TransactionInitializeSessionResponse.mjs";
 
 const ApiContracts = AuthorizeNet.APIContracts;
 
 export const TransactionInitializeError = BaseError.subclass("TransactionInitializeError");
 
-export const TransactionInitializeUnexpectedDataError = TransactionInitializeError.subclass(
+const TransactionInitializeUnexpectedDataError = TransactionInitializeError.subclass(
   "TransactionInitializeUnexpectedDataError",
 );
 
-/**
- * `payload.data` is app-agnostic stringified JSON object we need to parse to make sure it has the expected structure.
- * To be able to create the transaction, Authorize App expects to receive Accept Payment nonce in the `event.data` object.
- * @see https://developer.authorize.net/api/reference/index.html#accept-suite-create-an-accept-payment-transaction
- * todo: Look into moving to Saleor provided JSON schema validation
- */
-const transactionInitializePayloadDataSchema = z.object({
-  dataDescriptor: z.string(),
-  dataValue: z.string(),
+const transactionInitializeSessionPayloadDataSchema = z.object({
+  shouldCreateCustomerProfile: z.boolean().optional().default(false),
 });
 
-// This function doesn't know anything about the payment method
-// todo: test
-function buildTransactionFromPayload(
-  payload: TransactionInitializeSessionEventFragment,
-): AuthorizeNet.APIContracts.TransactionRequestType {
-  const payloadDataParseResult = transactionInitializePayloadDataSchema.safeParse(payload.data);
+/**
+ * Authorize.net's payment form called Accept Hosted has to be initialized with `formToken`.
+ * Read more: https://developer.authorize.net/api/reference/features/accept-hosted.html#Requesting_the_Form_Token
+ */
+const transactionInitializeSessionResponseDataSchema = z.object({
+  formToken: z.string().min(1),
+  environment: authorizeEnvironmentSchema,
+});
 
-  if (!payloadDataParseResult.success) {
-    throw new TransactionInitializeUnexpectedDataError("`data` object has unexpected structure.", {
-      props: {
-        detail: payloadDataParseResult.error,
-      },
+type TransactionInitializeSessionResponseData = z.infer<
+  typeof transactionInitializeSessionResponseDataSchema
+>;
+
+export class TransactionInitializeSessionService {
+  private authorizeConfig: AuthorizeProviderConfig.FullShape;
+  private customerProfileManager: CustomerProfileManager;
+
+  private logger = createLogger({
+    name: "TransactionInitializeSessionService",
+  });
+
+  constructor({ authorizeConfig }: { authorizeConfig: AuthorizeProviderConfig.FullShape }) {
+    this.authorizeConfig = authorizeConfig;
+    this.customerProfileManager = new CustomerProfileManager({
+      authorizeConfig,
     });
   }
 
-  const paymentNonce = payloadDataParseResult.data;
+  private getWebhookResponseData(
+    response: GetHostedPaymentPageResponse,
+  ): TransactionInitializeSessionResponseData {
+    const dataParseResult = transactionInitializeSessionResponseDataSchema.safeParse({
+      formToken: response.token,
+      environment: this.authorizeConfig.environment,
+    });
 
-  const opaqueData = new ApiContracts.OpaqueDataType();
-  opaqueData.setDataDescriptor(paymentNonce.dataDescriptor);
-  opaqueData.setDataValue(paymentNonce.dataValue);
+    if (!dataParseResult.success) {
+      throw new TransactionInitializeUnexpectedDataError(
+        "`data` object has unexpected structure.",
+        {
+          cause: dataParseResult.error,
+        },
+      );
+    }
 
-  const payment = new ApiContracts.PaymentType();
-  payment.setOpaqueData(opaqueData);
+    return dataParseResult.data;
+  }
 
-  const transactionRequest = new ApiContracts.TransactionRequestType();
-  transactionRequest.setTransactionType(ApiContracts.TransactionTypeEnum.AUTHCAPTURETRANSACTION);
-  transactionRequest.setAmount(payload.action.amount);
-  transactionRequest.setPayment(payment);
+  private async buildTransactionFromPayload(
+    payload: TransactionInitializeSessionEventFragment,
+  ): Promise<AuthorizeNet.APIContracts.TransactionRequestType> {
+    const transactionRequest = new ApiContracts.TransactionRequestType();
+    transactionRequest.setTransactionType(ApiContracts.TransactionTypeEnum.AUTHONLYTRANSACTION);
+    transactionRequest.setAmount(payload.action.amount);
 
-  return transactionRequest;
-}
+    const userEmail = payload.sourceObject.userEmail;
 
-export class TransactionInitializeSessionService {
-  private client: AuthorizeNetClient;
+    if (!userEmail) {
+      this.logger.trace("No user email found in payload, skipping customerProfileId lookup.");
 
-  constructor(client: AuthorizeNetClient) {
-    this.client = client;
+      return transactionRequest;
+    }
+
+    const dataParseResult = transactionInitializeSessionPayloadDataSchema.safeParse(payload.data);
+
+    if (!dataParseResult.success) {
+      throw new TransactionInitializeUnexpectedDataError(
+        "`data` object has unexpected structure.",
+        {
+          cause: dataParseResult.error,
+        },
+      );
+    }
+
+    const { shouldCreateCustomerProfile } = dataParseResult.data;
+
+    if (!shouldCreateCustomerProfile) {
+      this.logger.trace("Skipping customerProfileId lookup.");
+
+      return transactionRequest;
+    }
+
+    this.logger.trace("Looking up customerProfileId.");
+
+    const customerProfileId = await this.customerProfileManager.getUserCustomerProfileId({
+      userEmail,
+    });
+
+    if (customerProfileId) {
+      this.logger.trace("Found customerProfileId, adding to transaction request.");
+
+      const profile = {
+        customerProfileId,
+      };
+
+      transactionRequest.setProfile(profile);
+    }
+
+    this.logger.trace("Finished building transaction request.");
+
+    return transactionRequest;
   }
 
   async execute(
     payload: TransactionInitializeSessionEventFragment,
-  ): Promise<SyncWebhookResponse<"TRANSACTION_INITIALIZE_SESSION">> {
-    const transaction = buildTransactionFromPayload(payload);
+  ): Promise<TransactionInitializeSessionResponse> {
+    this.logger.debug("Called execute");
 
-    try {
-      await this.client.createTransaction(transaction);
+    const transactionInput = await this.buildTransactionFromPayload(payload);
 
-      // todo: revisit response
-      return {
-        amount: payload.action.amount,
-        result: "AUTHORIZATION_SUCCESS",
-        data: {
-          foo: "bar",
-        },
-        message: "Success",
-        // externalUrl: "https://example.com",
-        // pspReference: "pspReference",
-        // time: "",
-      };
-    } catch (error) {
-      throw TransactionInitializeError.normalize(error);
-    }
+    const hostedPaymentPageClient = new HostedPaymentPageClient(this.authorizeConfig);
+
+    const hostedPaymentPageResponse =
+      await hostedPaymentPageClient.getHostedPaymentPageRequest(transactionInput);
+
+    this.logger.trace("Successfully called getHostedPaymentPageRequest");
+
+    const data = this.getWebhookResponseData(hostedPaymentPageResponse);
+
+    this.logger.trace("Successfully built webhook response data");
+
+    return {
+      amount: payload.action.amount,
+      result: "AUTHORIZATION_ACTION_REQUIRED",
+      data,
+    };
   }
 }

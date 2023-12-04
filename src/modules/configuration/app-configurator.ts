@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { AuthorizeProviderConfig } from "../authorize-net/authorize-net-config";
-import { ProvidersConfigurator } from "../provider/provider-configurator";
 import { ChannelConnectionConfigurator } from "../channel-connection/channel-connection-configurator";
 import { ChannelConnection } from "../channel-connection/channel-connection.schema";
+import { ProvidersConfigurator } from "../provider/provider-configurator";
 
 export namespace AppConfig {
   export const Schema = z.object({

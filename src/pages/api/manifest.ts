@@ -3,7 +3,7 @@ import { type AppManifest } from "@saleor/app-sdk/types";
 
 import packageJson from "../../../package.json";
 import { transactionInitializeSessionSyncWebhook } from "./webhooks/transaction-initialize-session";
-import { paymentGatewayInitializeSessionSyncWebhook } from "./webhooks/payment-gateway-initialize-session";
+import { transactionProcessSessionSyncWebhook } from "./webhooks/transaction-process-session";
 
 export default createManifestHandler({
   async manifestFactory(context) {
@@ -17,7 +17,7 @@ export default createManifestHandler({
       requiredSaleorVersion: ">=3.13",
       webhooks: [
         transactionInitializeSessionSyncWebhook.getWebhookManifest(context.appBaseUrl),
-        paymentGatewayInitializeSessionSyncWebhook.getWebhookManifest(context.appBaseUrl),
+        transactionProcessSessionSyncWebhook.getWebhookManifest(context.appBaseUrl),
       ],
       extensions: [
         /**

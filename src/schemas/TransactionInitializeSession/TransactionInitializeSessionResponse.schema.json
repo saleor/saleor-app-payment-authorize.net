@@ -4,13 +4,7 @@
   "properties": {
     "pspReference": { "type": "string" },
     "data": {
-      "type": "object",
-      "additionalProperties": true,
-      "properties": {
-        "paymentResponse": { "$ref": "definitions.json#/definitions/JSON" },
-        "errors": { "$ref": "definitions.json#/definitions/SyncWebhookAppErrors" }
-      },
-      "required": ["paymentResponse"]
+      "type": "object"
     },
     "result": { "$ref": "definitions.json#/definitions/TransactionSessionResult" },
     "amount": { "$ref": "definitions.json#/definitions/PositiveDecimal" },
