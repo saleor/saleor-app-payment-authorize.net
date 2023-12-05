@@ -20,5 +20,9 @@ fragment TransactionCancelationRequestedEvent on TransactionCancelationRequested
       key
       value
     }
+    authorizedAmount {
+      amount
+      currency
+    }
   }
 }

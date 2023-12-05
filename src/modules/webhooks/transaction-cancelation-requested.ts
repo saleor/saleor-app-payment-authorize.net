@@ -77,9 +77,12 @@ export class TransactionCancelationRequestedService {
 
     await createTransactionClient.createTransaction(transactionInput);
 
-    this.logger.trace("Successfully called createTransaction");
+    this.logger.debug("Successfully voided the transaction");
+
+    const amount = payload.transaction.authorizedAmount.amount;
 
     return {
+      amount,
       pspReference: authorizeTransactionId,
       result: "CANCEL_SUCCESS",
     };
