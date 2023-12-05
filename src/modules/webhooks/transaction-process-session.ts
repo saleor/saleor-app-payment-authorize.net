@@ -67,7 +67,7 @@ export class TransactionProcessSessionService {
     const { transactionStatus } = response.transaction;
 
     if (transactionStatus === "authorizedPendingCapture") {
-      return { result: "AUTHORIZATION_SUCCESS", actions: ["CANCEL"] };
+      return { result: "AUTHORIZATION_SUCCESS", actions: ["CANCEL", "REFUND"] };
     }
 
     if (transactionStatus === "FDSPendingReview") {

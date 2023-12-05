@@ -8,9 +8,11 @@ import { AppConfigResolver } from "../configuration/app-config-resolver";
 import { TransactionInitializeSessionService } from "./transaction-initialize-session";
 import { TransactionProcessSessionService } from "./transaction-process-session";
 import { TransactionCancelationRequestedService } from "./transaction-cancelation-requested";
+import { TransactionRefundRequestedService } from "./transaction-refund-requested";
 import { type TransactionInitializeSessionResponse } from "@/schemas/TransactionInitializeSession/TransactionInitializeSessionResponse.mjs";
 
 import {
+  type TransactionRefundRequestedEventFragment,
   type MetadataItem,
   type TransactionCancelationRequestedEventFragment,
   type TransactionInitializeSessionEventFragment,
@@ -20,6 +22,7 @@ import { type TransactionProcessSessionResponse } from "@/schemas/TransactionPro
 import { type TransactionCancelationRequestedResponse } from "@/schemas/TransactionCancelationRequested/TransactionCancelationRequestedResponse.mjs";
 import { logger } from "@/lib/logger";
 import { createServerClient } from "@/lib/create-graphq-client";
+import { type TransactionRefundRequestedResponse } from "@/schemas/TransactionRefundRequested/TransactionRefundRequestedResponse.mjs";
 
 export interface PaymentsWebhooks {
   transactionInitializeSession: (
@@ -73,6 +76,17 @@ export class WebhookManagerService implements PaymentsWebhooks {
     payload: TransactionCancelationRequestedEventFragment,
   ): Promise<TransactionCancelationRequestedResponse> {
     const service = new TransactionCancelationRequestedService({
+      authorizeConfig: this.authorizeConfig,
+      apiClient: this.apiClient,
+    });
+
+    return service.execute(payload);
+  }
+
+  async transactionRefundRequested(
+    payload: TransactionRefundRequestedEventFragment,
+  ): Promise<TransactionRefundRequestedResponse> {
+    const service = new TransactionRefundRequestedService({
       authorizeConfig: this.authorizeConfig,
       apiClient: this.apiClient,
     });

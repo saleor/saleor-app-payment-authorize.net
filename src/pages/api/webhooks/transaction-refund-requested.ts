@@ -2,13 +2,13 @@ import { SaleorSyncWebhook } from "@saleor/app-sdk/handlers/next";
 import * as Sentry from "@sentry/nextjs";
 import { createLogger } from "@/lib/logger";
 import { SynchronousWebhookResponseBuilder } from "@/lib/webhook-response-builder";
-import { TransactionCancelationRequestedError } from "@/modules/webhooks/transaction-cancelation-requested";
+import { TransactionRefundRequestedError } from "@/modules/webhooks/transaction-refund-requested";
 import { getWebhookManagerServiceFromCtx } from "@/modules/webhooks/webhook-manager-service";
 import { saleorApp } from "@/saleor-app";
-import { type TransactionCancelationRequestedResponse } from "@/schemas/TransactionCancelationRequested/TransactionCancelationRequestedResponse.mjs";
+import { type TransactionRefundRequestedResponse } from "@/schemas/TransactionRefundRequested/TransactionRefundRequestedResponse.mjs";
 import {
-  UntypedTransactionCancelationRequestedDocument,
-  type TransactionCancelationRequestedEventFragment,
+  UntypedTransactionRefundRequestedDocument,
+  type TransactionRefundRequestedEventFragment,
 } from "generated/graphql";
 
 export const config = {
@@ -17,25 +17,25 @@ export const config = {
   },
 };
 
-export const transactionCancelationRequestedSyncWebhook =
-  new SaleorSyncWebhook<TransactionCancelationRequestedEventFragment>({
-    name: "TransactionCancelationRequested",
+export const transactionRefundRequestedSyncWebhook =
+  new SaleorSyncWebhook<TransactionRefundRequestedEventFragment>({
+    name: "TransactionRefundRequested",
     apl: saleorApp.apl,
-    event: "TRANSACTION_CANCELATION_REQUESTED",
-    query: UntypedTransactionCancelationRequestedDocument,
-    webhookPath: "/api/webhooks/transaction-cancelation-requested",
+    event: "TRANSACTION_REFUND_REQUESTED",
+    query: UntypedTransactionRefundRequestedDocument,
+    webhookPath: "/api/webhooks/transaction-refund-requested",
   });
 
 const logger = createLogger({
-  name: "transactionCancelationRequestedSyncWebhook",
+  name: "transactionRefundRequestedSyncWebhook",
 });
 
-class WebhookResponseBuilder extends SynchronousWebhookResponseBuilder<TransactionCancelationRequestedResponse> {}
+class WebhookResponseBuilder extends SynchronousWebhookResponseBuilder<TransactionRefundRequestedResponse> {}
 
 /**
     @description This handler is called when a Saleor transaction is canceled. It changes the status of the transaction in Authorize to "void".
  */
-export default transactionCancelationRequestedSyncWebhook.createHandler(async (req, res, ctx) => {
+export default transactionRefundRequestedSyncWebhook.createHandler(async (req, res, ctx) => {
   const responseBuilder = new WebhookResponseBuilder(res);
   logger.debug({ payload: ctx.payload }, "handler called");
 
@@ -46,16 +46,16 @@ export default transactionCancelationRequestedSyncWebhook.createHandler(async (r
       authData: ctx.authData,
     });
 
-    const response = await webhookManagerService.transactionCancelationRequested(ctx.payload);
+    const response = await webhookManagerService.transactionRefundRequested(ctx.payload);
     // eslint-disable-next-line @saleor/saleor-app/logger-leak
     logger.info({ response }, "Responding with:");
     return responseBuilder.ok(response);
   } catch (error) {
     Sentry.captureException(error);
 
-    const normalizedError = TransactionCancelationRequestedError.normalize(error);
+    const normalizedError = TransactionRefundRequestedError.normalize(error);
     return responseBuilder.ok({
-      result: "CANCEL_FAILURE",
+      result: "REFUND_FAILURE",
       pspReference: "", // todo: add
       message: normalizedError.message,
     });
