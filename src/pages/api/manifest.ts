@@ -2,8 +2,10 @@ import { createManifestHandler } from "@saleor/app-sdk/handlers/next";
 import { type AppManifest } from "@saleor/app-sdk/types";
 
 import packageJson from "../../../package.json";
+import { transactionCancelationRequestedSyncWebhook } from "./webhooks/transaction-cancelation-requested";
 import { transactionInitializeSessionSyncWebhook } from "./webhooks/transaction-initialize-session";
 import { transactionProcessSessionSyncWebhook } from "./webhooks/transaction-process-session";
+import { transactionRefundRequestedSyncWebhook } from "./webhooks/transaction-refund-requested";
 
 export default createManifestHandler({
   async manifestFactory(context) {
@@ -18,6 +20,8 @@ export default createManifestHandler({
       webhooks: [
         transactionInitializeSessionSyncWebhook.getWebhookManifest(context.appBaseUrl),
         transactionProcessSessionSyncWebhook.getWebhookManifest(context.appBaseUrl),
+        transactionCancelationRequestedSyncWebhook.getWebhookManifest(context.appBaseUrl),
+        transactionRefundRequestedSyncWebhook.getWebhookManifest(context.appBaseUrl),
       ],
       extensions: [
         /**

@@ -14,6 +14,15 @@ mutation CreateCheckout($variantId: ID!) {
 				postalCode: "13126"
 				country: US
 			}
+			shippingAddress: {
+				firstName: "John"
+				lastName: "Doe"
+				streetAddress1: "813 Howard Street"
+				city: "Oswego"
+				countryArea: "NY"
+				postalCode: "13126"
+				country: US
+			}
 		}
 	) {
 		checkout {
@@ -21,6 +30,14 @@ mutation CreateCheckout($variantId: ID!) {
 			availablePaymentGateways {
 				id
 				name
+			}
+			shippingMethods {
+				id
+				name
+				price {
+					currency
+					amount
+				}
 			}
 		}
 	}

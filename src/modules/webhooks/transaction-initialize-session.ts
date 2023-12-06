@@ -55,26 +55,6 @@ export class TransactionInitializeSessionService {
     });
   }
 
-  private getWebhookResponseData(
-    response: GetHostedPaymentPageResponse,
-  ): TransactionInitializeSessionResponseData {
-    const dataParseResult = transactionInitializeSessionResponseDataSchema.safeParse({
-      formToken: response.token,
-      environment: this.authorizeConfig.environment,
-    });
-
-    if (!dataParseResult.success) {
-      throw new TransactionInitializeUnexpectedDataError(
-        "`data` object has unexpected structure.",
-        {
-          cause: dataParseResult.error,
-        },
-      );
-    }
-
-    return dataParseResult.data;
-  }
-
   private async buildTransactionFromPayload(
     payload: TransactionInitializeSessionEventFragment,
   ): Promise<AuthorizeNet.APIContracts.TransactionRequestType> {
@@ -130,10 +110,30 @@ export class TransactionInitializeSessionService {
     return transactionRequest;
   }
 
+  private mapResponseToWebhookData(
+    response: GetHostedPaymentPageResponse,
+  ): TransactionInitializeSessionResponseData {
+    const dataParseResult = transactionInitializeSessionResponseDataSchema.safeParse({
+      formToken: response.token,
+      environment: this.authorizeConfig.environment,
+    });
+
+    if (!dataParseResult.success) {
+      throw new TransactionInitializeUnexpectedDataError(
+        "`data` object has unexpected structure.",
+        {
+          cause: dataParseResult.error,
+        },
+      );
+    }
+
+    return dataParseResult.data;
+  }
+
   async execute(
     payload: TransactionInitializeSessionEventFragment,
   ): Promise<TransactionInitializeSessionResponse> {
-    this.logger.debug("Called execute");
+    this.logger.debug({ id: payload.transaction?.id }, "Called execute with");
 
     const transactionInput = await this.buildTransactionFromPayload(payload);
 
@@ -144,7 +144,7 @@ export class TransactionInitializeSessionService {
 
     this.logger.trace("Successfully called getHostedPaymentPageRequest");
 
-    const data = this.getWebhookResponseData(hostedPaymentPageResponse);
+    const data = this.mapResponseToWebhookData(hostedPaymentPageResponse);
 
     this.logger.trace("Successfully built webhook response data");
 

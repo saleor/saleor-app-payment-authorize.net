@@ -9,6 +9,9 @@ import {
 	CreateCheckoutMutation,
 	CreateCheckoutMutationVariables,
 	CreateCheckoutDocument,
+	UpdateDeliveryMutation,
+	UpdateDeliveryMutationVariables,
+	UpdateDeliveryDocument,
 } from "../../generated/graphql";
 
 export default function Page() {
@@ -18,6 +21,10 @@ export default function Page() {
 
 	const [createCheckout] = useMutation<CreateCheckoutMutation, CreateCheckoutMutationVariables>(
 		gql(CreateCheckoutDocument.toString()),
+	);
+
+	const [updateDelivery] = useMutation<UpdateDeliveryMutation, UpdateDeliveryMutationVariables>(
+		gql(UpdateDeliveryDocument.toString()),
 	);
 
 	const product = data?.products?.edges[0].node;
@@ -37,6 +44,14 @@ export default function Page() {
 		if (!response.data?.checkoutCreate?.checkout?.id) {
 			throw new Error("Failed to create checkout");
 		}
+
+		const methodId = response.data.checkoutCreate.checkout.shippingMethods?.[0].id;
+
+		if (!methodId) {
+			throw new Error("Failed to find shipping method for checkout");
+		}
+
+		await updateDelivery({ variables: { checkoutId: response.data.checkoutCreate.checkout.id, methodId } });
 
 		sessionStorage.setItem("checkoutId", response.data.checkoutCreate.checkout.id);
 		return router.push("/cart");

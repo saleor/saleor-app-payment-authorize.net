@@ -20,5 +20,9 @@ fragment TransactionRefundRequestedEvent on TransactionRefundRequested {
       }
       ...OrderOrCheckoutLines
     }
+    privateMetadata {
+      key
+      value
+    }
   }
 }

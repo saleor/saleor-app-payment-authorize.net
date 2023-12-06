@@ -1,12 +1,15 @@
 import { z } from "zod";
+import { type Client } from "urql";
 import { type AuthorizeProviderConfig } from "../authorize-net/authorize-net-config";
 import {
   TransactionDetailsClient,
   type GetTransactionDetailsResponse,
 } from "../authorize-net/client/transaction-details-client";
+import { TransactionMetadataManager } from "../configuration/transaction-metadata-manager";
 import { type TransactionProcessSessionEventFragment } from "generated/graphql";
 import { type TransactionProcessSessionResponse } from "@/schemas/TransactionProcessSession/TransactionProcessSessionResponse.mjs";
 import { BaseError } from "@/errors";
+import { createLogger } from "@/lib/logger";
 
 export const TransactionProcessError = BaseError.subclass("TransactionProcessError");
 
@@ -14,38 +17,61 @@ export const TransactionProcessUnexpectedDataError = TransactionProcessError.sub
   "TransactionProcessUnexpectedDataError",
 );
 
-type PossibleTransactionResult = Extract<
-  TransactionProcessSessionResponse["result"],
-  "AUTHORIZATION_ACTION_REQUIRED" | "AUTHORIZATION_REQUEST"
->;
-
 const transactionProcessPayloadDataSchema = z.object({
   transactionId: z.string().min(1),
 });
 
 export class TransactionProcessSessionService {
   private authorizeConfig: AuthorizeProviderConfig.FullShape;
+  private apiClient: Client;
 
-  constructor({ authorizeConfig }: { authorizeConfig: AuthorizeProviderConfig.FullShape }) {
+  private logger = createLogger({
+    name: "TransactionProcessSessionService",
+  });
+
+  constructor({
+    authorizeConfig,
+    apiClient,
+  }: {
+    authorizeConfig: AuthorizeProviderConfig.FullShape;
+    apiClient: Client;
+  }) {
     this.authorizeConfig = authorizeConfig;
+    this.apiClient = apiClient;
+  }
+
+  /**
+   * @description Saves Authorize transaction ID in metadata for future usage in other operations (e.g. `transaction-cancelation-requested`).
+   */
+  private async saveTransactionIdInMetadata({
+    saleorTransactionId,
+    authorizeTransactionId,
+  }: {
+    saleorTransactionId: string;
+    authorizeTransactionId: string;
+  }) {
+    const metadataManager = new TransactionMetadataManager({ apiClient: this.apiClient });
+    await metadataManager.saveTransactionId({
+      saleorTransactionId,
+      authorizeTransactionId,
+    });
   }
 
   /**
    * @description Calls the Authorize.net API to get the transaction status. Maps Authorize settlement state to Saleor transaction result.
-   * @param transactionId - Authorize.net transactionId
    * @returns Possible transaction result
    */
-  private mapTransactionResult(
-    transactionDetails: GetTransactionDetailsResponse,
-  ): PossibleTransactionResult {
-    const { transactionStatus } = transactionDetails.transaction;
+  private mapTransactionToWebhookResponse(
+    response: GetTransactionDetailsResponse,
+  ): Pick<TransactionProcessSessionResponse, "result" | "actions"> {
+    const { transactionStatus } = response.transaction;
 
     if (transactionStatus === "authorizedPendingCapture") {
-      return "AUTHORIZATION_REQUEST";
+      return { result: "AUTHORIZATION_SUCCESS", actions: ["CANCEL", "REFUND"] };
     }
 
     if (transactionStatus === "FDSPendingReview") {
-      return "AUTHORIZATION_ACTION_REQUIRED";
+      return { result: "AUTHORIZATION_REQUEST", actions: [] };
     }
 
     throw new TransactionProcessError(`Unexpected transaction status: ${transactionStatus}`);
@@ -54,6 +80,7 @@ export class TransactionProcessSessionService {
   async execute(
     payload: TransactionProcessSessionEventFragment,
   ): Promise<TransactionProcessSessionResponse> {
+    this.logger.debug({ id: payload.transaction?.id }, "Called execute with");
     const dataParseResult = transactionProcessPayloadDataSchema.safeParse(payload.data);
 
     if (!dataParseResult.success) {
@@ -64,16 +91,22 @@ export class TransactionProcessSessionService {
 
     const { transactionId } = dataParseResult.data;
 
+    await this.saveTransactionIdInMetadata({
+      saleorTransactionId: payload.transaction.id,
+      authorizeTransactionId: transactionId,
+    });
+
     const transactionDetailsClient = new TransactionDetailsClient(this.authorizeConfig);
     const details = await transactionDetailsClient.getTransactionDetailsRequest({
       transactionId,
     });
 
-    const result = this.mapTransactionResult(details);
+    const { result, actions } = this.mapTransactionToWebhookResponse(details);
 
     return {
       amount: details.transaction.authAmount,
       result,
+      actions,
       message: details.transaction.responseReasonDescription,
       pspReference: transactionId,
     };

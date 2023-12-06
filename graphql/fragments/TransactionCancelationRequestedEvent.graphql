@@ -16,5 +16,13 @@ fragment TransactionCancelationRequestedEvent on TransactionCancelationRequested
         slug
       }
     }
+    privateMetadata {
+      key
+      value
+    }
+    authorizedAmount {
+      amount
+      currency
+    }
   }
 }

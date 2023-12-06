@@ -8,8 +8,8 @@ import { env } from "@/lib/env.mjs";
 
 // copied from @saleor/apps/shared
 
-const UpdateAppMetadataMutation = gql`
-  mutation UpdateAppMetadata($id: ID!, $input: [MetadataInput!]!) {
+const UpdatePrivateMetadataMutation = gql`
+  mutation UpdatePrivateMetadata($id: ID!, $input: [MetadataInput!]!) {
     updatePrivateMetadata(id: $id, input: $input) {
       item {
         privateMetadata {
@@ -88,7 +88,7 @@ async function updatePrivateMetadata(
   appId: string,
 ) {
   const { error: mutationError, data: mutationData } = await client
-    .mutation<UpdateAppPrivateMetadataMutation>(UpdateAppMetadataMutation, {
+    .mutation<UpdateAppPrivateMetadataMutation>(UpdatePrivateMetadataMutation, {
       id: appId,
       input: metadata,
     })
