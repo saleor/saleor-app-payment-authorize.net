@@ -24,13 +24,39 @@ export const env = createEnv({
     UPSTASH_TOKEN: z.string().optional(),
     REST_APL_ENDPOINT: z.string().optional(),
     REST_APL_TOKEN: z.string().optional(),
-
-    AUTHORIZE_API_LOGIN_ID: z.string().min(1).optional(),
-    AUTHORIZE_TRANSACTION_KEY: z.string().min(1).optional(),
-    AUTHORIZE_PUBLIC_CLIENT_KEY: z.string().min(1).optional(),
+    AUTHORIZE_API_LOGIN_ID: z
+      .string()
+      .min(1)
+      .optional()
+      .describe("API Login ID. You can find it in Account → API Credentials & Keys."),
+    AUTHORIZE_TRANSACTION_KEY: z
+      .string()
+      .min(1)
+      .optional()
+      .describe(
+        "Transaction key needed to authenticate Authorize.net SDK. You can generate it in Account → API Credentials & Keys.",
+      ),
+    AUTHORIZE_PUBLIC_CLIENT_KEY: z
+      .string()
+      .min(1)
+      .optional()
+      .describe("Public client key. You can generate it in Account -> Manage Public Client Key"),
     AUTHORIZE_ENVIRONMENT: z.enum(["sandbox", "production"]).optional(),
-    AUTHORIZE_SALEOR_CHANNEL_SLUG: z.string().min(1).optional(),
-    AUTHORIZE_PAYMENT_FORM_URL: z.string().min(1).optional(),
+    AUTHORIZE_SALEOR_CHANNEL_SLUG: z
+      .string()
+      .min(1)
+      .optional()
+      .default("default-channel")
+      .describe(
+        "Saleor channel slug. When configuring the app through env, you can only use one channel.",
+      ),
+    AUTHORIZE_PAYMENT_FORM_URL: z
+      .string()
+      .min(1)
+      .optional()
+      .describe(
+        "Payment form URL. This is the address your front-end UI is running on. Make sure it is on https. Otherwise the Accept Hosted form will not work.",
+      ),
   },
 
   /*
