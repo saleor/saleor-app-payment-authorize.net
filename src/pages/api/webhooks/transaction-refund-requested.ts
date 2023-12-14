@@ -3,7 +3,8 @@ import * as Sentry from "@sentry/nextjs";
 import { createLogger } from "@/lib/logger";
 import { SynchronousWebhookResponseBuilder } from "@/lib/webhook-response-builder";
 import { TransactionRefundRequestedError } from "@/modules/webhooks/transaction-refund-requested";
-import { getWebhookManagerServiceFromCtx } from "@/modules/webhooks/webhook-manager-service";
+
+import { AppInitializer } from "@/app-initializer";
 import { saleorApp } from "@/saleor-app";
 import { type TransactionRefundRequestedResponse } from "@/schemas/TransactionRefundRequested/TransactionRefundRequestedResponse.mjs";
 import {
@@ -40,11 +41,15 @@ export default transactionRefundRequestedSyncWebhook.createHandler(async (req, r
   logger.debug({ payload: ctx.payload }, "handler called");
 
   try {
-    const webhookManagerService = await getWebhookManagerServiceFromCtx({
+    const appInitializer = new AppInitializer({
       appMetadata: ctx.payload.recipient?.privateMetadata ?? [],
       channelSlug: ctx.payload.transaction?.sourceObject?.channel.slug ?? "",
       authData: ctx.authData,
     });
+
+    const webhookManagerService = await appInitializer.createWebhookManagerService();
+
+    await appInitializer.registerAuthorizeWebhooks();
 
     const response = await webhookManagerService.transactionRefundRequested(ctx.payload);
     // eslint-disable-next-line @saleor/saleor-app/logger-leak

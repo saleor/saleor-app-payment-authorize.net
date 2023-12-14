@@ -3,13 +3,14 @@ import * as Sentry from "@sentry/nextjs";
 import { createLogger } from "@/lib/logger";
 import { SynchronousWebhookResponseBuilder } from "@/lib/webhook-response-builder";
 import { TransactionCancelationRequestedError } from "@/modules/webhooks/transaction-cancelation-requested";
-import { getWebhookManagerServiceFromCtx } from "@/modules/webhooks/webhook-manager-service";
+
 import { saleorApp } from "@/saleor-app";
 import { type TransactionCancelationRequestedResponse } from "@/schemas/TransactionCancelationRequested/TransactionCancelationRequestedResponse.mjs";
 import {
   UntypedTransactionCancelationRequestedDocument,
   type TransactionCancelationRequestedEventFragment,
 } from "generated/graphql";
+import { AppInitializer } from "@/app-initializer";
 
 export const config = {
   api: {
@@ -40,11 +41,15 @@ export default transactionCancelationRequestedSyncWebhook.createHandler(async (r
   logger.debug({ payload: ctx.payload }, "handler called");
 
   try {
-    const webhookManagerService = await getWebhookManagerServiceFromCtx({
+    const appInitializer = new AppInitializer({
       appMetadata: ctx.payload.recipient?.privateMetadata ?? [],
-      channelSlug: ctx.payload.transaction?.sourceObject?.channel.slug ?? "",
       authData: ctx.authData,
+      channelSlug: ctx.payload.transaction?.sourceObject?.channel.slug ?? "",
     });
+
+    const webhookManagerService = await appInitializer.createWebhookManagerService();
+
+    await appInitializer.registerAuthorizeWebhooks();
 
     const response = await webhookManagerService.transactionCancelationRequested(ctx.payload);
     // eslint-disable-next-line @saleor/saleor-app/logger-leak

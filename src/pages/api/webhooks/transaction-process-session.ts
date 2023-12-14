@@ -1,9 +1,9 @@
 import { SaleorSyncWebhook } from "@saleor/app-sdk/handlers/next";
 import * as Sentry from "@sentry/nextjs";
+import { AppInitializer } from "@/app-initializer";
 import { createLogger } from "@/lib/logger";
 import { SynchronousWebhookResponseBuilder } from "@/lib/webhook-response-builder";
 import { TransactionProcessError } from "@/modules/webhooks/transaction-process-session";
-import { getWebhookManagerServiceFromCtx } from "@/modules/webhooks/webhook-manager-service";
 import { saleorApp } from "@/saleor-app";
 import { type TransactionProcessSessionResponse } from "@/schemas/TransactionProcessSession/TransactionProcessSessionResponse.mjs";
 import {
@@ -52,11 +52,15 @@ export default transactionProcessSessionSyncWebhook.createHandler(async (req, re
   );
 
   try {
-    const webhookManagerService = await getWebhookManagerServiceFromCtx({
+    const appInitializer = new AppInitializer({
       appMetadata: ctx.payload.recipient?.privateMetadata ?? [],
       channelSlug: ctx.payload.sourceObject.channel.slug,
       authData: ctx.authData,
     });
+
+    const webhookManagerService = await appInitializer.createWebhookManagerService();
+
+    await appInitializer.registerAuthorizeWebhooks();
 
     const response = await webhookManagerService.transactionProcessSession(ctx.payload);
 
