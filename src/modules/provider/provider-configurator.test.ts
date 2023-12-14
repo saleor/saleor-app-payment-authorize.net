@@ -19,6 +19,7 @@ describe("ProvidersConfigurator", () => {
           environment: "sandbox",
           publicClientKey: "public-client-key",
           signatureKey: "signature-key",
+          webhooks: [],
         },
         {
           id: "2",
@@ -27,6 +28,7 @@ describe("ProvidersConfigurator", () => {
           environment: "sandbox",
           publicClientKey: "public-client-key",
           signatureKey: "signature-key-2",
+          webhooks: [],
         },
       ]);
 
@@ -38,6 +40,7 @@ describe("ProvidersConfigurator", () => {
           environment: "sandbox",
           publicClientKey: "public-client-key",
           signatureKey: "signature-key",
+          webhooks: [],
         },
         {
           id: "2",
@@ -46,6 +49,7 @@ describe("ProvidersConfigurator", () => {
           environment: "sandbox",
           publicClientKey: "public-client-key",
           signatureKey: "signature-key-2",
+          webhooks: [],
         },
       ]);
     });
@@ -61,6 +65,7 @@ describe("ProvidersConfigurator", () => {
           environment: "sandbox",
           publicClientKey: "public-client-key",
           signatureKey: "signature-key",
+          webhooks: [],
         },
       ]);
 
@@ -71,6 +76,7 @@ describe("ProvidersConfigurator", () => {
         environment: "sandbox",
         publicClientKey: "public-client-key",
         signatureKey: "signature-key",
+        webhooks: [],
       });
     });
 
@@ -83,6 +89,7 @@ describe("ProvidersConfigurator", () => {
           environment: "sandbox",
           publicClientKey: "public-client-key",
           signatureKey: "signature-key",
+          webhooks: [],
         },
       ]);
 
@@ -100,6 +107,7 @@ describe("ProvidersConfigurator", () => {
         environment: "sandbox",
         publicClientKey: "public-client-key",
         signatureKey: "signature-key",
+        webhooks: [],
       });
 
       expect(configurator.getProviders()).toEqual([
@@ -126,6 +134,7 @@ describe("ProvidersConfigurator", () => {
         environment: "sandbox",
         publicClientKey: "public-client-key",
         signatureKey: "signature-key",
+        webhooks: [],
       });
 
       expect(configurator.getProviders()).toEqual(rootData);
@@ -139,6 +148,7 @@ describe("ProvidersConfigurator", () => {
           environment: "sandbox",
           publicClientKey: "public-client-key",
           signatureKey: "signature-key",
+          webhooks: [],
         },
       ]);
 
@@ -149,6 +159,7 @@ describe("ProvidersConfigurator", () => {
         environment: "sandbox",
         publicClientKey: "new-public-client-key",
         signatureKey: "new-signature-key",
+        webhooks: [],
       });
 
       expect(configurator.getProviders()).toEqual([
@@ -174,6 +185,7 @@ describe("ProvidersConfigurator", () => {
           environment: "sandbox",
           publicClientKey: "public-client-key",
           signatureKey: "signature-key",
+          webhooks: [],
         },
         {
           id: "2",
@@ -182,6 +194,7 @@ describe("ProvidersConfigurator", () => {
           environment: "sandbox",
           publicClientKey: "public-client-key",
           signatureKey: "signature-key-2",
+          webhooks: [],
         },
       ]);
 
@@ -208,6 +221,7 @@ describe("ProvidersConfigurator", () => {
           environment: "sandbox",
           publicClientKey: "public-client-key",
           signatureKey: "signature-key",
+          webhooks: [],
         },
         {
           id: "2",
@@ -216,6 +230,7 @@ describe("ProvidersConfigurator", () => {
           environment: "sandbox",
           publicClientKey: "public-client-key",
           signatureKey: "signature-key-2",
+          webhooks: [],
         },
       ]);
 
