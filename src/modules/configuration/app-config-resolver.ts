@@ -32,6 +32,7 @@ export class AppConfigResolver {
       publicClientKey: env.AUTHORIZE_PUBLIC_CLIENT_KEY,
       transactionKey: env.AUTHORIZE_TRANSACTION_KEY,
       environment: env.AUTHORIZE_ENVIRONMENT,
+      signatureKey: env.AUTHORIZE_SIGNATURE_KEY,
     };
 
     const connectionInput = {

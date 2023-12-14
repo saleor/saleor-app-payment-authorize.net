@@ -13,6 +13,7 @@ describe("ActiveProviderResolver", () => {
             publicClientKey: "publicClientKey1",
             transactionKey: "transactionKey1",
             environment: "sandbox",
+            signatureKey: "signatureKey1",
           },
           {
             id: "provider2",
@@ -20,6 +21,7 @@ describe("ActiveProviderResolver", () => {
             publicClientKey: "publicClientKey2",
             transactionKey: "transactionKey2",
             environment: "sandbox",
+            signatureKey: "signatureKey2",
           },
         ],
         connections: [

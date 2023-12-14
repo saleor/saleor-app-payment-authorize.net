@@ -6,6 +6,7 @@ const inputSchema = z.object({
   apiLoginId: z.string().min(1),
   publicClientKey: z.string().min(1),
   transactionKey: z.string().min(1),
+  signatureKey: z.string().min(1),
   environment: authorizeEnvironmentSchema,
 });
 

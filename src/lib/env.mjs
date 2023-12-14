@@ -37,6 +37,13 @@ export const env = createEnv({
       .describe(
         "Transaction key needed to authenticate Authorize.net SDK. You can generate it in Account → API Credentials & Keys.",
       ),
+    AUTHORIZE_SIGNATURE_KEY: z
+      .string()
+      .min(1)
+      // .optional()
+      .describe(
+        "Signature Key needed to verify webhooks. You can generate it in Account → API Credentials & Keys.",
+      ),
     AUTHORIZE_PUBLIC_CLIENT_KEY: z
       .string()
       .min(1)
@@ -91,6 +98,7 @@ export const env = createEnv({
     REST_APL_TOKEN: process.env.REST_APL_TOKEN,
     AUTHORIZE_API_LOGIN_ID: process.env.AUTHORIZE_API_LOGIN_ID,
     AUTHORIZE_TRANSACTION_KEY: process.env.AUTHORIZE_TRANSACTION_KEY,
+    AUTHORIZE_SIGNATURE_KEY: process.env.AUTHORIZE_SIGNATURE_KEY,
     AUTHORIZE_PUBLIC_CLIENT_KEY: process.env.AUTHORIZE_PUBLIC_CLIENT_KEY,
     AUTHORIZE_ENVIRONMENT: process.env.AUTHORIZE_ENVIRONMENT,
     AUTHORIZE_SALEOR_CHANNEL_SLUG: process.env.AUTHORIZE_SALEOR_CHANNEL_SLUG,

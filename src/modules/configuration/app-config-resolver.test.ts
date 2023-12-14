@@ -19,6 +19,7 @@ const appConfig: AppConfig.Shape = {
       id: "provider1",
       publicClientKey: "publicClientKey1",
       transactionKey: "transactionKey1",
+      signatureKey: "signatureKey1",
     },
   ],
 };

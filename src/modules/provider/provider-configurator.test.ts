@@ -18,6 +18,7 @@ describe("ProvidersConfigurator", () => {
           transactionKey: "transaction-key",
           environment: "sandbox",
           publicClientKey: "public-client-key",
+          signatureKey: "signature-key",
         },
         {
           id: "2",
@@ -25,6 +26,7 @@ describe("ProvidersConfigurator", () => {
           transactionKey: "transaction-key",
           environment: "sandbox",
           publicClientKey: "public-client-key",
+          signatureKey: "signature-key-2",
         },
       ]);
 
@@ -35,6 +37,7 @@ describe("ProvidersConfigurator", () => {
           transactionKey: "transaction-key",
           environment: "sandbox",
           publicClientKey: "public-client-key",
+          signatureKey: "signature-key",
         },
         {
           id: "2",
@@ -42,6 +45,7 @@ describe("ProvidersConfigurator", () => {
           transactionKey: "transaction-key",
           environment: "sandbox",
           publicClientKey: "public-client-key",
+          signatureKey: "signature-key-2",
         },
       ]);
     });
@@ -56,6 +60,7 @@ describe("ProvidersConfigurator", () => {
           transactionKey: "transaction-key",
           environment: "sandbox",
           publicClientKey: "public-client-key",
+          signatureKey: "signature-key",
         },
       ]);
 
@@ -65,6 +70,7 @@ describe("ProvidersConfigurator", () => {
         transactionKey: "transaction-key",
         environment: "sandbox",
         publicClientKey: "public-client-key",
+        signatureKey: "signature-key",
       });
     });
 
@@ -76,6 +82,7 @@ describe("ProvidersConfigurator", () => {
           transactionKey: "transaction-key",
           environment: "sandbox",
           publicClientKey: "public-client-key",
+          signatureKey: "signature-key",
         },
       ]);
 
@@ -92,6 +99,7 @@ describe("ProvidersConfigurator", () => {
         transactionKey: "transaction-key",
         environment: "sandbox",
         publicClientKey: "public-client-key",
+        signatureKey: "signature-key",
       });
 
       expect(configurator.getProviders()).toEqual([
@@ -101,6 +109,7 @@ describe("ProvidersConfigurator", () => {
           transactionKey: "transaction-key",
           environment: "sandbox",
           publicClientKey: "public-client-key",
+          signatureKey: "signature-key",
         },
       ]);
     });
@@ -116,6 +125,7 @@ describe("ProvidersConfigurator", () => {
         transactionKey: "transaction-key",
         environment: "sandbox",
         publicClientKey: "public-client-key",
+        signatureKey: "signature-key",
       });
 
       expect(configurator.getProviders()).toEqual(rootData);
@@ -128,6 +138,7 @@ describe("ProvidersConfigurator", () => {
           transactionKey: "transaction-key",
           environment: "sandbox",
           publicClientKey: "public-client-key",
+          signatureKey: "signature-key",
         },
       ]);
 
@@ -137,6 +148,7 @@ describe("ProvidersConfigurator", () => {
         transactionKey: "new-transaction-key",
         environment: "sandbox",
         publicClientKey: "new-public-client-key",
+        signatureKey: "new-signature-key",
       });
 
       expect(configurator.getProviders()).toEqual([
@@ -146,6 +158,7 @@ describe("ProvidersConfigurator", () => {
           transactionKey: "new-transaction-key",
           environment: "sandbox",
           publicClientKey: "new-public-client-key",
+          signatureKey: "new-signature-key",
         },
       ]);
     });
@@ -160,6 +173,7 @@ describe("ProvidersConfigurator", () => {
           transactionKey: "transaction-key",
           environment: "sandbox",
           publicClientKey: "public-client-key",
+          signatureKey: "signature-key",
         },
         {
           id: "2",
@@ -167,6 +181,7 @@ describe("ProvidersConfigurator", () => {
           transactionKey: "transaction-key",
           environment: "sandbox",
           publicClientKey: "public-client-key",
+          signatureKey: "signature-key-2",
         },
       ]);
 
@@ -179,6 +194,7 @@ describe("ProvidersConfigurator", () => {
           transactionKey: "transaction-key",
           environment: "sandbox",
           publicClientKey: "public-client-key",
+          signatureKey: "signature-key-2",
         },
       ]);
     });
@@ -191,6 +207,7 @@ describe("ProvidersConfigurator", () => {
           transactionKey: "transaction-key",
           environment: "sandbox",
           publicClientKey: "public-client-key",
+          signatureKey: "signature-key",
         },
         {
           id: "2",
@@ -198,6 +215,7 @@ describe("ProvidersConfigurator", () => {
           transactionKey: "transaction-key",
           environment: "sandbox",
           publicClientKey: "public-client-key",
+          signatureKey: "signature-key-2",
         },
       ]);
 
@@ -210,6 +228,7 @@ describe("ProvidersConfigurator", () => {
           transactionKey: "transaction-key",
           environment: "sandbox",
           publicClientKey: "public-client-key",
+          signatureKey: "signature-key",
         },
         {
           id: "2",
@@ -217,6 +236,7 @@ describe("ProvidersConfigurator", () => {
           transactionKey: "transaction-key",
           environment: "sandbox",
           publicClientKey: "public-client-key",
+          signatureKey: "signature-key-2",
         },
       ]);
     });
