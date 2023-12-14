@@ -12,7 +12,7 @@
   },
   "type": "module",
   "scripts": {
-    "dev": "pnpm generate && next dev",
+    "dev": "pnpm generate && next dev --port 8000",
     "build": "pnpm generate && next build",
     "deploy": "tsx ./src/deploy.ts",
     "start": "next start",
