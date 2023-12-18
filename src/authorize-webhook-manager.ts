@@ -7,6 +7,8 @@ import {
 import { AppConfigurator, type AppConfig } from "./modules/configuration/app-configurator";
 import { resolveAuthorizeConfigFromAppConfig } from "./modules/configuration/authorize-config-resolver";
 import { AppConfigMetadataManager } from "./modules/configuration/app-config-metadata-manager";
+import { env } from "./lib/env.mjs";
+import { isDevelopment } from "./lib/isEnv";
 import { createLogger } from "@/lib/logger";
 
 export class AuthorizeWebhookManager {
@@ -16,7 +18,7 @@ export class AuthorizeWebhookManager {
   private authorizeConfig: AuthorizeProviderConfig.FullShape;
 
   private logger = createLogger({
-    name: "AppWebhookInitializer",
+    name: "AuthorizeWebhookManager",
   });
 
   constructor({
@@ -51,6 +53,9 @@ export class AuthorizeWebhookManager {
   }
 
   public async register() {
+    this.logger.debug({
+      authorizeConfig: this.authorizeConfig,
+    });
     if (this.authorizeConfig.webhook) {
       this.logger.info("Webhook already registered");
       return;
@@ -59,17 +64,17 @@ export class AuthorizeWebhookManager {
     this.logger.debug("Registering webhook...");
 
     const webhooksClient = new AuthorizeNetWebhooksClient(this.authorizeConfig);
+    const appUrl = isDevelopment() ? env.LOCAL_APP_URL : `https://${env.VERCEL_URL}`;
     const webhookParams: AuthorizeNetWebhook = {
-      name: `Saleor ${this.authData.domain} webhook`,
       eventTypes: ["net.authorize.payment.authcapture.created"],
       status: "active",
-      url: `${this.authData.saleorApiUrl}/api/webhooks/authorize`,
+      url: `${appUrl}/api/webhooks/authorize`,
     };
 
     const webhook = await webhooksClient.registerWebhook(webhookParams);
 
     await this.updateMetadataWithWebhook(webhook);
 
-    this.logger.info("Webhook registered");
+    this.logger.info("Webhook registered successfully");
   }
 }

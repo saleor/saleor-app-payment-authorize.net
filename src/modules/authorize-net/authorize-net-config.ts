@@ -12,7 +12,6 @@ const authorizeNetEventSchema = z.enum([
 ]);
 
 export const webhookSchema = z.object({
-  name: z.string(),
   url: z.string(),
   eventTypes: z.array(authorizeNetEventSchema),
   status: z.enum(["active", "inactive"]),

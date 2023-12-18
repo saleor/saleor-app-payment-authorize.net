@@ -1,11 +1,10 @@
-import crypto from "crypto";
 import { z } from "zod";
-import { AuthorizeNetInvalidWebhookSignatureError } from "../authorize-net-error";
 import { createAuthorizeWebhooksFetch } from "./create-authorize-webhooks-fetch";
 import {
   webhookSchema,
   type AuthorizeProviderConfig,
 } from "@/modules/authorize-net/authorize-net-config";
+import { createLogger } from "@/lib/logger";
 
 export type AuthorizeNetWebhook = z.infer<typeof webhookSchema>;
 
@@ -28,36 +27,13 @@ const listWebhooksResponseSchema = z.array(webhookResponseSchema);
  */
 export class AuthorizeNetWebhooksClient {
   private fetch: ReturnType<typeof createAuthorizeWebhooksFetch>;
-  private authorizeSignature = "X-ANET-Signature";
 
-  constructor(private config: AuthorizeProviderConfig.FullShape) {
+  private logger = createLogger({
+    name: "AuthorizeNetWebhooksClient",
+  });
+
+  constructor(config: AuthorizeProviderConfig.FullShape) {
     this.fetch = createAuthorizeWebhooksFetch(config);
-  }
-
-  /**
-   * @see https://developer.authorize.net/api/reference/features/webhooks.html#Verifying_the_Notification
-   */
-  private async verifyAuthorizeWebhook(response: Response) {
-    const headers = response.headers;
-    const xAnetSignature = headers.get(this.authorizeSignature);
-
-    if (!xAnetSignature) {
-      throw new AuthorizeNetInvalidWebhookSignatureError(
-        `Missing ${this.authorizeSignature} header`,
-      );
-    }
-
-    const body = await response.text();
-    const hash = crypto
-      .createHmac("sha512", this.config.signatureKey)
-      .update(body)
-      .digest("base64");
-
-    const validSignature = `sha512=${hash}`;
-
-    if (validSignature !== xAnetSignature) {
-      throw new AuthorizeNetInvalidWebhookSignatureError("Invalid signature");
-    }
   }
 
   async registerWebhook(params: AuthorizeNetWebhook) {
@@ -66,9 +42,8 @@ export class AuthorizeNetWebhooksClient {
       body: params,
     });
 
-    await this.verifyAuthorizeWebhook(response);
-
     const result = await response.json();
+
     const parsedResult = webhookResponseSchema.parse(result);
 
     return parsedResult;
@@ -78,8 +53,6 @@ export class AuthorizeNetWebhooksClient {
     const response = await this.fetch({
       method: "GET",
     });
-
-    await this.verifyAuthorizeWebhook(response);
 
     const result = await response.json();
     const parsedResult = listWebhooksResponseSchema.parse(result);

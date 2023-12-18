@@ -1,3 +1,4 @@
+import { createLogger } from "@/lib/logger";
 import { type AuthorizeProviderConfig } from "@/modules/authorize-net/authorize-net-config";
 
 /**
@@ -19,18 +20,28 @@ type AuthorizeWebhooksFetchParams = {
 
 export function createAuthorizeWebhooksFetch(config: AuthorizeProviderConfig.FullShape) {
   const authenticationKey = createAuthorizeAuthenticationKey(config);
+
   const url =
     config.environment === "sandbox"
       ? "https://apitest.authorize.net/rest/v1/webhooks"
       : "https://api.authorize.net/rest/v1/webhooks";
 
-  return ({ path, body }: AuthorizeWebhooksFetchParams) => {
+  const logger = createLogger({
+    name: "AuthorizeWebhooksFetch",
+  });
+
+  return ({ path, body, method }: AuthorizeWebhooksFetchParams) => {
     const apiUrl = path ? `${url}/${path}` : url;
-    return fetch(apiUrl, {
+    const options = {
+      method,
       headers: {
+        "Content-Type": "application/json",
         Authorization: `Basic ${authenticationKey}`,
       },
       body: JSON.stringify(body),
-    });
+    };
+
+    logger.trace({ apiUrl, options: { method, body } }, "Calling Authorize.net webhooks API");
+    return fetch(apiUrl, options);
   };
 }

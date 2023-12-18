@@ -34,6 +34,7 @@ class AppConfigResolver {
       transactionKey: env.AUTHORIZE_TRANSACTION_KEY,
       environment: env.AUTHORIZE_ENVIRONMENT,
       signatureKey: env.AUTHORIZE_SIGNATURE_KEY,
+      webhook: null,
     };
 
     const connectionInput = {
