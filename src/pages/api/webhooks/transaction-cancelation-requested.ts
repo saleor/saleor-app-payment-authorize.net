@@ -13,7 +13,7 @@ import {
   UntypedTransactionCancelationRequestedDocument,
   type TransactionCancelationRequestedEventFragment,
 } from "generated/graphql";
-import { AuthorizeWebhookManager } from "@/authorize-webhook-initializer";
+import { AuthorizeWebhookManager } from "@/authorize-webhook-manager";
 
 export const config = {
   api: {
