@@ -31,7 +31,7 @@ export interface PaymentsWebhooks {
   ) => Promise<TransactionCancelationRequestedResponse>;
 }
 
-export class WebhookManagerService implements PaymentsWebhooks {
+export class AppWebhookManager implements PaymentsWebhooks {
   private authorizeConfig: AuthorizeProviderConfig.FullShape;
   private apiClient: Client;
 
@@ -90,7 +90,7 @@ export class WebhookManagerService implements PaymentsWebhooks {
   }
 }
 
-export async function createWebhookManagerService({
+export async function createAppWebhookManager({
   authData,
   authorizeConfig,
 }: {
@@ -98,10 +98,10 @@ export async function createWebhookManagerService({
   authorizeConfig: AuthorizeProviderConfig.FullShape;
 }) {
   const apiClient = createServerClient(authData.saleorApiUrl, authData.token);
-  const webhookManagerService = new WebhookManagerService({
+  const appWebhookManager = new AppWebhookManager({
     authorizeConfig,
     apiClient,
   });
 
-  return webhookManagerService;
+  return appWebhookManager;
 }

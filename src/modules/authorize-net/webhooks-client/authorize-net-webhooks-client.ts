@@ -7,7 +7,7 @@ import {
   type AuthorizeProviderConfig,
 } from "@/modules/authorize-net/authorize-net-config";
 
-export type AuthorizeNetNewWebhookParams = z.infer<typeof webhookSchema>;
+export type AuthorizeNetWebhook = z.infer<typeof webhookSchema>;
 
 const webhookResponseSchema = z
   .object({
@@ -60,7 +60,7 @@ export class AuthorizeNetWebhooksClient {
     }
   }
 
-  async registerWebhook(params: AuthorizeNetNewWebhookParams) {
+  async registerWebhook(params: AuthorizeNetWebhook) {
     const response = await this.fetch({
       method: "POST",
       body: params,

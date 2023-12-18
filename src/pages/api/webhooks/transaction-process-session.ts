@@ -1,11 +1,12 @@
 import { SaleorSyncWebhook } from "@saleor/app-sdk/handlers/next";
 import * as Sentry from "@sentry/nextjs";
-import { resolveAuthorizeConfig } from "@/authorize-provider-resolver";
-import { initializeAuthorizeWebhook } from "@/authorize-webhook-initializer";
+import { AuthorizeWebhookManager } from "@/authorize-webhook-initializer";
 import { createLogger } from "@/lib/logger";
 import { SynchronousWebhookResponseBuilder } from "@/lib/webhook-response-builder";
+import { resolveAppConfigFromCtx } from "@/modules/configuration/app-config-resolver";
+import { resolveAuthorizeConfigFromAppConfig } from "@/modules/configuration/authorize-config-resolver";
 import { TransactionProcessError } from "@/modules/webhooks/transaction-process-session";
-import { createWebhookManagerService } from "@/modules/webhooks/webhook-manager-service";
+import { createAppWebhookManager } from "@/modules/webhooks/webhook-manager-service";
 import { saleorApp } from "@/saleor-app";
 import { type TransactionProcessSessionResponse } from "@/schemas/TransactionProcessSession/TransactionProcessSessionResponse.mjs";
 import {
@@ -44,34 +45,43 @@ class WebhookResponseBuilder extends SynchronousWebhookResponseBuilder<Transacti
 export default transactionProcessSessionSyncWebhook.createHandler(
   async (req, res, { authData, ...ctx }) => {
     const responseBuilder = new WebhookResponseBuilder(res);
+    const channelSlug = ctx.payload.sourceObject.channel.slug;
+
     // todo: add more extensive logs
     logger.debug(
       {
         action: ctx.payload.action,
-        channelSlug: ctx.payload.sourceObject.channel.slug,
+        channelSlug,
         transaction: ctx.payload.transaction,
       },
       "Handler called",
     );
 
     try {
-      const authorizeConfig = await resolveAuthorizeConfig({
+      const appConfig = await resolveAppConfigFromCtx({
+        authData,
         appMetadata: ctx.payload.recipient?.privateMetadata ?? [],
-        channelSlug: ctx.payload.sourceObject.channel.slug,
-        authData,
       });
 
-      await initializeAuthorizeWebhook({
+      const authorizeConfig = resolveAuthorizeConfigFromAppConfig({
+        appConfig,
+        channelSlug,
+      });
+
+      const authorizeWebhookManager = new AuthorizeWebhookManager({
+        authData,
+        appConfig,
+        channelSlug,
+      });
+
+      await authorizeWebhookManager.register();
+
+      const appWebhookManager = await createAppWebhookManager({
         authData,
         authorizeConfig,
       });
 
-      const webhookManagerService = await createWebhookManagerService({
-        authData,
-        authorizeConfig,
-      });
-
-      const response = await webhookManagerService.transactionProcessSession(ctx.payload);
+      const response = await appWebhookManager.transactionProcessSession(ctx.payload);
 
       // eslint-disable-next-line @saleor/saleor-app/logger-leak
       logger.info({ response }, "Responding with:");

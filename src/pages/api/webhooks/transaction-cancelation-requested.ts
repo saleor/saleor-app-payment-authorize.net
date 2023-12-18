@@ -4,15 +4,16 @@ import { createLogger } from "@/lib/logger";
 import { SynchronousWebhookResponseBuilder } from "@/lib/webhook-response-builder";
 import { TransactionCancelationRequestedError } from "@/modules/webhooks/transaction-cancelation-requested";
 
-import { resolveAuthorizeConfig } from "@/authorize-provider-resolver";
-import { initializeAuthorizeWebhook } from "@/authorize-webhook-initializer";
-import { createWebhookManagerService } from "@/modules/webhooks/webhook-manager-service";
+import { resolveAppConfigFromCtx } from "@/modules/configuration/app-config-resolver";
+import { resolveAuthorizeConfigFromAppConfig } from "@/modules/configuration/authorize-config-resolver";
+import { createAppWebhookManager } from "@/modules/webhooks/webhook-manager-service";
 import { saleorApp } from "@/saleor-app";
 import { type TransactionCancelationRequestedResponse } from "@/schemas/TransactionCancelationRequested/TransactionCancelationRequestedResponse.mjs";
 import {
   UntypedTransactionCancelationRequestedDocument,
   type TransactionCancelationRequestedEventFragment,
 } from "generated/graphql";
+import { AuthorizeWebhookManager } from "@/authorize-webhook-initializer";
 
 export const config = {
   api: {
@@ -44,23 +45,31 @@ export default transactionCancelationRequestedSyncWebhook.createHandler(
     logger.debug({ payload: ctx.payload }, "handler called");
 
     try {
-      const authorizeConfig = await resolveAuthorizeConfig({
+      const channelSlug = ctx.payload.transaction?.sourceObject?.channel.slug ?? "";
+      const appConfig = await resolveAppConfigFromCtx({
         authData,
         appMetadata: ctx.payload.recipient?.privateMetadata ?? [],
-        channelSlug: ctx.payload.transaction?.sourceObject?.channel.slug ?? "",
       });
 
-      await initializeAuthorizeWebhook({
+      const authorizeConfig = resolveAuthorizeConfigFromAppConfig({
+        appConfig,
+        channelSlug,
+      });
+
+      const authorizeWebhookManager = new AuthorizeWebhookManager({
+        authData,
+        appConfig,
+        channelSlug,
+      });
+
+      await authorizeWebhookManager.register();
+
+      const appWebhookManager = await createAppWebhookManager({
         authData,
         authorizeConfig,
       });
 
-      const webhookManagerService = await createWebhookManagerService({
-        authData,
-        authorizeConfig,
-      });
-
-      const response = await webhookManagerService.transactionCancelationRequested(ctx.payload);
+      const response = await appWebhookManager.transactionCancelationRequested(ctx.payload);
       // eslint-disable-next-line @saleor/saleor-app/logger-leak
       logger.info({ response }, "Responding with:");
       return responseBuilder.ok(response);
