@@ -7,7 +7,7 @@ import {
   type AuthorizeProviderConfig,
 } from "@/modules/authorize-net/authorize-net-config";
 
-type AuthorizeNetNewWebhookParams = z.infer<typeof webhookSchema>;
+export type AuthorizeNetNewWebhookParams = z.infer<typeof webhookSchema>;
 
 const webhookResponseSchema = z
   .object({

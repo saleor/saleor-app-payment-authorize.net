@@ -2,7 +2,14 @@ import { z } from "zod";
 
 export const authorizeEnvironmentSchema = z.enum(["sandbox", "production"]);
 
-const authorizeNetEventSchema = z.enum(["net.authorize.payment.authcapture.created"]); // todo: add more
+const authorizeNetEventSchema = z.enum([
+  "net.authorize.payment.authorization.created",
+  "net.authorize.payment.authcapture.created",
+  "net.authorize.payment.capture.created",
+  "net.authorize.payment.refund.created",
+  "net.authorize.payment.priorAuthCapture.created",
+  "net.authorize.payment.void.create",
+]);
 
 export const webhookSchema = z.object({
   name: z.string(),
@@ -17,7 +24,7 @@ const inputSchema = z.object({
   transactionKey: z.string().min(1),
   signatureKey: z.string().min(1),
   environment: authorizeEnvironmentSchema,
-  webhooks: z.array(webhookSchema),
+  webhook: webhookSchema.nullable(),
 });
 
 const fullSchema = inputSchema.extend({

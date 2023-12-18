@@ -19,7 +19,7 @@ describe("ProvidersConfigurator", () => {
           environment: "sandbox",
           publicClientKey: "public-client-key",
           signatureKey: "signature-key",
-          webhooks: [],
+          webhook: null,
         },
         {
           id: "2",
@@ -28,7 +28,7 @@ describe("ProvidersConfigurator", () => {
           environment: "sandbox",
           publicClientKey: "public-client-key",
           signatureKey: "signature-key-2",
-          webhooks: [],
+          webhook: null,
         },
       ]);
 
@@ -40,7 +40,7 @@ describe("ProvidersConfigurator", () => {
           environment: "sandbox",
           publicClientKey: "public-client-key",
           signatureKey: "signature-key",
-          webhooks: [],
+          webhook: null,
         },
         {
           id: "2",
@@ -49,7 +49,7 @@ describe("ProvidersConfigurator", () => {
           environment: "sandbox",
           publicClientKey: "public-client-key",
           signatureKey: "signature-key-2",
-          webhooks: [],
+          webhook: null,
         },
       ]);
     });
@@ -65,7 +65,7 @@ describe("ProvidersConfigurator", () => {
           environment: "sandbox",
           publicClientKey: "public-client-key",
           signatureKey: "signature-key",
-          webhooks: [],
+          webhook: null,
         },
       ]);
 
@@ -76,7 +76,7 @@ describe("ProvidersConfigurator", () => {
         environment: "sandbox",
         publicClientKey: "public-client-key",
         signatureKey: "signature-key",
-        webhooks: [],
+        webhook: null,
       });
     });
 
@@ -89,7 +89,7 @@ describe("ProvidersConfigurator", () => {
           environment: "sandbox",
           publicClientKey: "public-client-key",
           signatureKey: "signature-key",
-          webhooks: [],
+          webhook: null,
         },
       ]);
 
@@ -107,7 +107,7 @@ describe("ProvidersConfigurator", () => {
         environment: "sandbox",
         publicClientKey: "public-client-key",
         signatureKey: "signature-key",
-        webhooks: [],
+        webhook: null,
       });
 
       expect(configurator.getProviders()).toEqual([
@@ -134,7 +134,7 @@ describe("ProvidersConfigurator", () => {
         environment: "sandbox",
         publicClientKey: "public-client-key",
         signatureKey: "signature-key",
-        webhooks: [],
+        webhook: null,
       });
 
       expect(configurator.getProviders()).toEqual(rootData);
@@ -148,7 +148,7 @@ describe("ProvidersConfigurator", () => {
           environment: "sandbox",
           publicClientKey: "public-client-key",
           signatureKey: "signature-key",
-          webhooks: [],
+          webhook: null,
         },
       ]);
 
@@ -159,7 +159,7 @@ describe("ProvidersConfigurator", () => {
         environment: "sandbox",
         publicClientKey: "new-public-client-key",
         signatureKey: "new-signature-key",
-        webhooks: [],
+        webhook: null,
       });
 
       expect(configurator.getProviders()).toEqual([
@@ -185,7 +185,7 @@ describe("ProvidersConfigurator", () => {
           environment: "sandbox",
           publicClientKey: "public-client-key",
           signatureKey: "signature-key",
-          webhooks: [],
+          webhook: null,
         },
         {
           id: "2",
@@ -194,7 +194,7 @@ describe("ProvidersConfigurator", () => {
           environment: "sandbox",
           publicClientKey: "public-client-key",
           signatureKey: "signature-key-2",
-          webhooks: [],
+          webhook: null,
         },
       ]);
 
@@ -221,7 +221,7 @@ describe("ProvidersConfigurator", () => {
           environment: "sandbox",
           publicClientKey: "public-client-key",
           signatureKey: "signature-key",
-          webhooks: [],
+          webhook: null,
         },
         {
           id: "2",
@@ -230,7 +230,7 @@ describe("ProvidersConfigurator", () => {
           environment: "sandbox",
           publicClientKey: "public-client-key",
           signatureKey: "signature-key-2",
-          webhooks: [],
+          webhook: null,
         },
       ]);
 

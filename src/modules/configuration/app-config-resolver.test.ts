@@ -20,7 +20,7 @@ const appConfig: AppConfig.Shape = {
       publicClientKey: "publicClientKey1",
       transactionKey: "transactionKey1",
       signatureKey: "signatureKey1",
-      webhooks: [],
+      webhook: null,
     },
   ],
 };

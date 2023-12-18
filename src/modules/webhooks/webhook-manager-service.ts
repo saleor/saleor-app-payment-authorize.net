@@ -1,4 +1,5 @@
 import { type Client } from "urql";
+import { type AuthData } from "@saleor/app-sdk/APL";
 import { type AuthorizeProviderConfig } from "../authorize-net/authorize-net-config";
 
 import { TransactionCancelationRequestedService } from "./transaction-cancelation-requested";
@@ -16,6 +17,7 @@ import {
   type TransactionProcessSessionEventFragment,
   type TransactionRefundRequestedEventFragment,
 } from "generated/graphql";
+import { createServerClient } from "@/lib/create-graphq-client";
 
 export interface PaymentsWebhooks {
   transactionInitializeSession: (
@@ -86,4 +88,20 @@ export class WebhookManagerService implements PaymentsWebhooks {
 
     return service.execute(payload);
   }
+}
+
+export async function createWebhookManagerService({
+  authData,
+  authorizeConfig,
+}: {
+  authData: AuthData;
+  authorizeConfig: AuthorizeProviderConfig.FullShape;
+}) {
+  const apiClient = createServerClient(authData.saleorApiUrl, authData.token);
+  const webhookManagerService = new WebhookManagerService({
+    authorizeConfig,
+    apiClient,
+  });
+
+  return webhookManagerService;
 }

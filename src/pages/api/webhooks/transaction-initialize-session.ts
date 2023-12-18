@@ -1,9 +1,11 @@
 import { SaleorSyncWebhook } from "@saleor/app-sdk/handlers/next";
 import * as Sentry from "@sentry/nextjs";
-import { AppInitializer } from "@/app-initializer";
+import { resolveAuthorizeConfig } from "@/authorize-provider-resolver";
+import { initializeAuthorizeWebhook } from "@/authorize-webhook-initializer";
 import { createLogger } from "@/lib/logger";
 import { SynchronousWebhookResponseBuilder } from "@/lib/webhook-response-builder";
 import { TransactionInitializeError } from "@/modules/webhooks/transaction-initialize-session";
+import { createWebhookManagerService } from "@/modules/webhooks/webhook-manager-service";
 import { saleorApp } from "@/saleor-app";
 import { type TransactionInitializeSessionResponse } from "@/schemas/TransactionInitializeSession/TransactionInitializeSessionResponse.mjs";
 import {
@@ -39,39 +41,47 @@ class WebhookResponseBuilder extends SynchronousWebhookResponseBuilder<Transacti
  * 2. Call Authorize.net's `getHostedPaymentPageRequest` to get `formToken` needed to display the Accept Hosted form.
  * 3. Initializes the Saleor transaction by returning "AUTHORIZATION_ACTION_REQUIRED" result if everything was successful.
  */
-export default transactionInitializeSessionSyncWebhook.createHandler(async (req, res, ctx) => {
-  const responseBuilder = new WebhookResponseBuilder(res);
-  logger.info({ action: ctx.payload.action }, "called with:");
+export default transactionInitializeSessionSyncWebhook.createHandler(
+  async (req, res, { authData, ...ctx }) => {
+    const responseBuilder = new WebhookResponseBuilder(res);
+    logger.info({ action: ctx.payload.action }, "called with:");
 
-  try {
-    const appInitializer = new AppInitializer({
-      appMetadata: ctx.payload.recipient?.privateMetadata ?? [],
-      channelSlug: ctx.payload.sourceObject.channel.slug,
-      authData: ctx.authData,
-    });
+    try {
+      const authorizeConfig = await resolveAuthorizeConfig({
+        appMetadata: ctx.payload.recipient?.privateMetadata ?? [],
+        channelSlug: ctx.payload.sourceObject.channel.slug,
+        authData,
+      });
 
-    const webhookManagerService = await appInitializer.createWebhookManagerService();
+      await initializeAuthorizeWebhook({
+        authData,
+        authorizeConfig,
+      });
 
-    await appInitializer.registerAuthorizeWebhooks();
+      const webhookManagerService = await createWebhookManagerService({
+        authData,
+        authorizeConfig,
+      });
 
-    const response = await webhookManagerService.transactionInitializeSession(ctx.payload);
+      const response = await webhookManagerService.transactionInitializeSession(ctx.payload);
 
-    // eslint-disable-next-line @saleor/saleor-app/logger-leak
-    logger.info({ response }, "Responding with:");
-    return responseBuilder.ok(response);
-  } catch (error) {
-    Sentry.captureException(error);
+      // eslint-disable-next-line @saleor/saleor-app/logger-leak
+      logger.info({ response }, "Responding with:");
+      return responseBuilder.ok(response);
+    } catch (error) {
+      Sentry.captureException(error);
 
-    const normalizedError = TransactionInitializeError.normalize(error);
-    return responseBuilder.ok({
-      amount: 0, // 0 or real amount?
-      result: "AUTHORIZATION_FAILURE",
-      message: "Failure",
-      data: {
-        error: {
-          message: normalizedError.message,
+      const normalizedError = TransactionInitializeError.normalize(error);
+      return responseBuilder.ok({
+        amount: 0, // 0 or real amount?
+        result: "AUTHORIZATION_FAILURE",
+        message: "Failure",
+        data: {
+          error: {
+            message: normalizedError.message,
+          },
         },
-      },
-    });
-  }
-});
+      });
+    }
+  },
+);

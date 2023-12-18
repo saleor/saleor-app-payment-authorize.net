@@ -14,7 +14,7 @@ describe("ActiveProviderResolver", () => {
             transactionKey: "transactionKey1",
             environment: "sandbox",
             signatureKey: "signatureKey1",
-            webhooks: [],
+            webhook: null,
           },
           {
             id: "provider2",
@@ -23,7 +23,7 @@ describe("ActiveProviderResolver", () => {
             transactionKey: "transactionKey2",
             environment: "sandbox",
             signatureKey: "signatureKey2",
-            webhooks: [],
+            webhook: null,
           },
         ],
         connections: [

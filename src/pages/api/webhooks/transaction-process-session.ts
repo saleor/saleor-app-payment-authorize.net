@@ -1,9 +1,11 @@
 import { SaleorSyncWebhook } from "@saleor/app-sdk/handlers/next";
 import * as Sentry from "@sentry/nextjs";
-import { AppInitializer } from "@/app-initializer";
+import { resolveAuthorizeConfig } from "@/authorize-provider-resolver";
+import { initializeAuthorizeWebhook } from "@/authorize-webhook-initializer";
 import { createLogger } from "@/lib/logger";
 import { SynchronousWebhookResponseBuilder } from "@/lib/webhook-response-builder";
 import { TransactionProcessError } from "@/modules/webhooks/transaction-process-session";
+import { createWebhookManagerService } from "@/modules/webhooks/webhook-manager-service";
 import { saleorApp } from "@/saleor-app";
 import { type TransactionProcessSessionResponse } from "@/schemas/TransactionProcessSession/TransactionProcessSessionResponse.mjs";
 import {
@@ -39,47 +41,55 @@ class WebhookResponseBuilder extends SynchronousWebhookResponseBuilder<Transacti
  * 2. Checks the `data` for the `customerProfileId`. If the customerProfileId was passed from Accept Hosted form, updates the stored customerProfileId x userEmail mapping.
  * 3. Returns to Saleor the transaction result: `AUTHORIZATION_SUCCESS`, `AUTHORIZATION_FAILURE` or `AUTHORIZATION_REQUESTED`.
  */
-export default transactionProcessSessionSyncWebhook.createHandler(async (req, res, ctx) => {
-  const responseBuilder = new WebhookResponseBuilder(res);
-  // todo: add more extensive logs
-  logger.debug(
-    {
-      action: ctx.payload.action,
-      channelSlug: ctx.payload.sourceObject.channel.slug,
-      transaction: ctx.payload.transaction,
-    },
-    "Handler called",
-  );
-
-  try {
-    const appInitializer = new AppInitializer({
-      appMetadata: ctx.payload.recipient?.privateMetadata ?? [],
-      channelSlug: ctx.payload.sourceObject.channel.slug,
-      authData: ctx.authData,
-    });
-
-    const webhookManagerService = await appInitializer.createWebhookManagerService();
-
-    await appInitializer.registerAuthorizeWebhooks();
-
-    const response = await webhookManagerService.transactionProcessSession(ctx.payload);
-
-    // eslint-disable-next-line @saleor/saleor-app/logger-leak
-    logger.info({ response }, "Responding with:");
-    return responseBuilder.ok(response);
-  } catch (error) {
-    Sentry.captureException(error);
-
-    const normalizedError = TransactionProcessError.normalize(error);
-    return responseBuilder.ok({
-      amount: ctx.payload.action.amount,
-      result: "AUTHORIZATION_FAILURE",
-      message: "Failure",
-      data: {
-        error: {
-          message: normalizedError.message,
-        },
+export default transactionProcessSessionSyncWebhook.createHandler(
+  async (req, res, { authData, ...ctx }) => {
+    const responseBuilder = new WebhookResponseBuilder(res);
+    // todo: add more extensive logs
+    logger.debug(
+      {
+        action: ctx.payload.action,
+        channelSlug: ctx.payload.sourceObject.channel.slug,
+        transaction: ctx.payload.transaction,
       },
-    });
-  }
-});
+      "Handler called",
+    );
+
+    try {
+      const authorizeConfig = await resolveAuthorizeConfig({
+        appMetadata: ctx.payload.recipient?.privateMetadata ?? [],
+        channelSlug: ctx.payload.sourceObject.channel.slug,
+        authData,
+      });
+
+      await initializeAuthorizeWebhook({
+        authData,
+        authorizeConfig,
+      });
+
+      const webhookManagerService = await createWebhookManagerService({
+        authData,
+        authorizeConfig,
+      });
+
+      const response = await webhookManagerService.transactionProcessSession(ctx.payload);
+
+      // eslint-disable-next-line @saleor/saleor-app/logger-leak
+      logger.info({ response }, "Responding with:");
+      return responseBuilder.ok(response);
+    } catch (error) {
+      Sentry.captureException(error);
+
+      const normalizedError = TransactionProcessError.normalize(error);
+      return responseBuilder.ok({
+        amount: ctx.payload.action.amount,
+        result: "AUTHORIZATION_FAILURE",
+        message: "Failure",
+        data: {
+          error: {
+            message: normalizedError.message,
+          },
+        },
+      });
+    }
+  },
+);
