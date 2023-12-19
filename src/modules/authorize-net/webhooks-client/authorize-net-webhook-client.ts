@@ -1,12 +1,11 @@
 import { z } from "zod";
 import { createAuthorizeWebhooksFetch } from "./create-authorize-webhooks-fetch";
+import { createLogger } from "@/lib/logger";
 import {
   webhookSchema,
   type AuthorizeProviderConfig,
+  type AuthorizeNetWebhookInput,
 } from "@/modules/authorize-net/authorize-net-config";
-import { createLogger } from "@/lib/logger";
-
-export type AuthorizeNetWebhook = z.infer<typeof webhookSchema>;
 
 const webhookResponseSchema = z
   .object({
@@ -15,9 +14,10 @@ const webhookResponseSchema = z
         href: z.string(),
       }),
     }),
-    webhookId: z.string(),
   })
   .and(webhookSchema);
+
+export type AuthorizeNetWebhookResponse = z.infer<typeof webhookResponseSchema>;
 
 const listWebhooksResponseSchema = z.array(webhookResponseSchema);
 
@@ -25,24 +25,26 @@ const listWebhooksResponseSchema = z.array(webhookResponseSchema);
  * @description Authorize.net has a separate API for registering webhooks.
  * @see AuthorizeNetClient for managing transactions etc.
  */
-export class AuthorizeNetWebhooksClient {
+export class AuthorizeNetWebhookClient {
   private fetch: ReturnType<typeof createAuthorizeWebhooksFetch>;
 
   private logger = createLogger({
-    name: "AuthorizeNetWebhooksClient",
+    name: "AuthorizeNetWebhookClient",
   });
 
   constructor(config: AuthorizeProviderConfig.FullShape) {
     this.fetch = createAuthorizeWebhooksFetch(config);
   }
 
-  async registerWebhook(params: AuthorizeNetWebhook) {
+  async registerWebhook(input: AuthorizeNetWebhookInput) {
     const response = await this.fetch({
       method: "POST",
-      body: params,
+      body: input,
     });
 
     const result = await response.json();
+
+    this.logger.trace({ result }, "registerWebhook response:");
 
     const parsedResult = webhookResponseSchema.parse(result);
 

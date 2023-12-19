@@ -1,11 +1,11 @@
 import { SaleorSyncWebhook } from "@saleor/app-sdk/handlers/next";
 import * as Sentry from "@sentry/nextjs";
-import { AuthorizeWebhookManager } from "@/authorize-webhook-manager";
+import { normalizeError } from "@/errors";
 import { createLogger } from "@/lib/logger";
 import { SynchronousWebhookResponseBuilder } from "@/lib/webhook-response-builder";
+import { AuthorizeWebhookManager } from "@/modules/authorize-net/webhooks-client/authorize-net-webhook-manager";
 import { resolveAppConfigFromCtx } from "@/modules/configuration/app-config-resolver";
 import { resolveAuthorizeConfigFromAppConfig } from "@/modules/configuration/authorize-config-resolver";
-import { TransactionInitializeError } from "@/modules/webhooks/transaction-initialize-session";
 import { createAppWebhookManager } from "@/modules/webhooks/webhook-manager-service";
 import { saleorApp } from "@/saleor-app";
 import { type TransactionInitializeSessionResponse } from "@/schemas/TransactionInitializeSession/TransactionInitializeSessionResponse.mjs";
@@ -80,7 +80,7 @@ export default transactionInitializeSessionSyncWebhook.createHandler(
     } catch (error) {
       Sentry.captureException(error);
 
-      const normalizedError = TransactionInitializeError.normalize(error);
+      const normalizedError = normalizeError(error);
       return responseBuilder.ok({
         amount: 0, // 0 or real amount?
         result: "AUTHORIZATION_FAILURE",

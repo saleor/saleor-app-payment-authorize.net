@@ -4,7 +4,7 @@ import { createLogger } from "@/lib/logger";
 import { SynchronousWebhookResponseBuilder } from "@/lib/webhook-response-builder";
 import { TransactionRefundRequestedError } from "@/modules/webhooks/transaction-refund-requested";
 
-import { AuthorizeWebhookManager } from "@/authorize-webhook-manager";
+import { AuthorizeWebhookManager } from "@/modules/authorize-net/webhooks-client/authorize-net-webhook-manager";
 import { resolveAppConfigFromCtx } from "@/modules/configuration/app-config-resolver";
 import { resolveAuthorizeConfigFromAppConfig } from "@/modules/configuration/authorize-config-resolver";
 import { createAppWebhookManager } from "@/modules/webhooks/webhook-manager-service";
