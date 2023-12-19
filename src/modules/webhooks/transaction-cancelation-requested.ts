@@ -59,7 +59,7 @@ export class TransactionCancelationRequestedService {
   async execute(
     payload: TransactionCancelationRequestedEventFragment,
   ): Promise<TransactionCancelationRequestedResponse> {
-    this.logger.debug({ id: payload.transaction?.id }, "Called execute with");
+    this.logger.debug({ id: payload.transaction?.id }, "Canceling transaction");
 
     const saleorTransactionId = payload.transaction?.id;
 

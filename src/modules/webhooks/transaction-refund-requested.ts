@@ -56,7 +56,7 @@ export class TransactionRefundRequestedService {
   async execute(
     payload: TransactionRefundRequestedEventFragment,
   ): Promise<TransactionRefundRequestedResponse> {
-    this.logger.debug({ id: payload.transaction?.id }, "Called execute with");
+    this.logger.debug({ id: payload.transaction?.id }, "Refunding the transaction");
 
     const saleorTransactionId = payload.transaction?.id;
 

@@ -80,7 +80,7 @@ export class TransactionProcessSessionService {
   async execute(
     payload: TransactionProcessSessionEventFragment,
   ): Promise<TransactionProcessSessionResponse> {
-    this.logger.debug({ id: payload.transaction?.id }, "Called execute with");
+    this.logger.debug({ id: payload.transaction?.id }, "Mapping the state of transaction");
     const dataParseResult = transactionProcessPayloadDataSchema.safeParse(payload.data);
 
     if (!dataParseResult.success) {

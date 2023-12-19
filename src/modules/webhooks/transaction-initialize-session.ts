@@ -133,7 +133,10 @@ export class TransactionInitializeSessionService {
   async execute(
     payload: TransactionInitializeSessionEventFragment,
   ): Promise<TransactionInitializeSessionResponse> {
-    this.logger.debug({ id: payload.transaction?.id }, "Called execute with");
+    this.logger.debug(
+      { id: payload.transaction?.id },
+      "Getting hosted payment page settings for transaction",
+    );
 
     const transactionInput = await this.buildTransactionFromPayload(payload);
 
