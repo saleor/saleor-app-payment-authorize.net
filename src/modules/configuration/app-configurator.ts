@@ -13,7 +13,7 @@ export namespace AppConfig {
 }
 
 export class AppConfigurator {
-  private rootData: AppConfig.Shape = {
+  rootData: AppConfig.Shape = {
     providers: [],
     connections: [],
   };

@@ -11,9 +11,11 @@ import {
 } from "../authorize-net-config";
 import { AuthorizeNetWebhookClient } from "./authorize-net-webhook-client";
 import { MissingAppUrlError } from "./authorize-net-webhook-errors";
-import { AuthorizeNetWebhookUrlBuilder } from "./authorize-net-webhook-url-builder";
 import { createLogger } from "@/lib/logger";
 
+/**
+ * @description This class is used to register and manage the webhook with Authorize.net
+ */
 export class AuthorizeWebhookManager {
   private authData: AuthData;
   private appConfig: AppConfig.Shape;
@@ -62,27 +64,24 @@ export class AuthorizeWebhookManager {
       throw new MissingAppUrlError("Missing appUrl needed for registering the webhook");
     }
 
-    const urlBuilder = new AuthorizeNetWebhookUrlBuilder();
     const webhookParams: AuthorizeNetWebhookInput = {
       eventTypes: [
         "net.authorize.payment.authcapture.created",
         "net.authorize.payment.authorization.created",
+        "net.authorize.payment.capture.created",
       ],
       status: "active",
-      url: urlBuilder.buildFromParams({
-        appUrl,
-      }),
+      url: `${appUrl}/api/webhooks/authorize`,
     };
 
     return webhookParams;
   }
 
   public async register() {
-    // todo: bring back
-    // if (this.authorizeConfig.webhook) {
-    //   this.logger.info("Webhook already registered");
-    //   return;
-    // }
+    if (this.authorizeConfig.webhook) {
+      this.logger.info("Webhook already registered");
+      return;
+    }
 
     this.logger.debug("Registering webhook...");
 

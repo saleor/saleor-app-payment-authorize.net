@@ -3,7 +3,7 @@ import * as Sentry from "@sentry/nextjs";
 import { normalizeError } from "@/errors";
 import { createLogger } from "@/lib/logger";
 import { SynchronousWebhookResponseBuilder } from "@/lib/webhook-response-builder";
-import { AuthorizeWebhookManager } from "@/modules/authorize-net/webhooks-client/authorize-net-webhook-manager";
+import { AuthorizeWebhookManager } from "@/modules/authorize-net/webhook/authorize-net-webhook-manager";
 import { resolveAppConfigFromCtx } from "@/modules/configuration/app-config-resolver";
 import { resolveAuthorizeConfigFromAppConfig } from "@/modules/configuration/authorize-config-resolver";
 import { createAppWebhookManager } from "@/modules/webhooks/webhook-manager-service";

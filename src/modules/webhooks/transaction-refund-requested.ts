@@ -72,7 +72,7 @@ export class TransactionRefundRequestedService {
 
     const createTransactionClient = new CreateTransactionClient(this.authorizeConfig);
 
-    await createTransactionClient.createTransaction(transactionInput);
+    await createTransactionClient.createTransaction({ transactionInput, saleorTransactionId });
 
     this.logger.debug("Successfully refunded the transaction");
 

@@ -63,15 +63,24 @@ export class TransactionProcessSessionService {
    */
   private mapTransactionToWebhookResponse(
     response: GetTransactionDetailsResponse,
-  ): Pick<TransactionProcessSessionResponse, "result" | "actions"> {
+  ): TransactionProcessSessionResponse {
+    const baseResponse: Pick<
+      TransactionProcessSessionResponse,
+      "amount" | "message" | "pspReference"
+    > = {
+      amount: response.transaction.authAmount,
+      message: response.transaction.responseReasonDescription,
+      pspReference: response.transaction.refTransId,
+    };
+
     const { transactionStatus } = response.transaction;
 
     if (transactionStatus === "authorizedPendingCapture") {
-      return { result: "AUTHORIZATION_SUCCESS", actions: ["CANCEL", "REFUND"] };
+      return { ...baseResponse, result: "AUTHORIZATION_SUCCESS", actions: ["CANCEL", "REFUND"] };
     }
 
     if (transactionStatus === "FDSPendingReview") {
-      return { result: "AUTHORIZATION_REQUEST", actions: [] };
+      return { ...baseResponse, result: "AUTHORIZATION_REQUEST", actions: [] };
     }
 
     throw new TransactionProcessError(`Unexpected transaction status: ${transactionStatus}`);

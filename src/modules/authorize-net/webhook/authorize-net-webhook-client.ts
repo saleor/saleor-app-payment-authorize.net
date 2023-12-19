@@ -22,7 +22,7 @@ export type AuthorizeNetWebhookResponse = z.infer<typeof webhookResponseSchema>;
 const listWebhooksResponseSchema = z.array(webhookResponseSchema);
 
 /**
- * @description Authorize.net has a separate API for registering webhooks.
+ * @description Authorize.net has a separate API for registering webhooks. This class communicates with that API.
  * @see AuthorizeNetClient for managing transactions etc.
  */
 export class AuthorizeNetWebhookClient {

@@ -11,12 +11,21 @@ const createTransactionSchema = baseAuthorizeObjectSchema.and(z.unknown());
 type CreateTransactionResponse = z.infer<typeof createTransactionSchema>;
 
 export class CreateTransactionClient extends AuthorizeNetClient {
-  async createTransaction(
-    transactionInput: AuthorizeNet.APIContracts.TransactionRequestType,
-  ): Promise<CreateTransactionResponse> {
+  async createTransaction({
+    transactionInput,
+    saleorTransactionId,
+  }: {
+    transactionInput: AuthorizeNet.APIContracts.TransactionRequestType;
+    saleorTransactionId: string;
+  }): Promise<CreateTransactionResponse> {
     const createRequest = new ApiContracts.CreateTransactionRequest();
     createRequest.setMerchantAuthentication(this.merchantAuthenticationType);
     createRequest.setTransactionRequest(transactionInput);
+    /**
+     * @description refId is needed to update the state of the transaction on Authorize.net webhook.
+     * @see AuthorizeNetWebhookHandler
+     */
+    createRequest.setRefId(saleorTransactionId);
 
     const transactionController = new ApiControllers.CreateTransactionController(
       createRequest.getJSON(),

@@ -12,6 +12,8 @@ const getTransactionDetailsSchema = baseAuthorizeObjectSchema.and(
       transactionStatus: z.string().min(1),
       authAmount: z.number(),
       responseReasonDescription: z.string().min(1),
+      refTransId: z.string().min(1),
+      submitTimeLocal: z.string().min(1),
     }),
   }),
 );

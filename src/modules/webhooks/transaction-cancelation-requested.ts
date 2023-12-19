@@ -75,7 +75,10 @@ export class TransactionCancelationRequestedService {
 
     const createTransactionClient = new CreateTransactionClient(this.authorizeConfig);
 
-    await createTransactionClient.createTransaction(transactionInput);
+    await createTransactionClient.createTransaction({
+      transactionInput,
+      saleorTransactionId,
+    });
 
     this.logger.debug("Successfully voided the transaction");
 
