@@ -69,6 +69,7 @@ export class AuthorizeWebhookManager {
         "net.authorize.payment.authcapture.created",
         "net.authorize.payment.authorization.created",
         "net.authorize.payment.capture.created",
+        "net.authorize.payment.priorAuthCapture.created",
       ],
       status: "active",
       url: `${appUrl}/api/webhooks/authorize`,
