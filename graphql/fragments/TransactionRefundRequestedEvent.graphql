@@ -8,21 +8,6 @@ fragment TransactionRefundRequestedEvent on TransactionRefundRequested {
     actionType
   }
   transaction {
-    id
-    pspReference
-    sourceObject: order {
-      ... on Order {
-        total {
-          gross {
-            ...Money
-          }
-        }
-      }
-      ...OrderOrCheckoutLines
-    }
-    privateMetadata {
-      key
-      value
-    }
+    ...Transaction
   }
 }

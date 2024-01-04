@@ -8,17 +8,6 @@ fragment TransactionChargeRequestedEvent on TransactionChargeRequested {
     actionType
   }
   transaction {
-    id
-    pspReference
-    sourceObject: order {
-      ... on Order {
-        total {
-          gross {
-            ...Money
-          }
-        }
-      }
-      ...OrderOrCheckoutLines
-    }
+    ...Transaction
   }
 }
