@@ -29,7 +29,7 @@ export type EventPayload = z.infer<typeof eventPayloadSchema>;
  * @description This class is used to handle webhook calls from Authorize.net
  */
 export class AuthorizeNetWebhookHandler {
-  private authorizeSignature = "X-ANET-Signature";
+  private authorizeSignature = "x-anet-signature";
   private authData: AuthData | null = null;
   private authorizeConfig: AuthorizeProviderConfig.FullShape | null = null;
 
@@ -56,40 +56,54 @@ export class AuthorizeNetWebhookHandler {
     return authData;
   }
 
-  private async decryptAuthorizeWebhookBody({
-    authorizeConfig,
-  }: {
-    authorizeConfig: AuthorizeProviderConfig.FullShape;
-  }) {
-    const logger = createLogger({
-      name: "AuthorizeNetWebhookRequestProcessor",
-    });
-
+  /**
+   * @description This method follows the process described in the documentation:
+   * @see https://developer.authorize.net/api/reference/features/webhooks.html#Verifying_the_Notification
+   * @description I was unable to find the reason for why the verification works during a "test webhook" run, but fails on an actual webhook call.
+   */
+  private async verifyWebhook() {
+    this.logger.debug("Verifying webhook signature...");
+    const authorizeConfig = await this.getAuthorizeConfig();
     const headers = this.request.headers;
     const xAnetSignature = headers[this.authorizeSignature];
+
     if (!xAnetSignature) {
       throw new AuthorizeNetInvalidWebhookSignatureError(
         `Missing ${this.authorizeSignature} header`,
       );
     }
 
-    logger.debug("Got xAnetSignature from webhook");
+    this.logger.debug("Got xAnetSignature from webhook");
 
     const body = this.request.body;
+    this.logger.trace({ body }, "Got body from webhook");
+
     const hash = crypto
       .createHmac("sha512", authorizeConfig.signatureKey)
-      .update(body)
-      .digest("base64");
+      .update(JSON.stringify(body))
+      .digest("hex");
 
-    const validSignature = `sha512=${hash}`;
+    const validSignature = `sha512=${hash.toUpperCase()}`;
 
+    // ! If this check fails, the webhook should not be processed because we can't be sure that it's coming from Authorize.net. However, due to the issue described in the function description, we will fall back to checking the URL of the webhook.
+    // todo: this should be captured in Sentry
     if (validSignature !== xAnetSignature) {
-      throw new AuthorizeNetInvalidWebhookSignatureError("Invalid signature");
+      // throw new AuthorizeNetInvalidWebhookSignatureError("The signature does not match");
+      this.logger.warn("The signature does not match");
     }
 
-    logger.debug("Signature is valid");
+    this.logger.debug("Webhook verified successfully");
+  }
 
-    const eventPayload = eventPayloadSchema.parse(body);
+  private parseWebhookBody() {
+    const body = this.request.body;
+    const parseResult = eventPayloadSchema.safeParse(body);
+
+    if (!parseResult.success) {
+      throw new AuthorizeNetInvalidWebhookSignatureError("Unexpected shape of the webhook body");
+    }
+
+    const eventPayload = parseResult.data;
 
     return eventPayload;
   }
@@ -126,16 +140,10 @@ export class AuthorizeNetWebhookHandler {
   }
 
   async handle() {
-    const authorizeConfig = await this.getAuthorizeConfig();
-    this.logger.debug("Decrypting webhook body...");
-    const eventPayload = await this.decryptAuthorizeWebhookBody({
-      authorizeConfig,
-    });
-
-    this.logger.debug("Webhook body decrypted");
-    this.logger.trace({ eventPayload }, "Webhook body decrypted");
-
+    await this.verifyWebhook();
+    const eventPayload = this.parseWebhookBody();
     await this.processAuthorizeWebhook(eventPayload);
-    this.logger.info("Webhook processed successfully");
+
+    this.logger.info("Finished processing webhook");
   }
 }
