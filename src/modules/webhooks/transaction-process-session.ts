@@ -1,5 +1,5 @@
-import { z } from "zod";
 import { type Client } from "urql";
+import { z } from "zod";
 import { type AuthorizeProviderConfig } from "../authorize-net/authorize-net-config";
 import {
   TransactionDetailsClient,
@@ -8,8 +8,8 @@ import {
 import { TransactionMetadataManager } from "../configuration/transaction-metadata-manager";
 import { type TransactionProcessSessionEventFragment } from "generated/graphql";
 import { type TransactionProcessSessionResponse } from "@/schemas/TransactionProcessSession/TransactionProcessSessionResponse.mjs";
-import { BaseError } from "@/errors";
 import { createLogger } from "@/lib/logger";
+import { BaseError } from "@/errors";
 
 export const TransactionProcessError = BaseError.subclass("TransactionProcessError");
 
@@ -41,9 +41,9 @@ export class TransactionProcessSessionService {
   }
 
   /**
-   * @description Saves Authorize transaction ID in metadata for future usage in other operations (e.g. `transaction-cancelation-requested`).
+   * @description Saves Authorize transaction ID in metadata for future usage in other operations (e.g. `transaction-cancelation-requested`). Also saves Saleor transaction ID in Authorize transaction as order.description.
    */
-  private async saveTransactionIdInMetadata({
+  private async synchronizeTransaction({
     saleorTransactionId,
     authorizeTransactionId,
   }: {
@@ -51,6 +51,7 @@ export class TransactionProcessSessionService {
     authorizeTransactionId: string;
   }) {
     const metadataManager = new TransactionMetadataManager({ apiClient: this.apiClient });
+
     await metadataManager.saveTransactionId({
       saleorTransactionId,
       authorizeTransactionId,
@@ -70,7 +71,7 @@ export class TransactionProcessSessionService {
     > = {
       amount: response.transaction.authAmount,
       message: response.transaction.responseReasonDescription,
-      pspReference: response.transaction.refTransId,
+      pspReference: response.transaction.transId,
     };
 
     const { transactionStatus } = response.transaction;
@@ -98,16 +99,16 @@ export class TransactionProcessSessionService {
       });
     }
 
-    const { transactionId } = dataParseResult.data;
+    const { transactionId: authorizeTransactionId } = dataParseResult.data;
 
-    await this.saveTransactionIdInMetadata({
+    await this.synchronizeTransaction({
       saleorTransactionId: payload.transaction.id,
-      authorizeTransactionId: transactionId,
+      authorizeTransactionId,
     });
 
     const transactionDetailsClient = new TransactionDetailsClient(this.authorizeConfig);
     const details = await transactionDetailsClient.getTransactionDetailsRequest({
-      transactionId,
+      transactionId: authorizeTransactionId,
     });
 
     const { result, actions } = this.mapTransactionToWebhookResponse(details);
@@ -117,7 +118,7 @@ export class TransactionProcessSessionService {
       result,
       actions,
       message: details.transaction.responseReasonDescription,
-      pspReference: transactionId,
+      pspReference: authorizeTransactionId,
     };
   }
 }

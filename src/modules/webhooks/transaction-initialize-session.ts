@@ -9,6 +9,8 @@ import {
   type GetHostedPaymentPageResponse,
 } from "../authorize-net/client/hosted-payment-page-client";
 import { CustomerProfileManager } from "../customer-profile/customer-profile-manager";
+import { saleorTransactionIdConverter } from "../authorize-net/synchronized-transaction/saleor-transaction-id-converter";
+import { createSynchronizedTransactionRequest } from "../authorize-net/synchronized-transaction/create-synchronized-transaction-request";
 import { type TransactionInitializeSessionEventFragment } from "generated/graphql";
 
 import { BaseError } from "@/errors";
@@ -58,9 +60,21 @@ export class TransactionInitializeSessionService {
   private async buildTransactionFromPayload(
     payload: TransactionInitializeSessionEventFragment,
   ): Promise<AuthorizeNet.APIContracts.TransactionRequestType> {
-    const transactionRequest = new ApiContracts.TransactionRequestType();
+    const saleorTransactionId = saleorTransactionIdConverter.fromSaleorTransaction(
+      payload.transaction,
+    );
+
+    const transactionRequest = createSynchronizedTransactionRequest({
+      saleorTransactionId,
+    });
+
     transactionRequest.setTransactionType(ApiContracts.TransactionTypeEnum.AUTHONLYTRANSACTION);
     transactionRequest.setAmount(payload.action.amount);
+
+    const order = new ApiContracts.OrderType();
+    order.setDescription(saleorTransactionId);
+
+    transactionRequest.setOrder(order);
 
     const userEmail = payload.sourceObject.userEmail;
 

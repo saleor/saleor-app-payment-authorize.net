@@ -9,6 +9,7 @@ import {
   TransactionEventReportDocument,
   TransactionEventTypeEnum,
 } from "generated/graphql";
+import { saleorTransactionIdConverter } from "@/modules/authorize-net/synchronized-transaction/saleor-transaction-id-converter";
 
 const TransactionEventReportMutationError = AuthorizeNetError.subclass(
   "TransactionEventReportMutationError",
@@ -62,13 +63,17 @@ export class AuthorizeNetWebhookTransactionSynchronizer {
     const transactionId = eventPayload.payload.id;
     const authorizeTransaction = await this.getAuthorizeTransaction({ id: transactionId });
 
-    const saleorTransactionId = authorizeTransaction.transaction.refTransId;
+    const saleorTransactionId =
+      saleorTransactionIdConverter.fromAuthorizeNetTransaction(authorizeTransaction);
+
+    const authorizeTransactionId = authorizeTransaction.transaction.transId;
+
     const type = this.mapEventType(eventPayload.eventType);
 
     await this.transactionEventReport({
       amount: authorizeTransaction.transaction.authAmount,
       availableActions: [],
-      pspReference: authorizeTransaction.transaction.refTransId,
+      pspReference: authorizeTransactionId,
       time: authorizeTransaction.transaction.submitTimeLocal,
       transactionId: saleorTransactionId,
       type,
