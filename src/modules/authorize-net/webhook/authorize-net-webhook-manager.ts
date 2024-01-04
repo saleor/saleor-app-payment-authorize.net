@@ -66,10 +66,10 @@ export class AuthorizeWebhookManager {
 
     const webhookParams: AuthorizeNetWebhookInput = {
       eventTypes: [
-        "net.authorize.payment.authcapture.created",
-        "net.authorize.payment.authorization.created",
         "net.authorize.payment.capture.created",
         "net.authorize.payment.priorAuthCapture.created",
+        "net.authorize.payment.void.created",
+        "net.authorize.payment.refund.created",
       ],
       status: "active",
       url: `${appUrl}/api/webhooks/authorize`,

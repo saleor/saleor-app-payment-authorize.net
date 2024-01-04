@@ -8,7 +8,7 @@ export const authorizeNetEventSchema = z.enum([
   "net.authorize.payment.capture.created",
   "net.authorize.payment.refund.created",
   "net.authorize.payment.priorAuthCapture.created",
-  "net.authorize.payment.void.create",
+  "net.authorize.payment.void.created",
 ]);
 
 export type AuthorizeNetEvent = z.infer<typeof authorizeNetEventSchema>;
