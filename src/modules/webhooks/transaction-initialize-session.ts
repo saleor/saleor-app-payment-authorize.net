@@ -105,8 +105,6 @@ export class TransactionInitializeSessionService {
       transactionRequest.setProfile(profile);
     }
 
-    this.logger.trace("Finished building transaction request.");
-
     return transactionRequest;
   }
 
