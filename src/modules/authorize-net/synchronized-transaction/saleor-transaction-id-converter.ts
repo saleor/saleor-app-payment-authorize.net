@@ -14,11 +14,10 @@ import { type TransactionFragment } from "generated/graphql";
  */
 export const saleorTransactionIdConverter = {
   fromSaleorTransaction(saleorTransaction: TransactionFragment) {
-    // remove last two characters
-    return saleorTransaction.id.slice(0, -2); // strip the last two "==" characters from the end of the string, as Authorize can't parse it 🤷
+    return btoa(saleorTransaction.id); // we need to encode the string to base64, because Authorize.net can't parse the "=" character that is in the Saleor transaction ID
   },
   fromAuthorizeNetTransaction(authorizeTransaction: GetTransactionDetailsResponse) {
-    const orderDescription = authorizeTransaction.transaction.order.description;
-    return `${orderDescription}==`; // add the "==" characters back to the end of the string, so that it's a valid Saleor transaction ID.
+    const orderDescription = authorizeTransaction.transaction.order.description; // we need to decode it back to use the Saleor transaction ID
+    return atob(orderDescription);
   },
 };

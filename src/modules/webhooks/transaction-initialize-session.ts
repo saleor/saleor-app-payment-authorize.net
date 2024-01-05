@@ -65,6 +65,8 @@ export class TransactionInitializeSessionService {
       payload.transaction,
     );
 
+    this.logger.trace({ saleorTransactionId }, "Saleor transaction id");
+
     const transactionRequest = createSynchronizedTransactionRequest({
       saleorTransactionId,
     });

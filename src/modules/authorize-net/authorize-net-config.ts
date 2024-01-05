@@ -13,7 +13,7 @@ export const authorizeNetEventSchema = z.enum([
 
 export type AuthorizeNetEvent = z.infer<typeof authorizeNetEventSchema>;
 
-export const webhookInputSchema = z.object({
+const webhookInputSchema = z.object({
   url: z.string(),
   eventTypes: z.array(authorizeNetEventSchema),
   status: z.enum(["active", "inactive"]),
