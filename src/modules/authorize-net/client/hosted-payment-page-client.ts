@@ -1,4 +1,3 @@
-import { env } from "process";
 import AuthorizeNet from "authorizenet";
 
 import { z } from "zod";
@@ -16,46 +15,17 @@ const getHostedPaymentPageResponseSchema = baseAuthorizeObjectSchema.and(
 export type GetHostedPaymentPageResponse = z.infer<typeof getHostedPaymentPageResponseSchema>;
 
 export class HostedPaymentPageClient extends AuthorizeNetClient {
-  private getHostedPaymentPageSettings(): AuthorizeNet.APIContracts.ArrayOfSetting {
-    const settings = {
-      hostedPaymentReturnOptions: {
-        showReceipt: false, // must be false if we want to receive the transaction response in the payment form iframe
-      },
-      hostedPaymentIFrameCommunicatorUrl: {
-        url: `${env.AUTHORIZE_PAYMENT_FORM_URL}/accept-hosted.html`, // url where the payment form iframe will be hosted,
-      },
-      hostedPaymentCustomerOptions: {
-        showEmail: false,
-        requiredEmail: false,
-        addPaymentProfile: true,
-      },
-    };
-
-    const settingsArray: AuthorizeNet.APIContracts.SettingType[] = [];
-
-    Object.entries(settings).forEach(([settingName, settingValue]) => {
-      const setting = new ApiContracts.SettingType();
-      setting.setSettingName(settingName);
-      setting.setSettingValue(JSON.stringify(settingValue));
-      settingsArray.push(setting);
-    });
-
-    const arrayOfSettings = new ApiContracts.ArrayOfSetting();
-    arrayOfSettings.setSetting(settingsArray);
-
-    return arrayOfSettings;
-  }
-
-  async getHostedPaymentPageRequest(
-    transactionInput: AuthorizeNet.APIContracts.TransactionRequestType,
-  ): Promise<GetHostedPaymentPageResponse> {
+  async getHostedPaymentPageRequest({
+    transactionInput,
+    settingsInput,
+  }: {
+    transactionInput: AuthorizeNet.APIContracts.TransactionRequestType;
+    settingsInput: AuthorizeNet.APIContracts.ArrayOfSetting;
+  }): Promise<GetHostedPaymentPageResponse> {
     const createRequest = new ApiContracts.GetHostedPaymentPageRequest();
     createRequest.setMerchantAuthentication(this.merchantAuthenticationType);
     createRequest.setTransactionRequest(transactionInput);
-
-    const settings = this.getHostedPaymentPageSettings();
-
-    createRequest.setHostedPaymentSettings(settings);
+    createRequest.setHostedPaymentSettings(settingsInput);
 
     const transactionController = new ApiControllers.GetHostedPaymentPageController(
       createRequest.getJSON(),
@@ -67,7 +37,7 @@ export class HostedPaymentPageClient extends AuthorizeNetClient {
       transactionController.execute(() => {
         try {
           this.logger.debug(
-            { settings },
+            { settings: settingsInput },
             "Calling getHostedPaymentPageRequest with the following settings:",
           );
 

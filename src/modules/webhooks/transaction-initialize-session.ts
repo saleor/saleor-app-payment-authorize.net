@@ -1,3 +1,4 @@
+import { env } from "process";
 import AuthorizeNet from "authorizenet";
 import { z } from "zod";
 import {
@@ -142,6 +143,41 @@ export class TransactionInitializeSessionService {
     return dataParseResult.data;
   }
 
+  private getHostedPaymentPageSettings(): AuthorizeNet.APIContracts.ArrayOfSetting {
+    const settings = {
+      hostedPaymentReturnOptions: {
+        showReceipt: false, // must be false if we want to receive the transaction response in the payment form iframe
+      },
+      hostedPaymentIFrameCommunicatorUrl: {
+        url: `${env.AUTHORIZE_PAYMENT_FORM_URL}/accept-hosted.html`, // url where the payment form iframe will be hosted,
+      },
+      hostedPaymentCustomerOptions: {
+        showEmail: false,
+        requiredEmail: false,
+        addPaymentProfile: true,
+      },
+      hostedPaymentOrderOptions: {
+        /** we need to hide order details because we are using order.description to store the saleorTransactionId.
+         * @see: createSynchronizedTransactionRequest */
+        show: false,
+      },
+    };
+
+    const settingsArray: AuthorizeNet.APIContracts.SettingType[] = [];
+
+    Object.entries(settings).forEach(([settingName, settingValue]) => {
+      const setting = new ApiContracts.SettingType();
+      setting.setSettingName(settingName);
+      setting.setSettingValue(JSON.stringify(settingValue));
+      settingsArray.push(setting);
+    });
+
+    const arrayOfSettings = new ApiContracts.ArrayOfSetting();
+    arrayOfSettings.setSetting(settingsArray);
+
+    return arrayOfSettings;
+  }
+
   async execute(
     payload: TransactionInitializeSessionEventFragment,
   ): Promise<TransactionInitializeSessionResponse> {
@@ -151,11 +187,14 @@ export class TransactionInitializeSessionService {
     );
 
     const transactionInput = await this.buildTransactionFromPayload(payload);
+    const settingsInput = this.getHostedPaymentPageSettings();
 
     const hostedPaymentPageClient = new HostedPaymentPageClient(this.authorizeConfig);
 
-    const hostedPaymentPageResponse =
-      await hostedPaymentPageClient.getHostedPaymentPageRequest(transactionInput);
+    const hostedPaymentPageResponse = await hostedPaymentPageClient.getHostedPaymentPageRequest({
+      transactionInput,
+      settingsInput,
+    });
 
     this.logger.trace("Successfully called getHostedPaymentPageRequest");
 
