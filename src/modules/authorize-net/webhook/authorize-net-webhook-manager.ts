@@ -58,7 +58,7 @@ export class AuthorizeWebhookManager {
   }
 
   private getWebhookParams() {
-    const appUrl = isDevelopment() ? env.LOCAL_APP_URL : `https://${env.VERCEL_URL}`;
+    const appUrl = isDevelopment() ? env.LOCAL_APP_URL : `https://${env.VERCEL_URL}`; // todo: get rid of it
 
     if (!appUrl) {
       throw new MissingAppUrlError("Missing appUrl needed for registering the webhook");
