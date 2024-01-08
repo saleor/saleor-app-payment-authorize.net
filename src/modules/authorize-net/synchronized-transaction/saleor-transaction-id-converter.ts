@@ -2,8 +2,6 @@ import { type GetTransactionDetailsResponse } from "../client/transaction-detail
 import { type TransactionFragment } from "generated/graphql";
 
 /**
- * What you can see below is a classic example of a hack.
- *
  * We need to pass the saleorTransactionId to Authorize.net transaction so that we can
  * later (in the Authorize → Saleor webhook) match the Authorize.net transaction with the Saleor transaction.
  *

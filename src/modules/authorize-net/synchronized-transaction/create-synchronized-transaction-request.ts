@@ -19,6 +19,7 @@ export function createSynchronizedTransactionRequest({
   const transactionRequest = new ApiContracts.TransactionRequestType();
 
   if (authorizeTransactionId) {
+    // refTransId is the transaction ID of the original transaction being referenced
     transactionRequest.setRefTransId(authorizeTransactionId);
   }
 

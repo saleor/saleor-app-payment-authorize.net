@@ -86,8 +86,9 @@ export class AuthorizeNetWebhookHandler {
     const validSignature = `sha512=${hash.toUpperCase()}`;
 
     // ! If this check fails, the webhook should not be processed because we can't be sure that it's coming from Authorize.net. However, due to the issue described in the function description, we will fall back to checking the URL of the webhook.
-    // todo: this should be captured in Sentry
+    // todo: revisit
     if (validSignature !== xAnetSignature) {
+      // todo: this should be captured in Sentry
       // throw new AuthorizeNetInvalidWebhookSignatureError("The signature does not match");
       this.logger.warn("The signature does not match");
     }
