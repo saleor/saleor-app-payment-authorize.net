@@ -56,8 +56,9 @@ export const env = createEnv({
     AUTHORIZE_PAYMENT_FORM_URL: z
       .string()
       .min(1)
+      .optional()
       .describe(
-        "Payment form URL. This is the address your front-end UI is running on. Make sure it is on https. Otherwise the Accept Hosted form will not work.",
+        "Payment form URL. This is the address your front-end UI is running on. Make sure it is on https, otherwise the Accept Hosted form will not work. This is not needed if you are running your front-end UI on the same domain and sending referrerPolicy: 'strict-origin-when-cross-origin' header.",
       ),
   },
 

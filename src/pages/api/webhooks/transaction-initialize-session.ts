@@ -1,5 +1,6 @@
 import { SaleorSyncWebhook } from "@saleor/app-sdk/handlers/next";
 import * as Sentry from "@sentry/nextjs";
+import { validateDomainWhiteList, ALLOWED_DOMAIN } from "./validateDomainWhiteList";
 import { normalizeError } from "@/errors";
 import { createLogger } from "@/lib/logger";
 import { SynchronousWebhookResponseBuilder } from "@/lib/webhook-response-builder";
@@ -48,6 +49,8 @@ export default transactionInitializeSessionSyncWebhook.createHandler(
 
     try {
       const authorizeConfig = getAuthorizeConfig();
+      validateDomainWhiteList(req, ALLOWED_DOMAIN);
+
       const authorizeWebhookManager = new AuthorizeWebhookManager({
         appConfig: authorizeConfig,
       });

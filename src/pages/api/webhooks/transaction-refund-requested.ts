@@ -1,5 +1,6 @@
 import { SaleorSyncWebhook } from "@saleor/app-sdk/handlers/next";
 import * as Sentry from "@sentry/nextjs";
+import { validateDomainWhiteList, ALLOWED_DOMAIN } from "./validateDomainWhiteList";
 import { createLogger } from "@/lib/logger";
 import { SynchronousWebhookResponseBuilder } from "@/lib/webhook-response-builder";
 import { TransactionRefundRequestedError } from "@/modules/webhooks/transaction-refund-requested";
@@ -40,6 +41,8 @@ class WebhookResponseBuilder extends SynchronousWebhookResponseBuilder<Transacti
  */
 export default transactionRefundRequestedSyncWebhook.createHandler(
   async (req, res, { authData, ...ctx }) => {
+    validateDomainWhiteList(req, ALLOWED_DOMAIN);
+
     const responseBuilder = new WebhookResponseBuilder(res);
     logger.debug({ payload: ctx.payload }, "handler called");
 
