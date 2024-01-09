@@ -7,13 +7,21 @@ const logger = createLogger({
   name: "AuthorizeNetWebhooksHandler",
 });
 
+export const config = {
+  api: {
+    bodyParser: false /** Disables automatic body parsing, so we can use raw-body.
+    @see: authorize-net-webhook-handler.ts 
+    */,
+  },
+};
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     logger.debug({ url: req.url }, "Received webhook request");
     const handler = new AuthorizeNetWebhookHandler(req);
 
     await handler.handle();
-    res.status(200);
+    res.status(200).end();
   } catch (error) {
     // eslint-disable-next-line @saleor/saleor-app/logger-leak
     logger.error({ error }, "Error in webhook handler");
