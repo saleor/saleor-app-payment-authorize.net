@@ -3,7 +3,7 @@ import { type AuthData } from "@saleor/app-sdk/APL";
 import { buffer } from "micro";
 import { type NextApiRequest } from "next";
 import { z } from "zod";
-import { authorizeNetEventSchema, type AuthorizeProviderConfig } from "../authorize-net-config";
+import { authorizeNetEventSchema, type AuthorizeConfig } from "../authorize-net-config";
 import { AuthorizeNetInvalidWebhookSignatureError } from "../authorize-net-error";
 import { MissingAuthDataError } from "./authorize-net-webhook-errors";
 import { AuthorizeNetWebhookTransactionSynchronizer } from "./authorize-net-webhook-transaction-synchronizer";
@@ -32,7 +32,7 @@ export type EventPayload = z.infer<typeof eventPayloadSchema>;
 export class AuthorizeNetWebhookHandler {
   private authorizeSignature = "x-anet-signature";
   private authData: AuthData | null = null;
-  private authorizeConfig: AuthorizeProviderConfig.FullShape | null = null;
+  private authorizeConfig: AuthorizeConfig.FullShape | null = null;
 
   private logger = createLogger({
     name: "AuthorizeWebhookHandler",

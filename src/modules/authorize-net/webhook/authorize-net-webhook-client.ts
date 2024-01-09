@@ -3,7 +3,7 @@ import { createAuthorizeWebhooksFetch } from "./create-authorize-webhooks-fetch"
 import { createLogger } from "@/lib/logger";
 import {
   webhookSchema,
-  type AuthorizeProviderConfig,
+  type AuthorizeConfig,
   type AuthorizeNetWebhookInput,
 } from "@/modules/authorize-net/authorize-net-config";
 
@@ -28,7 +28,7 @@ export class AuthorizeNetWebhookClient {
     name: "AuthorizeNetWebhookClient",
   });
 
-  constructor(config: AuthorizeProviderConfig.FullShape) {
+  constructor(config: AuthorizeConfig.FullShape) {
     this.fetch = createAuthorizeWebhooksFetch(config);
   }
 

@@ -1,11 +1,11 @@
 import { z } from "zod";
-import { AuthorizeProviderConfig } from "../authorize-net/authorize-net-config";
+import { AuthorizeConfig } from "../authorize-net/authorize-net-config";
 import { ChannelConnection } from "../channel-connection/channel-connection.schema";
 import { generateId } from "@/lib/generate-id";
 
 export namespace AppConfig {
   export const Schema = z.object({
-    providers: z.array(AuthorizeProviderConfig.Schema.Full),
+    providers: z.array(AuthorizeConfig.Schema.Full),
     connections: z.array(ChannelConnection.Schema.Full),
   });
 
@@ -31,7 +31,7 @@ export class AppConfigurator {
     getProviderById: (id: string) => {
       return this.rootData.providers.find((p) => p.id === id);
     },
-    addProvider: (input: AuthorizeProviderConfig.InputShape) => {
+    addProvider: (input: AuthorizeConfig.InputShape) => {
       const nextProviders = [
         ...this.rootData.providers,
         {
@@ -42,7 +42,7 @@ export class AppConfigurator {
 
       this.rootData.providers = nextProviders;
     },
-    updateProvider: (provider: AuthorizeProviderConfig.FullShape) => {
+    updateProvider: (provider: AuthorizeConfig.FullShape) => {
       const nextProviders = this.rootData.providers.map((p) => {
         if (p.id === provider.id) {
           return provider;

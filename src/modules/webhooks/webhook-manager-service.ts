@@ -1,6 +1,6 @@
 import { type Client } from "urql";
 import { type AuthData } from "@saleor/app-sdk/APL";
-import { type AuthorizeProviderConfig } from "../authorize-net/authorize-net-config";
+import { type AuthorizeConfig } from "../authorize-net/authorize-net-config";
 
 import { TransactionCancelationRequestedService } from "./transaction-cancelation-requested";
 import { TransactionInitializeSessionService } from "./transaction-initialize-session";
@@ -32,14 +32,14 @@ export interface PaymentsWebhooks {
 }
 
 export class AppWebhookManager implements PaymentsWebhooks {
-  private authorizeConfig: AuthorizeProviderConfig.FullShape;
+  private authorizeConfig: AuthorizeConfig.FullShape;
   private apiClient: Client;
 
   constructor({
     authorizeConfig,
     apiClient,
   }: {
-    authorizeConfig: AuthorizeProviderConfig.FullShape;
+    authorizeConfig: AuthorizeConfig.FullShape;
     apiClient: Client;
   }) {
     this.authorizeConfig = authorizeConfig;
@@ -95,7 +95,7 @@ export async function createAppWebhookManager({
   authorizeConfig,
 }: {
   authData: AuthData;
-  authorizeConfig: AuthorizeProviderConfig.FullShape;
+  authorizeConfig: AuthorizeConfig.FullShape;
 }) {
   const apiClient = createServerClient(authData.saleorApiUrl, authData.token);
   const appWebhookManager = new AppWebhookManager({

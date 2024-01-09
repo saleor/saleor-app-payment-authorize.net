@@ -1,5 +1,5 @@
 import { type Client } from "urql";
-import { type AuthorizeProviderConfig, type AuthorizeNetEvent } from "../authorize-net-config";
+import { type AuthorizeConfig, type AuthorizeNetEvent } from "../authorize-net-config";
 import { TransactionDetailsClient } from "../client/transaction-details-client";
 import { AuthorizeNetError } from "../authorize-net-error";
 import { type EventPayload } from "./authorize-net-webhook-handler";
@@ -19,14 +19,14 @@ const TransactionEventReportMutationError = AuthorizeNetError.subclass(
  * @description This class is used to synchronize Authorize.net transactions with Saleor transactions
  */
 export class AuthorizeNetWebhookTransactionSynchronizer {
-  private authorizeConfig: AuthorizeProviderConfig.FullShape;
+  private authorizeConfig: AuthorizeConfig.FullShape;
   private client: Client;
 
   constructor({
     authorizeConfig,
     client,
   }: {
-    authorizeConfig: AuthorizeProviderConfig.FullShape;
+    authorizeConfig: AuthorizeConfig.FullShape;
     client: Client;
   }) {
     this.authorizeConfig = authorizeConfig;

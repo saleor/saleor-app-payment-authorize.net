@@ -1,6 +1,6 @@
 import AuthorizeNet from "authorizenet";
 import { type Client } from "urql";
-import { type AuthorizeProviderConfig } from "../authorize-net/authorize-net-config";
+import { type AuthorizeConfig } from "../authorize-net/authorize-net-config";
 import { CreateTransactionClient } from "../authorize-net/client/create-transaction";
 import { SynchronizedTransactionIdResolver } from "../authorize-net/synchronized-transaction/synchronized-transaction-id-resolver";
 import { createSynchronizedTransactionRequest } from "../authorize-net/synchronized-transaction/create-synchronized-transaction-request";
@@ -18,7 +18,7 @@ export const TransactionRefundRequestedError = BaseError.subclass(
 );
 
 export class TransactionRefundRequestedService {
-  private authorizeConfig: AuthorizeProviderConfig.FullShape;
+  private authorizeConfig: AuthorizeConfig.FullShape;
   private apiClient: Client;
 
   private logger = createLogger({
@@ -29,7 +29,7 @@ export class TransactionRefundRequestedService {
     authorizeConfig,
     apiClient,
   }: {
-    authorizeConfig: AuthorizeProviderConfig.FullShape;
+    authorizeConfig: AuthorizeConfig.FullShape;
     apiClient: Client;
   }) {
     this.authorizeConfig = authorizeConfig;

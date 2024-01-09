@@ -3,7 +3,7 @@ import AuthorizeNet from "authorizenet";
 import { z } from "zod";
 import {
   authorizeEnvironmentSchema,
-  type AuthorizeProviderConfig,
+  type AuthorizeConfig,
 } from "../authorize-net/authorize-net-config";
 import {
   HostedPaymentPageClient,
@@ -44,14 +44,14 @@ type TransactionInitializeSessionResponseData = z.infer<
 >;
 
 export class TransactionInitializeSessionService {
-  private authorizeConfig: AuthorizeProviderConfig.FullShape;
+  private authorizeConfig: AuthorizeConfig.FullShape;
   private customerProfileManager: CustomerProfileManager;
 
   private logger = createLogger({
     name: "TransactionInitializeSessionService",
   });
 
-  constructor({ authorizeConfig }: { authorizeConfig: AuthorizeProviderConfig.FullShape }) {
+  constructor({ authorizeConfig }: { authorizeConfig: AuthorizeConfig.FullShape }) {
     this.authorizeConfig = authorizeConfig;
     this.customerProfileManager = new CustomerProfileManager({
       authorizeConfig,

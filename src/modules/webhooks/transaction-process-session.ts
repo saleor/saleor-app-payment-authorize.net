@@ -1,6 +1,6 @@
 import { type Client } from "urql";
 import { z } from "zod";
-import { type AuthorizeProviderConfig } from "../authorize-net/authorize-net-config";
+import { type AuthorizeConfig } from "../authorize-net/authorize-net-config";
 import {
   TransactionDetailsClient,
   type GetTransactionDetailsResponse,
@@ -22,7 +22,7 @@ const transactionProcessPayloadDataSchema = z.object({
 });
 
 export class TransactionProcessSessionService {
-  private authorizeConfig: AuthorizeProviderConfig.FullShape;
+  private authorizeConfig: AuthorizeConfig.FullShape;
   private apiClient: Client;
 
   private logger = createLogger({
@@ -33,7 +33,7 @@ export class TransactionProcessSessionService {
     authorizeConfig,
     apiClient,
   }: {
-    authorizeConfig: AuthorizeProviderConfig.FullShape;
+    authorizeConfig: AuthorizeConfig.FullShape;
     apiClient: Client;
   }) {
     this.authorizeConfig = authorizeConfig;

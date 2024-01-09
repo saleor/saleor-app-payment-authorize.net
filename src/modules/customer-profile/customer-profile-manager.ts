@@ -1,4 +1,4 @@
-import { type AuthorizeProviderConfig } from "../authorize-net/authorize-net-config";
+import { type AuthorizeConfig } from "../authorize-net/authorize-net-config";
 import { CustomerProfileClient } from "../authorize-net/client/customer-profile-client";
 import { createLogger } from "@/lib/logger";
 
@@ -8,7 +8,7 @@ export class CustomerProfileManager {
     name: "CustomerProfileManager",
   });
 
-  constructor({ authorizeConfig }: { authorizeConfig: AuthorizeProviderConfig.FullShape }) {
+  constructor({ authorizeConfig }: { authorizeConfig: AuthorizeConfig.FullShape }) {
     this.customerProfileClient = new CustomerProfileClient(authorizeConfig);
   }
 

@@ -7,7 +7,7 @@ import { resolveAuthorizeConfigFromAppConfig } from "../../configuration/authori
 import {
   type AuthorizeNetWebhook,
   type AuthorizeNetWebhookInput,
-  type AuthorizeProviderConfig,
+  type AuthorizeConfig,
 } from "../authorize-net-config";
 import { AuthorizeNetWebhookClient } from "./authorize-net-webhook-client";
 import { MissingAppUrlError } from "./authorize-net-webhook-errors";
@@ -20,7 +20,7 @@ export class AuthorizeWebhookManager {
   private authData: AuthData;
   private appConfig: AppConfig.Shape;
 
-  private authorizeConfig: AuthorizeProviderConfig.FullShape;
+  private authorizeConfig: AuthorizeConfig.FullShape;
 
   private logger = createLogger({
     name: "AuthorizeWebhookManager",
@@ -45,7 +45,7 @@ export class AuthorizeWebhookManager {
   }
 
   private async updateMetadataWithWebhook(webhook: AuthorizeNetWebhook) {
-    const nextConfig: AuthorizeProviderConfig.FullShape = {
+    const nextConfig: AuthorizeConfig.FullShape = {
       ...this.authorizeConfig,
       webhook,
     };

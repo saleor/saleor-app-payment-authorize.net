@@ -42,7 +42,7 @@ const fullSchema = inputSchema.extend({
   id: z.string(),
 });
 
-export namespace AuthorizeProviderConfig {
+export namespace AuthorizeConfig {
   export type InputShape = z.infer<typeof inputSchema>;
   export type FullShape = z.infer<typeof fullSchema>;
 
