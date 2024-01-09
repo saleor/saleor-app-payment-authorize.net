@@ -38,6 +38,8 @@ const webhookResponseSchema = z
   })
   .and(webhookSchema);
 
+const listWebhooksResponseSchema = z.array(webhookSchema);
+
 /**
  * @description Authorize.net has a separate API for registering webhooks. This class communicates with that API.
  * @see AuthorizeNetClient for managing transactions etc.
@@ -64,6 +66,20 @@ export class AuthorizeNetWebhookClient {
     this.logger.trace({ result }, "registerWebhook response:");
 
     const parsedResult = webhookResponseSchema.parse(result);
+
+    return parsedResult;
+  }
+
+  async listWebhooks() {
+    const response = await this.fetch({
+      method: "GET",
+    });
+
+    const result = await response.json();
+
+    this.logger.trace({ result }, "listWebhooks response:");
+
+    const parsedResult = listWebhooksResponseSchema.parse(result);
 
     return parsedResult;
   }

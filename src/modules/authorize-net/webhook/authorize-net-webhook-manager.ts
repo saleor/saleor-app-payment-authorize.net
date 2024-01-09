@@ -3,7 +3,6 @@ import { isDevelopment } from "../../../lib/isEnv";
 import { type AppConfig } from "../../configuration/app-configurator";
 import { resolveAuthorizeConfigFromAppConfig } from "../../configuration/authorize-config-resolver";
 
-import { type AuthorizeConfig } from "../authorize-net-config";
 import {
   AuthorizeNetWebhookClient,
   type AuthorizeNetWebhookInput,
@@ -15,17 +14,19 @@ import { createLogger } from "@/lib/logger";
  * @description This class is used to register and manage the webhook with Authorize.net
  */
 export class AuthorizeWebhookManager {
-  private authorizeConfig: AuthorizeConfig.FullShape;
+  private client: AuthorizeNetWebhookClient;
 
   private logger = createLogger({
     name: "AuthorizeWebhookManager",
   });
 
   constructor({ appConfig, channelSlug }: { appConfig: AppConfig.Shape; channelSlug: string }) {
-    this.authorizeConfig = resolveAuthorizeConfigFromAppConfig({
+    const authorizeConfig = resolveAuthorizeConfigFromAppConfig({
       appConfig,
       channelSlug,
     });
+
+    this.client = new AuthorizeNetWebhookClient(authorizeConfig);
   }
 
   private getWebhookParams() {
@@ -51,18 +52,31 @@ export class AuthorizeWebhookManager {
     return webhookParams;
   }
 
+  private async getAppWebhook() {
+    const webhookList = await this.client.listWebhooks();
+
+    const webhookParams = this.getWebhookParams();
+
+    const webhook = webhookList.find((webhook) => {
+      return webhook.url === webhookParams.url;
+    });
+
+    return webhook;
+  }
+
   public async register() {
-    const isWebhookRegistered = true; // todo: check if exists
+    const appWebhook = await this.getAppWebhook();
 
-    if (!isWebhookRegistered) {
-      this.logger.debug("Registering webhook...");
-
-      const webhooksClient = new AuthorizeNetWebhookClient(this.authorizeConfig);
-
-      const webhookParams = this.getWebhookParams();
-      await webhooksClient.registerWebhook(webhookParams);
-
-      this.logger.info("Webhook registered successfully");
+    if (appWebhook) {
+      this.logger.debug("Webhook already registered");
+      return;
     }
+
+    this.logger.debug("Webhook not found. Registering webhook...");
+
+    const webhookParams = this.getWebhookParams();
+    await this.client.registerWebhook(webhookParams);
+
+    this.logger.info("Webhook registered successfully");
   }
 }
