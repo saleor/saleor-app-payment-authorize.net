@@ -5,8 +5,6 @@ import { SynchronousWebhookResponseBuilder } from "@/lib/webhook-response-builde
 import { TransactionRefundRequestedError } from "@/modules/webhooks/transaction-refund-requested";
 
 import { AuthorizeWebhookManager } from "@/modules/authorize-net/webhook/authorize-net-webhook-manager";
-import { resolveAppConfigFromCtx } from "@/modules/configuration/app-config-resolver";
-import { resolveAuthorizeConfigFromAppConfig } from "@/modules/configuration/authorize-config-resolver";
 import { createAppWebhookManager } from "@/modules/webhooks/webhook-manager-service";
 import { saleorApp } from "@/saleor-app";
 import { type TransactionRefundRequestedResponse } from "@/schemas/TransactionRefundRequested/TransactionRefundRequestedResponse.mjs";
@@ -14,6 +12,7 @@ import {
   UntypedTransactionRefundRequestedDocument,
   type TransactionRefundRequestedEventFragment,
 } from "generated/graphql";
+import { getAppConfiguration } from "@/modules/configuration/app-configurator";
 
 export const config = {
   api: {
@@ -45,20 +44,9 @@ export default transactionRefundRequestedSyncWebhook.createHandler(
     logger.debug({ payload: ctx.payload }, "handler called");
 
     try {
-      const channelSlug = ctx.payload.transaction?.sourceObject?.channel.slug ?? "";
-      const appConfig = await resolveAppConfigFromCtx({
-        authData,
-        appMetadata: ctx.payload.recipient?.privateMetadata ?? [],
-      });
-
-      const authorizeConfig = resolveAuthorizeConfigFromAppConfig({
-        channelSlug,
-        appConfig,
-      });
-
+      const authorizeConfig = getAppConfiguration();
       const authorizeWebhookManager = new AuthorizeWebhookManager({
-        appConfig,
-        channelSlug,
+        appConfig: authorizeConfig,
       });
 
       await authorizeWebhookManager.register();

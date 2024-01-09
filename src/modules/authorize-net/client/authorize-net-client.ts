@@ -3,6 +3,7 @@ import { z } from "zod";
 import { type AuthorizeConfig } from "../authorize-net-config";
 import { AuthorizeNetError } from "../authorize-net-error";
 import { createLogger } from "@/lib/logger";
+import { getAppConfiguration } from "@/modules/configuration/app-configurator";
 
 const ApiContracts = AuthorizeNet.APIContracts;
 const SDKConstants = AuthorizeNet.Constants;
@@ -33,7 +34,9 @@ export class AuthorizeNetClient {
 
   config: AuthorizeConfig.FullShape;
 
-  constructor(config: AuthorizeConfig.FullShape) {
+  constructor() {
+    const config = getAppConfiguration();
+
     const merchantAuthenticationType = new ApiContracts.MerchantAuthenticationType();
     merchantAuthenticationType.setName(config.apiLoginId);
     merchantAuthenticationType.setTransactionKey(config.transactionKey);

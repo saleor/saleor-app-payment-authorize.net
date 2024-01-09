@@ -4,8 +4,6 @@ import { normalizeError } from "@/errors";
 import { createLogger } from "@/lib/logger";
 import { SynchronousWebhookResponseBuilder } from "@/lib/webhook-response-builder";
 import { AuthorizeWebhookManager } from "@/modules/authorize-net/webhook/authorize-net-webhook-manager";
-import { resolveAppConfigFromCtx } from "@/modules/configuration/app-config-resolver";
-import { resolveAuthorizeConfigFromAppConfig } from "@/modules/configuration/authorize-config-resolver";
 import { createAppWebhookManager } from "@/modules/webhooks/webhook-manager-service";
 import { saleorApp } from "@/saleor-app";
 import { type TransactionInitializeSessionResponse } from "@/schemas/TransactionInitializeSession/TransactionInitializeSessionResponse.mjs";
@@ -13,6 +11,7 @@ import {
   UntypedTransactionInitializeSessionDocument,
   type TransactionInitializeSessionEventFragment,
 } from "generated/graphql";
+import { getAppConfiguration } from "@/modules/configuration/app-configurator";
 
 export const config = {
   api: {
@@ -48,22 +47,10 @@ export default transactionInitializeSessionSyncWebhook.createHandler(
     logger.info({ action: ctx.payload.action }, "called with:");
 
     try {
-      const channelSlug = ctx.payload.sourceObject.channel.slug;
-      const appConfig = await resolveAppConfigFromCtx({
-        authData,
-        appMetadata: ctx.payload.recipient?.privateMetadata ?? [],
-      });
-
-      const authorizeConfig = resolveAuthorizeConfigFromAppConfig({
-        appConfig,
-        channelSlug,
-      });
-
+      const authorizeConfig = getAppConfiguration();
       const authorizeWebhookManager = new AuthorizeWebhookManager({
-        appConfig,
-        channelSlug,
+        appConfig: authorizeConfig,
       });
-
       await authorizeWebhookManager.register();
 
       const appWebhookManager = await createAppWebhookManager({

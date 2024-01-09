@@ -1,7 +1,6 @@
 import { env } from "../../../lib/env.mjs";
 import { isDevelopment } from "../../../lib/isEnv";
 import { type AppConfig } from "../../configuration/app-configurator";
-import { resolveAuthorizeConfigFromAppConfig } from "../../configuration/authorize-config-resolver";
 
 import {
   AuthorizeNetWebhookClient,
@@ -20,11 +19,8 @@ export class AuthorizeWebhookManager {
     name: "AuthorizeWebhookManager",
   });
 
-  constructor({ appConfig, channelSlug }: { appConfig: AppConfig.Shape; channelSlug: string }) {
-    const authorizeConfig = resolveAuthorizeConfigFromAppConfig({
-      appConfig,
-      channelSlug,
-    });
+  constructor({ appConfig }: { appConfig: AppConfig.Shape }) {
+    const authorizeConfig = appConfig;
 
     this.client = new AuthorizeNetWebhookClient(authorizeConfig);
   }

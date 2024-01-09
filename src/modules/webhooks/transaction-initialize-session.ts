@@ -9,9 +9,10 @@ import {
   HostedPaymentPageClient,
   type GetHostedPaymentPageResponse,
 } from "../authorize-net/client/hosted-payment-page-client";
-import { CustomerProfileManager } from "../customer-profile/customer-profile-manager";
-import { saleorTransactionIdConverter } from "../authorize-net/synchronized-transaction/saleor-transaction-id-converter";
 import { createSynchronizedTransactionRequest } from "../authorize-net/synchronized-transaction/create-synchronized-transaction-request";
+import { saleorTransactionIdConverter } from "../authorize-net/synchronized-transaction/saleor-transaction-id-converter";
+import { CustomerProfileManager } from "../customer-profile/customer-profile-manager";
+import { getAppConfiguration } from "../configuration/app-configurator";
 import { type TransactionInitializeSessionEventFragment } from "generated/graphql";
 
 import { BaseError } from "@/errors";
@@ -51,11 +52,9 @@ export class TransactionInitializeSessionService {
     name: "TransactionInitializeSessionService",
   });
 
-  constructor({ authorizeConfig }: { authorizeConfig: AuthorizeConfig.FullShape }) {
-    this.authorizeConfig = authorizeConfig;
-    this.customerProfileManager = new CustomerProfileManager({
-      authorizeConfig,
-    });
+  constructor() {
+    this.authorizeConfig = getAppConfiguration();
+    this.customerProfileManager = new CustomerProfileManager();
   }
 
   private async buildTransactionFromPayload(
@@ -191,7 +190,7 @@ export class TransactionInitializeSessionService {
     const transactionInput = await this.buildTransactionFromPayload(payload);
     const settingsInput = this.getHostedPaymentPageSettings();
 
-    const hostedPaymentPageClient = new HostedPaymentPageClient(this.authorizeConfig);
+    const hostedPaymentPageClient = new HostedPaymentPageClient();
 
     const hostedPaymentPageResponse = await hostedPaymentPageClient.getHostedPaymentPageRequest({
       transactionInput,

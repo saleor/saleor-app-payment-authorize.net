@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const authorizeEnvironmentSchema = z.enum(["sandbox", "production"]);
 
-const inputSchema = z.object({
+const fullSchema = z.object({
   apiLoginId: z.string().min(1),
   publicClientKey: z.string().min(1),
   transactionKey: z.string().min(1),
@@ -10,16 +10,10 @@ const inputSchema = z.object({
   environment: authorizeEnvironmentSchema,
 });
 
-const fullSchema = inputSchema.extend({
-  id: z.string(),
-});
-
 export namespace AuthorizeConfig {
-  export type InputShape = z.infer<typeof inputSchema>;
   export type FullShape = z.infer<typeof fullSchema>;
 
   export const Schema = {
-    Input: inputSchema,
     Full: fullSchema,
   };
 }

@@ -1,9 +1,8 @@
 import AuthorizeNet from "authorizenet";
 import { type Client } from "urql";
-import { type AuthorizeConfig } from "../authorize-net/authorize-net-config";
 import { CreateTransactionClient } from "../authorize-net/client/create-transaction";
-import { SynchronizedTransactionIdResolver } from "../authorize-net/synchronized-transaction/synchronized-transaction-id-resolver";
 import { createSynchronizedTransactionRequest } from "../authorize-net/synchronized-transaction/create-synchronized-transaction-request";
+import { SynchronizedTransactionIdResolver } from "../authorize-net/synchronized-transaction/synchronized-transaction-id-resolver";
 import { type TransactionCancelationRequestedEventFragment } from "generated/graphql";
 
 import { BaseError } from "@/errors";
@@ -18,21 +17,13 @@ export const TransactionCancelationRequestedError = BaseError.subclass(
 );
 
 export class TransactionCancelationRequestedService {
-  private authorizeConfig: AuthorizeConfig.FullShape;
   private apiClient: Client;
 
   private logger = createLogger({
     name: "TransactionCancelationRequestedService",
   });
 
-  constructor({
-    authorizeConfig,
-    apiClient,
-  }: {
-    authorizeConfig: AuthorizeConfig.FullShape;
-    apiClient: Client;
-  }) {
-    this.authorizeConfig = authorizeConfig;
+  constructor({ apiClient }: { apiClient: Client }) {
     this.apiClient = apiClient;
   }
 
@@ -70,7 +61,7 @@ export class TransactionCancelationRequestedService {
       saleorTransactionId,
     });
 
-    const createTransactionClient = new CreateTransactionClient(this.authorizeConfig);
+    const createTransactionClient = new CreateTransactionClient();
 
     await createTransactionClient.createTransaction(transactionInput);
 

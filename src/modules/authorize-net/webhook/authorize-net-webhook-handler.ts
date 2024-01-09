@@ -5,14 +5,13 @@ import { type NextApiRequest } from "next";
 import { z } from "zod";
 import { type AuthorizeConfig } from "../authorize-net-config";
 import { AuthorizeNetInvalidWebhookSignatureError } from "../authorize-net-error";
+import { authorizeNetEventSchema } from "./authorize-net-webhook-client";
 import { MissingAuthDataError } from "./authorize-net-webhook-errors";
 import { AuthorizeNetWebhookTransactionSynchronizer } from "./authorize-net-webhook-transaction-synchronizer";
-import { authorizeNetEventSchema } from "./authorize-net-webhook-client";
 import { saleorApp } from "@/saleor-app";
-import { resolveAuthorizeConfigFromAppConfig } from "@/modules/configuration/authorize-config-resolver";
-import { AppConfigMetadataManager } from "@/modules/configuration/app-config-metadata-manager";
 import { createLogger } from "@/lib/logger";
 import { createServerClient } from "@/lib/create-graphq-client";
+import { getAppConfiguration } from "@/modules/configuration/app-configurator";
 
 const eventPayloadSchema = z.object({
   notificationId: z.string(),
@@ -69,7 +68,7 @@ export class AuthorizeNetWebhookHandler {
    */
   private async verifyWebhook() {
     this.logger.debug("Verifying webhook signature...");
-    const authorizeConfig = await this.getAuthorizeConfig();
+    const authorizeConfig = getAppConfiguration();
     const headers = this.request.headers;
     const xAnetSignature = headers[this.authorizeSignature]?.toString();
 
@@ -109,33 +108,13 @@ export class AuthorizeNetWebhookHandler {
     return eventPayload;
   }
 
-  private async getAuthorizeConfig() {
-    if (this.authorizeConfig) {
-      return this.authorizeConfig;
-    }
-
-    const authData = await this.getAuthData();
-    const channelSlug = "default-channel"; // todo: get rid of channelSlug
-
-    const appConfigMetadataManager = AppConfigMetadataManager.createFromAuthData(authData);
-    const appConfigurator = await appConfigMetadataManager.get();
-    const appConfig = appConfigurator.rootData;
-
-    const authorizeConfig = resolveAuthorizeConfigFromAppConfig({ appConfig, channelSlug });
-    this.authorizeConfig = authorizeConfig;
-
-    return authorizeConfig;
-  }
-
   private async processAuthorizeWebhook(eventPayload: EventPayload) {
     const authData = await this.getAuthData();
-    const authorizeConfig = await this.getAuthorizeConfig();
 
     const client = createServerClient(authData.saleorApiUrl, authData.token);
 
     const synchronizer = new AuthorizeNetWebhookTransactionSynchronizer({
       client,
-      authorizeConfig,
     });
     return synchronizer.synchronizeTransaction(eventPayload);
   }

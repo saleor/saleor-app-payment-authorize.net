@@ -49,9 +49,7 @@ export class AppWebhookManager implements PaymentsWebhooks {
   async transactionInitializeSession(
     payload: TransactionInitializeSessionEventFragment,
   ): Promise<TransactionInitializeSessionResponse> {
-    const service = new TransactionInitializeSessionService({
-      authorizeConfig: this.authorizeConfig,
-    });
+    const service = new TransactionInitializeSessionService();
 
     return service.execute(payload);
   }
@@ -60,7 +58,6 @@ export class AppWebhookManager implements PaymentsWebhooks {
     payload: TransactionProcessSessionEventFragment,
   ): Promise<TransactionProcessSessionResponse> {
     const service = new TransactionProcessSessionService({
-      authorizeConfig: this.authorizeConfig,
       apiClient: this.apiClient,
     });
 
@@ -71,7 +68,6 @@ export class AppWebhookManager implements PaymentsWebhooks {
     payload: TransactionCancelationRequestedEventFragment,
   ): Promise<TransactionCancelationRequestedResponse> {
     const service = new TransactionCancelationRequestedService({
-      authorizeConfig: this.authorizeConfig,
       apiClient: this.apiClient,
     });
 
@@ -82,7 +78,6 @@ export class AppWebhookManager implements PaymentsWebhooks {
     payload: TransactionRefundRequestedEventFragment,
   ): Promise<TransactionRefundRequestedResponse> {
     const service = new TransactionRefundRequestedService({
-      authorizeConfig: this.authorizeConfig,
       apiClient: this.apiClient,
     });
 

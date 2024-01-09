@@ -4,8 +4,8 @@ import { createLogger } from "@/lib/logger";
 import { SynchronousWebhookResponseBuilder } from "@/lib/webhook-response-builder";
 import { TransactionCancelationRequestedError } from "@/modules/webhooks/transaction-cancelation-requested";
 
-import { resolveAppConfigFromCtx } from "@/modules/configuration/app-config-resolver";
-import { resolveAuthorizeConfigFromAppConfig } from "@/modules/configuration/authorize-config-resolver";
+import { AuthorizeWebhookManager } from "@/modules/authorize-net/webhook/authorize-net-webhook-manager";
+
 import { createAppWebhookManager } from "@/modules/webhooks/webhook-manager-service";
 import { saleorApp } from "@/saleor-app";
 import { type TransactionCancelationRequestedResponse } from "@/schemas/TransactionCancelationRequested/TransactionCancelationRequestedResponse.mjs";
@@ -13,7 +13,7 @@ import {
   UntypedTransactionCancelationRequestedDocument,
   type TransactionCancelationRequestedEventFragment,
 } from "generated/graphql";
-import { AuthorizeWebhookManager } from "@/modules/authorize-net/webhook/authorize-net-webhook-manager";
+import { getAppConfiguration } from "@/modules/configuration/app-configurator";
 
 export const config = {
   api: {
@@ -45,20 +45,9 @@ export default transactionCancelationRequestedSyncWebhook.createHandler(
     logger.debug({ payload: ctx.payload }, "handler called");
 
     try {
-      const channelSlug = ctx.payload.transaction?.sourceObject?.channel.slug ?? "";
-      const appConfig = await resolveAppConfigFromCtx({
-        authData,
-        appMetadata: ctx.payload.recipient?.privateMetadata ?? [],
-      });
-
-      const authorizeConfig = resolveAuthorizeConfigFromAppConfig({
-        appConfig,
-        channelSlug,
-      });
-
+      const authorizeConfig = getAppConfiguration();
       const authorizeWebhookManager = new AuthorizeWebhookManager({
-        appConfig,
-        channelSlug,
+        appConfig: authorizeConfig,
       });
 
       await authorizeWebhookManager.register();

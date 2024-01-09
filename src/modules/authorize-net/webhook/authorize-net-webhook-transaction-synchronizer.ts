@@ -1,14 +1,13 @@
 import { type Client } from "urql";
-import { type AuthorizeConfig } from "../authorize-net-config";
-import { TransactionDetailsClient } from "../client/transaction-details-client";
 import { AuthorizeNetError } from "../authorize-net-error";
-import { type EventPayload } from "./authorize-net-webhook-handler";
+import { TransactionDetailsClient } from "../client/transaction-details-client";
 import { type AuthorizeNetEvent } from "./authorize-net-webhook-client";
+import { type EventPayload } from "./authorize-net-webhook-handler";
 import {
-  type TransactionEventReportMutation,
-  type TransactionEventReportMutationVariables,
   TransactionEventReportDocument,
   TransactionEventTypeEnum,
+  type TransactionEventReportMutation,
+  type TransactionEventReportMutationVariables,
 } from "generated/graphql";
 import { saleorTransactionIdConverter } from "@/modules/authorize-net/synchronized-transaction/saleor-transaction-id-converter";
 
@@ -20,17 +19,9 @@ const TransactionEventReportMutationError = AuthorizeNetError.subclass(
  * @description This class is used to synchronize Authorize.net transactions with Saleor transactions
  */
 export class AuthorizeNetWebhookTransactionSynchronizer {
-  private authorizeConfig: AuthorizeConfig.FullShape;
   private client: Client;
 
-  constructor({
-    authorizeConfig,
-    client,
-  }: {
-    authorizeConfig: AuthorizeConfig.FullShape;
-    client: Client;
-  }) {
-    this.authorizeConfig = authorizeConfig;
+  constructor({ client }: { client: Client }) {
     this.client = client;
   }
 
@@ -56,7 +47,7 @@ export class AuthorizeNetWebhookTransactionSynchronizer {
   }
 
   private getAuthorizeTransaction({ id }: { id: string }) {
-    const transactionDetailsClient = new TransactionDetailsClient(this.authorizeConfig);
+    const transactionDetailsClient = new TransactionDetailsClient();
     return transactionDetailsClient.getTransactionDetailsRequest({ transactionId: id });
   }
 
