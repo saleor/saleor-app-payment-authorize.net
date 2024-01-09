@@ -16,7 +16,7 @@ fragment TransactionInitializeSessionEvent on TransactionInitializeSession {
     }
   }
   transaction {
-    id
+    ...Transaction
   }
   sourceObject {
     __typename

@@ -2,12 +2,14 @@ import AuthorizeNet from "authorizenet";
 import { type Client } from "urql";
 import { type AuthorizeProviderConfig } from "../authorize-net/authorize-net-config";
 import { CreateTransactionClient } from "../authorize-net/client/create-transaction";
-import { TransactionMetadataManager } from "../configuration/transaction-metadata-manager";
-import { type MetadataItem, type TransactionRefundRequestedEventFragment } from "generated/graphql";
+import { SynchronizedTransactionIdResolver } from "../authorize-net/synchronized-transaction/synchronized-transaction-id-resolver";
+import { createSynchronizedTransactionRequest } from "../authorize-net/synchronized-transaction/create-synchronized-transaction-request";
+import { type TransactionRefundRequestedEventFragment } from "generated/graphql";
 
 import { BaseError } from "@/errors";
 import { createLogger } from "@/lib/logger";
 import { type TransactionRefundRequestedResponse } from "@/schemas/TransactionRefundRequested/TransactionRefundRequestedResponse.mjs";
+import { invariant } from "@/lib/invariant";
 
 const ApiContracts = AuthorizeNet.APIContracts;
 
@@ -34,21 +36,18 @@ export class TransactionRefundRequestedService {
     this.apiClient = apiClient;
   }
 
-  private async getTransactionIdFromMetadata({ metadata }: { metadata: readonly MetadataItem[] }) {
-    const metadataManager = new TransactionMetadataManager({ apiClient: this.apiClient });
-    const transactionId = await metadataManager.getAuthorizeTransactionId({ metadata });
-
-    return transactionId;
-  }
-
   private async buildTransactionFromPayload({
     authorizeTransactionId,
+    saleorTransactionId,
   }: {
     authorizeTransactionId: string;
+    saleorTransactionId: string;
   }): Promise<AuthorizeNet.APIContracts.TransactionRequestType> {
-    const transactionRequest = new ApiContracts.TransactionRequestType();
+    const transactionRequest = createSynchronizedTransactionRequest({
+      saleorTransactionId,
+      authorizeTransactionId,
+    });
     transactionRequest.setTransactionType(ApiContracts.TransactionTypeEnum.VOIDTRANSACTION);
-    transactionRequest.setRefTransId(authorizeTransactionId);
 
     return transactionRequest;
   }
@@ -56,19 +55,19 @@ export class TransactionRefundRequestedService {
   async execute(
     payload: TransactionRefundRequestedEventFragment,
   ): Promise<TransactionRefundRequestedResponse> {
-    this.logger.debug({ id: payload.transaction?.id }, "Called execute with");
+    this.logger.debug({ id: payload.transaction?.id }, "Refunding the transaction");
 
-    const saleorTransactionId = payload.transaction?.id;
+    invariant(payload.transaction, "Transaction is missing");
 
-    if (!saleorTransactionId) {
-      throw new TransactionRefundRequestedError("Missing saleorTransactionId in payload");
-    }
+    const idResolver = new SynchronizedTransactionIdResolver(this.apiClient);
+    const { saleorTransactionId, authorizeTransactionId } = await idResolver.resolveFromTransaction(
+      payload.transaction,
+    );
 
-    const authorizeTransactionId = await this.getTransactionIdFromMetadata({
-      metadata: payload.transaction.privateMetadata ?? [],
+    const transactionInput = await this.buildTransactionFromPayload({
+      authorizeTransactionId,
+      saleorTransactionId,
     });
-
-    const transactionInput = await this.buildTransactionFromPayload({ authorizeTransactionId });
 
     const createTransactionClient = new CreateTransactionClient(this.authorizeConfig);
 

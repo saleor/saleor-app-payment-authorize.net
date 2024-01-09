@@ -2,10 +2,10 @@ mutation TransactionEventReport(
   $transactionId: ID!
   $amount: PositiveDecimal!
   $availableActions: [TransactionActionEnum!]!
-  $externalUrl: String!
+  $externalUrl: String
   $message: String
   $pspReference: String!
-  $time: DateTime!
+  $time: DateTime
   $type: TransactionEventTypeEnum!
 ) {
   transactionEventReport(

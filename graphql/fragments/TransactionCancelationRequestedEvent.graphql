@@ -8,21 +8,6 @@ fragment TransactionCancelationRequestedEvent on TransactionCancelationRequested
     amount
   }
   transaction {
-    id
-    pspReference
-    sourceObject: order {
-      channel {
-        id
-        slug
-      }
-    }
-    privateMetadata {
-      key
-      value
-    }
-    authorizedAmount {
-      amount
-      currency
-    }
+    ...Transaction
   }
 }

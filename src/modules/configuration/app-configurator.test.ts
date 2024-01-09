@@ -11,6 +11,8 @@ describe("AppConfigurator", () => {
         transactionKey: "transaction-key",
         environment: "sandbox",
         publicClientKey: "public-client-key",
+        signatureKey: "signature-key",
+        webhook: null,
       });
 
       const parsedConfig = JSON.parse(configurator.serialize());
@@ -23,6 +25,8 @@ describe("AppConfigurator", () => {
             transactionKey: "transaction-key",
             environment: "sandbox",
             publicClientKey: "public-client-key",
+            signatureKey: "signature-key",
+            webhook: null,
           },
         ],
         connections: [],

@@ -11,7 +11,7 @@ fragment TransactionProcessSessionEvent on TransactionProcessSession {
     actionType
   }
   transaction {
-    id
+    ...Transaction
   }
   sourceObject {
     __typename

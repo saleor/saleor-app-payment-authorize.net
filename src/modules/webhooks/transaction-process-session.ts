@@ -1,5 +1,5 @@
-import { z } from "zod";
 import { type Client } from "urql";
+import { z } from "zod";
 import { type AuthorizeProviderConfig } from "../authorize-net/authorize-net-config";
 import {
   TransactionDetailsClient,
@@ -8,8 +8,8 @@ import {
 import { TransactionMetadataManager } from "../configuration/transaction-metadata-manager";
 import { type TransactionProcessSessionEventFragment } from "generated/graphql";
 import { type TransactionProcessSessionResponse } from "@/schemas/TransactionProcessSession/TransactionProcessSessionResponse.mjs";
-import { BaseError } from "@/errors";
 import { createLogger } from "@/lib/logger";
+import { BaseError } from "@/errors";
 
 export const TransactionProcessError = BaseError.subclass("TransactionProcessError");
 
@@ -41,9 +41,9 @@ export class TransactionProcessSessionService {
   }
 
   /**
-   * @description Saves Authorize transaction ID in metadata for future usage in other operations (e.g. `transaction-cancelation-requested`).
+   * @description Saves Authorize transaction ID in metadata for future usage in other operations (e.g. `transaction-cancelation-requested`). Also saves Saleor transaction ID in Authorize transaction as order.description.
    */
-  private async saveTransactionIdInMetadata({
+  private async synchronizeTransaction({
     saleorTransactionId,
     authorizeTransactionId,
   }: {
@@ -51,6 +51,7 @@ export class TransactionProcessSessionService {
     authorizeTransactionId: string;
   }) {
     const metadataManager = new TransactionMetadataManager({ apiClient: this.apiClient });
+
     await metadataManager.saveTransactionId({
       saleorTransactionId,
       authorizeTransactionId,
@@ -63,15 +64,24 @@ export class TransactionProcessSessionService {
    */
   private mapTransactionToWebhookResponse(
     response: GetTransactionDetailsResponse,
-  ): Pick<TransactionProcessSessionResponse, "result" | "actions"> {
+  ): TransactionProcessSessionResponse {
+    const baseResponse: Pick<
+      TransactionProcessSessionResponse,
+      "amount" | "message" | "pspReference"
+    > = {
+      amount: response.transaction.authAmount,
+      message: response.transaction.responseReasonDescription,
+      pspReference: response.transaction.transId,
+    };
+
     const { transactionStatus } = response.transaction;
 
     if (transactionStatus === "authorizedPendingCapture") {
-      return { result: "AUTHORIZATION_SUCCESS", actions: ["CANCEL", "REFUND"] };
+      return { ...baseResponse, result: "AUTHORIZATION_SUCCESS", actions: ["CANCEL", "REFUND"] };
     }
 
     if (transactionStatus === "FDSPendingReview") {
-      return { result: "AUTHORIZATION_REQUEST", actions: [] };
+      return { ...baseResponse, result: "AUTHORIZATION_REQUEST", actions: [] };
     }
 
     throw new TransactionProcessError(`Unexpected transaction status: ${transactionStatus}`);
@@ -80,7 +90,7 @@ export class TransactionProcessSessionService {
   async execute(
     payload: TransactionProcessSessionEventFragment,
   ): Promise<TransactionProcessSessionResponse> {
-    this.logger.debug({ id: payload.transaction?.id }, "Called execute with");
+    this.logger.debug({ id: payload.transaction?.id }, "Mapping the state of transaction");
     const dataParseResult = transactionProcessPayloadDataSchema.safeParse(payload.data);
 
     if (!dataParseResult.success) {
@@ -89,16 +99,16 @@ export class TransactionProcessSessionService {
       });
     }
 
-    const { transactionId } = dataParseResult.data;
+    const { transactionId: authorizeTransactionId } = dataParseResult.data;
 
-    await this.saveTransactionIdInMetadata({
+    await this.synchronizeTransaction({
       saleorTransactionId: payload.transaction.id,
-      authorizeTransactionId: transactionId,
+      authorizeTransactionId,
     });
 
     const transactionDetailsClient = new TransactionDetailsClient(this.authorizeConfig);
     const details = await transactionDetailsClient.getTransactionDetailsRequest({
-      transactionId,
+      transactionId: authorizeTransactionId,
     });
 
     const { result, actions } = this.mapTransactionToWebhookResponse(details);
@@ -108,7 +118,7 @@ export class TransactionProcessSessionService {
       result,
       actions,
       message: details.transaction.responseReasonDescription,
-      pspReference: transactionId,
+      pspReference: authorizeTransactionId,
     };
   }
 }

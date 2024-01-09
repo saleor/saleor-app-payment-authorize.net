@@ -1,8 +1,7 @@
 import { z } from "zod";
 import { AuthorizeProviderConfig } from "../authorize-net/authorize-net-config";
-import { ChannelConnectionConfigurator } from "../channel-connection/channel-connection-configurator";
 import { ChannelConnection } from "../channel-connection/channel-connection.schema";
-import { ProvidersConfigurator } from "../provider/provider-configurator";
+import { generateId } from "@/lib/generate-id";
 
 export namespace AppConfig {
   export const Schema = z.object({
@@ -14,22 +13,79 @@ export namespace AppConfig {
 }
 
 export class AppConfigurator {
-  private rootData: AppConfig.Shape = {
+  rootData: AppConfig.Shape = {
     providers: [],
     connections: [],
   };
-
-  providers: ProvidersConfigurator;
-  connections: ChannelConnectionConfigurator;
 
   constructor(initialData?: AppConfig.Shape) {
     if (initialData) {
       this.rootData = initialData;
     }
-
-    this.providers = new ProvidersConfigurator(this.rootData.providers);
-    this.connections = new ChannelConnectionConfigurator(this.rootData.connections);
   }
+
+  providers = {
+    getProviders: () => {
+      return this.rootData.providers;
+    },
+    getProviderById: (id: string) => {
+      return this.rootData.providers.find((p) => p.id === id);
+    },
+    addProvider: (input: AuthorizeProviderConfig.InputShape) => {
+      const nextProviders = [
+        ...this.rootData.providers,
+        {
+          ...input,
+          id: generateId(),
+        },
+      ];
+
+      this.rootData.providers = nextProviders;
+    },
+    updateProvider: (provider: AuthorizeProviderConfig.FullShape) => {
+      const nextProviders = this.rootData.providers.map((p) => {
+        if (p.id === provider.id) {
+          return provider;
+        }
+
+        return p;
+      });
+
+      this.rootData.providers = nextProviders;
+    },
+    deleteProvider: (providerId: string) => {
+      const nextProviders = this.rootData.providers.filter((p) => p.id !== providerId);
+
+      this.rootData.providers = nextProviders;
+    },
+  };
+
+  connections = {
+    getConnections: () => {
+      return this.rootData.connections;
+    },
+    addConnection: (input: ChannelConnection.InputShape) => {
+      const nextConnections = [...this.rootData.connections, { ...input, id: generateId() }];
+
+      this.rootData.connections = nextConnections;
+    },
+    updateConnection: (connection: ChannelConnection.FullShape) => {
+      const nextConnections = this.rootData.connections.map((p) => {
+        if (p.id === connection.id) {
+          return connection;
+        }
+
+        return p;
+      });
+
+      this.rootData.connections = nextConnections;
+    },
+    deleteConnection: (connectionId: string) => {
+      const nextConnections = this.rootData.connections.filter((p) => p.id !== connectionId);
+
+      this.rootData.connections = nextConnections;
+    },
+  };
 
   static parse(serializedSchema: string) {
     const parsedSchema = JSON.parse(serializedSchema);

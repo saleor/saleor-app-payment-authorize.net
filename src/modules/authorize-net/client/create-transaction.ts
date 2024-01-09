@@ -8,12 +8,8 @@ const ApiControllers = AuthorizeNet.APIControllers;
 
 const createTransactionSchema = baseAuthorizeObjectSchema.and(z.unknown());
 
-type CreateTransactionResponse = z.infer<typeof createTransactionSchema>;
-
 export class CreateTransactionClient extends AuthorizeNetClient {
-  async createTransaction(
-    transactionInput: AuthorizeNet.APIContracts.TransactionRequestType,
-  ): Promise<CreateTransactionResponse> {
+  async createTransaction(transactionInput: AuthorizeNet.APIContracts.TransactionRequestType) {
     const createRequest = new ApiContracts.CreateTransactionRequest();
     createRequest.setMerchantAuthentication(this.merchantAuthenticationType);
     createRequest.setTransactionRequest(transactionInput);

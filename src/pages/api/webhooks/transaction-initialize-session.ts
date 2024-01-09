@@ -1,9 +1,12 @@
 import { SaleorSyncWebhook } from "@saleor/app-sdk/handlers/next";
 import * as Sentry from "@sentry/nextjs";
+import { normalizeError } from "@/errors";
 import { createLogger } from "@/lib/logger";
 import { SynchronousWebhookResponseBuilder } from "@/lib/webhook-response-builder";
-import { TransactionInitializeError } from "@/modules/webhooks/transaction-initialize-session";
-import { getWebhookManagerServiceFromCtx } from "@/modules/webhooks/webhook-manager-service";
+import { AuthorizeWebhookManager } from "@/modules/authorize-net/webhook/authorize-net-webhook-manager";
+import { resolveAppConfigFromCtx } from "@/modules/configuration/app-config-resolver";
+import { resolveAuthorizeConfigFromAppConfig } from "@/modules/configuration/authorize-config-resolver";
+import { createAppWebhookManager } from "@/modules/webhooks/webhook-manager-service";
 import { saleorApp } from "@/saleor-app";
 import { type TransactionInitializeSessionResponse } from "@/schemas/TransactionInitializeSession/TransactionInitializeSessionResponse.mjs";
 import {
@@ -39,35 +42,55 @@ class WebhookResponseBuilder extends SynchronousWebhookResponseBuilder<Transacti
  * 2. Call Authorize.net's `getHostedPaymentPageRequest` to get `formToken` needed to display the Accept Hosted form.
  * 3. Initializes the Saleor transaction by returning "AUTHORIZATION_ACTION_REQUIRED" result if everything was successful.
  */
-export default transactionInitializeSessionSyncWebhook.createHandler(async (req, res, ctx) => {
-  const responseBuilder = new WebhookResponseBuilder(res);
-  logger.info({ action: ctx.payload.action }, "called with:");
+export default transactionInitializeSessionSyncWebhook.createHandler(
+  async (req, res, { authData, ...ctx }) => {
+    const responseBuilder = new WebhookResponseBuilder(res);
+    logger.info({ action: ctx.payload.action }, "called with:");
 
-  try {
-    const webhookManagerService = await getWebhookManagerServiceFromCtx({
-      appMetadata: ctx.payload.recipient?.privateMetadata ?? [],
-      channelSlug: ctx.payload.sourceObject.channel.slug,
-      authData: ctx.authData,
-    });
+    try {
+      const channelSlug = ctx.payload.sourceObject.channel.slug;
+      const appConfig = await resolveAppConfigFromCtx({
+        authData,
+        appMetadata: ctx.payload.recipient?.privateMetadata ?? [],
+      });
 
-    const response = await webhookManagerService.transactionInitializeSession(ctx.payload);
+      const authorizeConfig = resolveAuthorizeConfigFromAppConfig({
+        appConfig,
+        channelSlug,
+      });
 
-    // eslint-disable-next-line @saleor/saleor-app/logger-leak
-    logger.info({ response }, "Responding with:");
-    return responseBuilder.ok(response);
-  } catch (error) {
-    Sentry.captureException(error);
+      const authorizeWebhookManager = new AuthorizeWebhookManager({
+        authData,
+        appConfig,
+        channelSlug,
+      });
 
-    const normalizedError = TransactionInitializeError.normalize(error);
-    return responseBuilder.ok({
-      amount: 0, // 0 or real amount?
-      result: "AUTHORIZATION_FAILURE",
-      message: "Failure",
-      data: {
-        error: {
-          message: normalizedError.message,
+      await authorizeWebhookManager.register();
+
+      const appWebhookManager = await createAppWebhookManager({
+        authData,
+        authorizeConfig,
+      });
+
+      const response = await appWebhookManager.transactionInitializeSession(ctx.payload);
+
+      // eslint-disable-next-line @saleor/saleor-app/logger-leak
+      logger.info({ response }, "Responding with:");
+      return responseBuilder.ok(response);
+    } catch (error) {
+      Sentry.captureException(error);
+
+      const normalizedError = normalizeError(error);
+      return responseBuilder.ok({
+        amount: ctx.payload.action.amount,
+        result: "AUTHORIZATION_FAILURE",
+        message: "Failure",
+        data: {
+          error: {
+            message: normalizedError.message,
+          },
         },
-      },
-    });
-  }
-});
+      });
+    }
+  },
+);

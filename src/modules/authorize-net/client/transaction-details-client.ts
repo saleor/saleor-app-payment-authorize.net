@@ -9,9 +9,14 @@ const ApiControllers = AuthorizeNet.APIControllers;
 const getTransactionDetailsSchema = baseAuthorizeObjectSchema.and(
   z.object({
     transaction: z.object({
+      transId: z.string().min(1),
       transactionStatus: z.string().min(1),
       authAmount: z.number(),
       responseReasonDescription: z.string().min(1),
+      submitTimeLocal: z.string().min(1),
+      order: z.object({
+        description: z.string().min(1),
+      }),
     }),
   }),
 );

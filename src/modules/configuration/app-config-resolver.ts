@@ -1,10 +1,11 @@
 import { decrypt } from "@saleor/app-sdk/settings-manager";
-import { type AppConfigMetadataManager } from "./app-config-metadata-manager";
+import { type AuthData } from "@saleor/app-sdk/APL";
+import { AppConfigMetadataManager } from "./app-config-metadata-manager";
 import { env } from "@/lib/env.mjs";
 import { generateId } from "@/lib/generate-id";
 import { createLogger, logger } from "@/lib/logger";
 import { AppConfig, AppConfigurator } from "@/modules/configuration/app-configurator";
-import { type WebhookRecipientFragment } from "generated/graphql";
+import { type MetadataItem, type WebhookRecipientFragment } from "generated/graphql";
 
 /**
  * This function looks for AppConfig in the webhook recipient metadata. If it's not found, it looks for it in the env.
@@ -18,7 +19,7 @@ const defaultAppConfig: AppConfig.Shape = {
   providers: [],
 };
 
-export class AppConfigResolver {
+class AppConfigResolver {
   private logger = createLogger({
     name: "AppConfigResolver",
   });
@@ -32,6 +33,8 @@ export class AppConfigResolver {
       publicClientKey: env.AUTHORIZE_PUBLIC_CLIENT_KEY,
       transactionKey: env.AUTHORIZE_TRANSACTION_KEY,
       environment: env.AUTHORIZE_ENVIRONMENT,
+      signatureKey: env.AUTHORIZE_SIGNATURE_KEY,
+      webhook: null,
     };
 
     const connectionInput = {
@@ -90,4 +93,19 @@ export class AppConfigResolver {
 
     return envConfig;
   }
+}
+
+export async function resolveAppConfigFromCtx({
+  authData,
+  appMetadata,
+}: {
+  authData: AuthData;
+  appMetadata: readonly MetadataItem[];
+}) {
+  const appConfigMetadataManager = AppConfigMetadataManager.createFromAuthData(authData);
+  const appConfigResolver = new AppConfigResolver(appConfigMetadataManager);
+
+  const appConfig = await appConfigResolver.resolve({ metadata: appMetadata });
+
+  return appConfig;
 }
