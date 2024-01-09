@@ -1,8 +1,9 @@
 import { type Client } from "urql";
-import { type AuthorizeConfig, type AuthorizeNetEvent } from "../authorize-net-config";
+import { type AuthorizeConfig } from "../authorize-net-config";
 import { TransactionDetailsClient } from "../client/transaction-details-client";
 import { AuthorizeNetError } from "../authorize-net-error";
 import { type EventPayload } from "./authorize-net-webhook-handler";
+import { type AuthorizeNetEvent } from "./authorize-net-webhook-client";
 import {
   type TransactionEventReportMutation,
   type TransactionEventReportMutationVariables,

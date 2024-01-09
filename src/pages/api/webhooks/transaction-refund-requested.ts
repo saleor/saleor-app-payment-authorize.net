@@ -57,7 +57,6 @@ export default transactionRefundRequestedSyncWebhook.createHandler(
       });
 
       const authorizeWebhookManager = new AuthorizeWebhookManager({
-        authData,
         appConfig,
         channelSlug,
       });

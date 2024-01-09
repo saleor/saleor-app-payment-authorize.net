@@ -57,7 +57,6 @@ export default transactionCancelationRequestedSyncWebhook.createHandler(
       });
 
       const authorizeWebhookManager = new AuthorizeWebhookManager({
-        authData,
         appConfig,
         channelSlug,
       });

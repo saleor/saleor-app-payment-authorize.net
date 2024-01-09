@@ -1,15 +1,13 @@
-import { type AuthData } from "@saleor/app-sdk/APL";
 import { env } from "../../../lib/env.mjs";
 import { isDevelopment } from "../../../lib/isEnv";
-import { AppConfigMetadataManager } from "../../configuration/app-config-metadata-manager";
-import { AppConfigurator, type AppConfig } from "../../configuration/app-configurator";
+import { type AppConfig } from "../../configuration/app-configurator";
 import { resolveAuthorizeConfigFromAppConfig } from "../../configuration/authorize-config-resolver";
+
+import { type AuthorizeConfig } from "../authorize-net-config";
 import {
-  type AuthorizeNetWebhook,
+  AuthorizeNetWebhookClient,
   type AuthorizeNetWebhookInput,
-  type AuthorizeConfig,
-} from "../authorize-net-config";
-import { AuthorizeNetWebhookClient } from "./authorize-net-webhook-client";
+} from "./authorize-net-webhook-client";
 import { MissingAppUrlError } from "./authorize-net-webhook-errors";
 import { createLogger } from "@/lib/logger";
 
@@ -17,44 +15,17 @@ import { createLogger } from "@/lib/logger";
  * @description This class is used to register and manage the webhook with Authorize.net
  */
 export class AuthorizeWebhookManager {
-  private authData: AuthData;
-  private appConfig: AppConfig.Shape;
-
   private authorizeConfig: AuthorizeConfig.FullShape;
 
   private logger = createLogger({
     name: "AuthorizeWebhookManager",
   });
 
-  constructor({
-    authData,
-    appConfig,
-    channelSlug,
-  }: {
-    authData: AuthData;
-    appConfig: AppConfig.Shape;
-    channelSlug: string;
-  }) {
-    this.authData = authData;
-    this.appConfig = appConfig;
-
+  constructor({ appConfig, channelSlug }: { appConfig: AppConfig.Shape; channelSlug: string }) {
     this.authorizeConfig = resolveAuthorizeConfigFromAppConfig({
       appConfig,
       channelSlug,
     });
-  }
-
-  private async updateMetadataWithWebhook(webhook: AuthorizeNetWebhook) {
-    const nextConfig: AuthorizeConfig.FullShape = {
-      ...this.authorizeConfig,
-      webhook,
-    };
-
-    const appConfigMetadataManager = AppConfigMetadataManager.createFromAuthData(this.authData);
-    const appConfigurator = new AppConfigurator(this.appConfig);
-
-    appConfigurator.providers.updateProvider(nextConfig);
-    await appConfigMetadataManager.set(appConfigurator);
   }
 
   private getWebhookParams() {
@@ -81,20 +52,17 @@ export class AuthorizeWebhookManager {
   }
 
   public async register() {
-    if (this.authorizeConfig.webhook) {
-      this.logger.info("Webhook already registered");
-      return;
+    const isWebhookRegistered = true; // todo: check if exists
+
+    if (!isWebhookRegistered) {
+      this.logger.debug("Registering webhook...");
+
+      const webhooksClient = new AuthorizeNetWebhookClient(this.authorizeConfig);
+
+      const webhookParams = this.getWebhookParams();
+      await webhooksClient.registerWebhook(webhookParams);
+
+      this.logger.info("Webhook registered successfully");
     }
-
-    this.logger.debug("Registering webhook...");
-
-    const webhooksClient = new AuthorizeNetWebhookClient(this.authorizeConfig);
-
-    const webhookParams = this.getWebhookParams();
-    const webhook = await webhooksClient.registerWebhook(webhookParams);
-
-    await this.updateMetadataWithWebhook(webhook);
-
-    this.logger.info("Webhook registered successfully");
   }
 }

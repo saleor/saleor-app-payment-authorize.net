@@ -69,7 +69,6 @@ export default transactionProcessSessionSyncWebhook.createHandler(
       });
 
       const authorizeWebhookManager = new AuthorizeWebhookManager({
-        authData,
         appConfig,
         channelSlug,
       });

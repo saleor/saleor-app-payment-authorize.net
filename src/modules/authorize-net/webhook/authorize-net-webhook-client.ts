@@ -1,11 +1,32 @@
 import { z } from "zod";
 import { createAuthorizeWebhooksFetch } from "./create-authorize-webhooks-fetch";
 import { createLogger } from "@/lib/logger";
-import {
-  webhookSchema,
-  type AuthorizeConfig,
-  type AuthorizeNetWebhookInput,
-} from "@/modules/authorize-net/authorize-net-config";
+import { type AuthorizeConfig } from "@/modules/authorize-net/authorize-net-config";
+
+export const authorizeNetEventSchema = z.enum([
+  "net.authorize.payment.authorization.created",
+  "net.authorize.payment.authcapture.created",
+  "net.authorize.payment.capture.created",
+  "net.authorize.payment.refund.created",
+  "net.authorize.payment.priorAuthCapture.created",
+  "net.authorize.payment.void.created",
+]);
+
+export type AuthorizeNetEvent = z.infer<typeof authorizeNetEventSchema>;
+
+const webhookInputSchema = z.object({
+  url: z.string(),
+  eventTypes: z.array(authorizeNetEventSchema),
+  status: z.enum(["active", "inactive"]),
+});
+
+export type AuthorizeNetWebhookInput = z.infer<typeof webhookInputSchema>;
+
+const webhookSchema = webhookInputSchema.and(
+  z.object({
+    webhookId: z.string(),
+  }),
+);
 
 const webhookResponseSchema = z
   .object({
