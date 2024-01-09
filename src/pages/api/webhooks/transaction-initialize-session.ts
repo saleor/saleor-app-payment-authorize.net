@@ -82,7 +82,7 @@ export default transactionInitializeSessionSyncWebhook.createHandler(
 
       const normalizedError = normalizeError(error);
       return responseBuilder.ok({
-        amount: 0, // 0 or real amount?
+        amount: ctx.payload.action.amount,
         result: "AUTHORIZATION_FAILURE",
         message: "Failure",
         data: {
