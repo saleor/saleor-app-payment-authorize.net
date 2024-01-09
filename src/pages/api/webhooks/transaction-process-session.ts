@@ -11,7 +11,7 @@ import {
   UntypedTransactionProcessSessionDocument,
   type TransactionProcessSessionEventFragment,
 } from "generated/graphql";
-import { getAppConfiguration } from "@/modules/configuration/app-configurator";
+import { getAuthorizeConfig } from "@/modules/authorize-net/authorize-net-config";
 
 export const config = {
   api: {
@@ -57,7 +57,7 @@ export default transactionProcessSessionSyncWebhook.createHandler(
     );
 
     try {
-      const authorizeConfig = getAppConfiguration();
+      const authorizeConfig = getAuthorizeConfig();
       const authorizeWebhookManager = new AuthorizeWebhookManager({
         appConfig: authorizeConfig,
       });

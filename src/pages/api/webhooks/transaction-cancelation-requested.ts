@@ -13,7 +13,7 @@ import {
   UntypedTransactionCancelationRequestedDocument,
   type TransactionCancelationRequestedEventFragment,
 } from "generated/graphql";
-import { getAppConfiguration } from "@/modules/configuration/app-configurator";
+import { getAuthorizeConfig } from "@/modules/authorize-net/authorize-net-config";
 
 export const config = {
   api: {
@@ -45,7 +45,7 @@ export default transactionCancelationRequestedSyncWebhook.createHandler(
     logger.debug({ payload: ctx.payload }, "handler called");
 
     try {
-      const authorizeConfig = getAppConfiguration();
+      const authorizeConfig = getAuthorizeConfig();
       const authorizeWebhookManager = new AuthorizeWebhookManager({
         appConfig: authorizeConfig,
       });

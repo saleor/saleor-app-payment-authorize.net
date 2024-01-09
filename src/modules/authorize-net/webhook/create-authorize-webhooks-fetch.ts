@@ -5,7 +5,7 @@ import { type AuthorizeConfig } from "@/modules/authorize-net/authorize-net-conf
  * @description Create a value for Authorization: basic header for Authorize.net webhooks
  * @see https://developer.authorize.net/api/reference/features/webhooks.html
  */
-function createAuthorizeAuthenticationKey(config: AuthorizeConfig.FullShape): string {
+function createAuthorizeAuthenticationKey(config: AuthorizeConfig): string {
   const concatenatedKey = `${config.apiLoginId}:${config.transactionKey}`;
   const encodedKey = Buffer.from(concatenatedKey).toString("base64");
 
@@ -18,7 +18,7 @@ type AuthorizeWebhooksFetchParams = {
   method: Required<RequestInit["method"]>;
 } & Omit<RequestInit, "body" | "method">;
 
-export function createAuthorizeWebhooksFetch(config: AuthorizeConfig.FullShape) {
+export function createAuthorizeWebhooksFetch(config: AuthorizeConfig) {
   const authenticationKey = createAuthorizeAuthenticationKey(config);
 
   const url =

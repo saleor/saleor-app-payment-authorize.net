@@ -3,7 +3,7 @@ import { type AuthData } from "@saleor/app-sdk/APL";
 import { buffer } from "micro";
 import { type NextApiRequest } from "next";
 import { z } from "zod";
-import { type AuthorizeConfig } from "../authorize-net-config";
+import { getAuthorizeConfig, type AuthorizeConfig } from "../authorize-net-config";
 import { AuthorizeNetInvalidWebhookSignatureError } from "../authorize-net-error";
 import { authorizeNetEventSchema } from "./authorize-net-webhook-client";
 import { MissingAuthDataError } from "./authorize-net-webhook-errors";
@@ -11,7 +11,6 @@ import { AuthorizeNetWebhookTransactionSynchronizer } from "./authorize-net-webh
 import { saleorApp } from "@/saleor-app";
 import { createLogger } from "@/lib/logger";
 import { createServerClient } from "@/lib/create-graphq-client";
-import { getAppConfiguration } from "@/modules/configuration/app-configurator";
 
 const eventPayloadSchema = z.object({
   notificationId: z.string(),
@@ -32,7 +31,7 @@ export type EventPayload = z.infer<typeof eventPayloadSchema>;
 export class AuthorizeNetWebhookHandler {
   private authorizeSignature = "x-anet-signature";
   private authData: AuthData | null = null;
-  private authorizeConfig: AuthorizeConfig.FullShape | null = null;
+  private authorizeConfig: AuthorizeConfig | null = null;
 
   private logger = createLogger({
     name: "AuthorizeWebhookHandler",
@@ -68,7 +67,7 @@ export class AuthorizeNetWebhookHandler {
    */
   private async verifyWebhook() {
     this.logger.debug("Verifying webhook signature...");
-    const authorizeConfig = getAppConfiguration();
+    const authorizeConfig = getAuthorizeConfig();
     const headers = this.request.headers;
     const xAnetSignature = headers[this.authorizeSignature]?.toString();
 

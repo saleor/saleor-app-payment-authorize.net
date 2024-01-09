@@ -32,14 +32,14 @@ export interface PaymentsWebhooks {
 }
 
 export class AppWebhookManager implements PaymentsWebhooks {
-  private authorizeConfig: AuthorizeConfig.FullShape;
+  private authorizeConfig: AuthorizeConfig;
   private apiClient: Client;
 
   constructor({
     authorizeConfig,
     apiClient,
   }: {
-    authorizeConfig: AuthorizeConfig.FullShape;
+    authorizeConfig: AuthorizeConfig;
     apiClient: Client;
   }) {
     this.authorizeConfig = authorizeConfig;
@@ -90,7 +90,7 @@ export async function createAppWebhookManager({
   authorizeConfig,
 }: {
   authData: AuthData;
-  authorizeConfig: AuthorizeConfig.FullShape;
+  authorizeConfig: AuthorizeConfig;
 }) {
   const apiClient = createServerClient(authData.saleorApiUrl, authData.token);
   const appWebhookManager = new AppWebhookManager({

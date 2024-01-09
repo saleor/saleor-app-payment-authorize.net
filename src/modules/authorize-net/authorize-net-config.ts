@@ -1,8 +1,9 @@
 import { z } from "zod";
+import { env } from "@/lib/env.mjs";
 
 export const authorizeEnvironmentSchema = z.enum(["sandbox", "production"]);
 
-const fullSchema = z.object({
+const authorizeConfigSchema = z.object({
   apiLoginId: z.string().min(1),
   publicClientKey: z.string().min(1),
   transactionKey: z.string().min(1),
@@ -10,10 +11,14 @@ const fullSchema = z.object({
   environment: authorizeEnvironmentSchema,
 });
 
-export namespace AuthorizeConfig {
-  export type FullShape = z.infer<typeof fullSchema>;
+export type AuthorizeConfig = z.infer<typeof authorizeConfigSchema>;
 
-  export const Schema = {
-    Full: fullSchema,
+export function getAuthorizeConfig(): AuthorizeConfig {
+  return {
+    apiLoginId: env.AUTHORIZE_API_LOGIN_ID,
+    publicClientKey: env.AUTHORIZE_PUBLIC_CLIENT_KEY,
+    transactionKey: env.AUTHORIZE_TRANSACTION_KEY,
+    environment: env.AUTHORIZE_ENVIRONMENT,
+    signatureKey: env.AUTHORIZE_SIGNATURE_KEY,
   };
 }

@@ -51,7 +51,7 @@ export class AuthorizeNetWebhookClient {
     name: "AuthorizeNetWebhookClient",
   });
 
-  constructor(config: AuthorizeConfig.FullShape) {
+  constructor(config: AuthorizeConfig) {
     this.fetch = createAuthorizeWebhooksFetch(config);
   }
 

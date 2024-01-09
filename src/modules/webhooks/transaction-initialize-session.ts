@@ -4,6 +4,7 @@ import { z } from "zod";
 import {
   authorizeEnvironmentSchema,
   type AuthorizeConfig,
+  getAuthorizeConfig,
 } from "../authorize-net/authorize-net-config";
 import {
   HostedPaymentPageClient,
@@ -12,7 +13,6 @@ import {
 import { createSynchronizedTransactionRequest } from "../authorize-net/synchronized-transaction/create-synchronized-transaction-request";
 import { saleorTransactionIdConverter } from "../authorize-net/synchronized-transaction/saleor-transaction-id-converter";
 import { CustomerProfileManager } from "../customer-profile/customer-profile-manager";
-import { getAppConfiguration } from "../configuration/app-configurator";
 import { type TransactionInitializeSessionEventFragment } from "generated/graphql";
 
 import { BaseError } from "@/errors";
@@ -45,7 +45,7 @@ type TransactionInitializeSessionResponseData = z.infer<
 >;
 
 export class TransactionInitializeSessionService {
-  private authorizeConfig: AuthorizeConfig.FullShape;
+  private authorizeConfig: AuthorizeConfig;
   private customerProfileManager: CustomerProfileManager;
 
   private logger = createLogger({
@@ -53,7 +53,7 @@ export class TransactionInitializeSessionService {
   });
 
   constructor() {
-    this.authorizeConfig = getAppConfiguration();
+    this.authorizeConfig = getAuthorizeConfig();
     this.customerProfileManager = new CustomerProfileManager();
   }
 
