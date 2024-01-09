@@ -19,7 +19,7 @@ export const env = createEnv({
       .optional()
       .default("error"),
     VERCEL_URL: z.string().optional(),
-    LOCAL_APP_URL: z.string().optional(),
+    APP_API_BASE_URL: z.string().optional(),
     PORT: z.coerce.number().optional(),
     UPSTASH_URL: z.string().optional(),
     UPSTASH_TOKEN: z.string().optional(),
@@ -85,7 +85,7 @@ export const env = createEnv({
     CI: process.env.CI,
     APP_DEBUG: process.env.APP_DEBUG,
     VERCEL_URL: process.env.VERCEL_URL,
-    LOCAL_APP_URL: process.env.LOCAL_APP_URL,
+    APP_API_BASE_URL: process.env.APP_API_BASE_URL,
     PORT: process.env.PORT,
     UPSTASH_URL: process.env.UPSTASH_URL,
     UPSTASH_TOKEN: process.env.UPSTASH_TOKEN,

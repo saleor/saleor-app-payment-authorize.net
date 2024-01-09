@@ -1,4 +1,34 @@
-Important:
+# Authorize.net App
+
+## Development
+
+### Build
+
+```bash
+pnpm run build
+```
+
+### Run
+
+#### Running the Authorize.net App
+
+```bash
+pnpm run dev
+```
+
+The app will run on port 8000.
+
+#### Running the Authorize.net UI example
+
+```bash
+cd example
+pnpm run dev
+```
+
+> [!IMPORTANT]
+> Both the example and the app need to be [tunneled](https://docs.saleor.io/docs/3.x/developer/extending/apps/developing-with-tunnels).
+
+## Important
 
 - The `example` Checkout UI relies on the "Authorize transactions instead of charging" setting in the Saleor Dashboard -> Configuration -> Channels -> [channel] settings.
 

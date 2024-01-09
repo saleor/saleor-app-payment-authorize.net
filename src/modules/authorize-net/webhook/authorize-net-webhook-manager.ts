@@ -58,11 +58,13 @@ export class AuthorizeWebhookManager {
   }
 
   private getWebhookParams() {
-    const appUrl = isDevelopment() ? env.LOCAL_APP_URL : `https://${env.VERCEL_URL}`; // todo: get rid of it
+    const appUrl = isDevelopment() ? env.APP_API_BASE_URL : `https://${env.VERCEL_URL}`; // todo: get rid of it
 
     if (!appUrl) {
       throw new MissingAppUrlError("Missing appUrl needed for registering the webhook");
     }
+
+    const url = new URL("/api/webhooks/authorize", appUrl);
 
     const webhookParams: AuthorizeNetWebhookInput = {
       eventTypes: [
@@ -72,7 +74,7 @@ export class AuthorizeWebhookManager {
         "net.authorize.payment.refund.created",
       ],
       status: "active",
-      url: `${appUrl}/api/webhooks/authorize`,
+      url: url.href,
     };
 
     return webhookParams;
