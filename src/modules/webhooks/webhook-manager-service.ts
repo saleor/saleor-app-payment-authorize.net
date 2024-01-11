@@ -1,6 +1,6 @@
 import { type Client } from "urql";
 import { type AuthData } from "@saleor/app-sdk/APL";
-import { type AuthorizeProviderConfig } from "../authorize-net/authorize-net-config";
+import { type AuthorizeConfig } from "../authorize-net/authorize-net-config";
 
 import { TransactionCancelationRequestedService } from "./transaction-cancelation-requested";
 import { TransactionInitializeSessionService } from "./transaction-initialize-session";
@@ -32,14 +32,14 @@ export interface PaymentsWebhooks {
 }
 
 export class AppWebhookManager implements PaymentsWebhooks {
-  private authorizeConfig: AuthorizeProviderConfig.FullShape;
+  private authorizeConfig: AuthorizeConfig;
   private apiClient: Client;
 
   constructor({
     authorizeConfig,
     apiClient,
   }: {
-    authorizeConfig: AuthorizeProviderConfig.FullShape;
+    authorizeConfig: AuthorizeConfig;
     apiClient: Client;
   }) {
     this.authorizeConfig = authorizeConfig;
@@ -49,9 +49,7 @@ export class AppWebhookManager implements PaymentsWebhooks {
   async transactionInitializeSession(
     payload: TransactionInitializeSessionEventFragment,
   ): Promise<TransactionInitializeSessionResponse> {
-    const service = new TransactionInitializeSessionService({
-      authorizeConfig: this.authorizeConfig,
-    });
+    const service = new TransactionInitializeSessionService();
 
     return service.execute(payload);
   }
@@ -60,7 +58,6 @@ export class AppWebhookManager implements PaymentsWebhooks {
     payload: TransactionProcessSessionEventFragment,
   ): Promise<TransactionProcessSessionResponse> {
     const service = new TransactionProcessSessionService({
-      authorizeConfig: this.authorizeConfig,
       apiClient: this.apiClient,
     });
 
@@ -71,7 +68,6 @@ export class AppWebhookManager implements PaymentsWebhooks {
     payload: TransactionCancelationRequestedEventFragment,
   ): Promise<TransactionCancelationRequestedResponse> {
     const service = new TransactionCancelationRequestedService({
-      authorizeConfig: this.authorizeConfig,
       apiClient: this.apiClient,
     });
 
@@ -82,7 +78,6 @@ export class AppWebhookManager implements PaymentsWebhooks {
     payload: TransactionRefundRequestedEventFragment,
   ): Promise<TransactionRefundRequestedResponse> {
     const service = new TransactionRefundRequestedService({
-      authorizeConfig: this.authorizeConfig,
       apiClient: this.apiClient,
     });
 
@@ -95,7 +90,7 @@ export async function createAppWebhookManager({
   authorizeConfig,
 }: {
   authData: AuthData;
-  authorizeConfig: AuthorizeProviderConfig.FullShape;
+  authorizeConfig: AuthorizeConfig;
 }) {
   const apiClient = createServerClient(authData.saleorApiUrl, authData.token);
   const appWebhookManager = new AppWebhookManager({

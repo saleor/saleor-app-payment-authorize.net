@@ -3,8 +3,6 @@ import * as Sentry from "@sentry/nextjs";
 import { AuthorizeWebhookManager } from "@/modules/authorize-net/webhook/authorize-net-webhook-manager";
 import { createLogger } from "@/lib/logger";
 import { SynchronousWebhookResponseBuilder } from "@/lib/webhook-response-builder";
-import { resolveAppConfigFromCtx } from "@/modules/configuration/app-config-resolver";
-import { resolveAuthorizeConfigFromAppConfig } from "@/modules/configuration/authorize-config-resolver";
 import { TransactionProcessError } from "@/modules/webhooks/transaction-process-session";
 import { createAppWebhookManager } from "@/modules/webhooks/webhook-manager-service";
 import { saleorApp } from "@/saleor-app";
@@ -13,6 +11,7 @@ import {
   UntypedTransactionProcessSessionDocument,
   type TransactionProcessSessionEventFragment,
 } from "generated/graphql";
+import { getAuthorizeConfig } from "@/modules/authorize-net/authorize-net-config";
 
 export const config = {
   api: {
@@ -58,20 +57,9 @@ export default transactionProcessSessionSyncWebhook.createHandler(
     );
 
     try {
-      const appConfig = await resolveAppConfigFromCtx({
-        authData,
-        appMetadata: ctx.payload.recipient?.privateMetadata ?? [],
-      });
-
-      const authorizeConfig = resolveAuthorizeConfigFromAppConfig({
-        appConfig,
-        channelSlug,
-      });
-
+      const authorizeConfig = getAuthorizeConfig();
       const authorizeWebhookManager = new AuthorizeWebhookManager({
-        authData,
-        appConfig,
-        channelSlug,
+        appConfig: authorizeConfig,
       });
 
       await authorizeWebhookManager.register();

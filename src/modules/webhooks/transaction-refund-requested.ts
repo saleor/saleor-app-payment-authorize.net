@@ -1,15 +1,14 @@
 import AuthorizeNet from "authorizenet";
 import { type Client } from "urql";
-import { type AuthorizeProviderConfig } from "../authorize-net/authorize-net-config";
 import { CreateTransactionClient } from "../authorize-net/client/create-transaction";
-import { SynchronizedTransactionIdResolver } from "../authorize-net/synchronized-transaction/synchronized-transaction-id-resolver";
 import { createSynchronizedTransactionRequest } from "../authorize-net/synchronized-transaction/create-synchronized-transaction-request";
+import { SynchronizedTransactionIdResolver } from "../authorize-net/synchronized-transaction/synchronized-transaction-id-resolver";
 import { type TransactionRefundRequestedEventFragment } from "generated/graphql";
 
 import { BaseError } from "@/errors";
+import { invariant } from "@/lib/invariant";
 import { createLogger } from "@/lib/logger";
 import { type TransactionRefundRequestedResponse } from "@/schemas/TransactionRefundRequested/TransactionRefundRequestedResponse.mjs";
-import { invariant } from "@/lib/invariant";
 
 const ApiContracts = AuthorizeNet.APIContracts;
 
@@ -18,21 +17,13 @@ export const TransactionRefundRequestedError = BaseError.subclass(
 );
 
 export class TransactionRefundRequestedService {
-  private authorizeConfig: AuthorizeProviderConfig.FullShape;
   private apiClient: Client;
 
   private logger = createLogger({
     name: "TransactionRefundRequestedService",
   });
 
-  constructor({
-    authorizeConfig,
-    apiClient,
-  }: {
-    authorizeConfig: AuthorizeProviderConfig.FullShape;
-    apiClient: Client;
-  }) {
-    this.authorizeConfig = authorizeConfig;
+  constructor({ apiClient }: { apiClient: Client }) {
     this.apiClient = apiClient;
   }
 
@@ -69,7 +60,7 @@ export class TransactionRefundRequestedService {
       saleorTransactionId,
     });
 
-    const createTransactionClient = new CreateTransactionClient(this.authorizeConfig);
+    const createTransactionClient = new CreateTransactionClient();
 
     await createTransactionClient.createTransaction(transactionInput);
 

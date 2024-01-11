@@ -1,11 +1,11 @@
 import { createLogger } from "@/lib/logger";
-import { type AuthorizeProviderConfig } from "@/modules/authorize-net/authorize-net-config";
+import { type AuthorizeConfig } from "@/modules/authorize-net/authorize-net-config";
 
 /**
  * @description Create a value for Authorization: basic header for Authorize.net webhooks
  * @see https://developer.authorize.net/api/reference/features/webhooks.html
  */
-function createAuthorizeAuthenticationKey(config: AuthorizeProviderConfig.FullShape): string {
+function createAuthorizeAuthenticationKey(config: AuthorizeConfig): string {
   const concatenatedKey = `${config.apiLoginId}:${config.transactionKey}`;
   const encodedKey = Buffer.from(concatenatedKey).toString("base64");
 
@@ -18,7 +18,7 @@ type AuthorizeWebhooksFetchParams = {
   method: Required<RequestInit["method"]>;
 } & Omit<RequestInit, "body" | "method">;
 
-export function createAuthorizeWebhooksFetch(config: AuthorizeProviderConfig.FullShape) {
+export function createAuthorizeWebhooksFetch(config: AuthorizeConfig) {
   const authenticationKey = createAuthorizeAuthenticationKey(config);
 
   const url =

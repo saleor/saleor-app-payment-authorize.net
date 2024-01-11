@@ -1,4 +1,3 @@
-import { type AuthorizeProviderConfig } from "../authorize-net/authorize-net-config";
 import { CustomerProfileClient } from "../authorize-net/client/customer-profile-client";
 import { createLogger } from "@/lib/logger";
 
@@ -8,8 +7,8 @@ export class CustomerProfileManager {
     name: "CustomerProfileManager",
   });
 
-  constructor({ authorizeConfig }: { authorizeConfig: AuthorizeProviderConfig.FullShape }) {
-    this.customerProfileClient = new CustomerProfileClient(authorizeConfig);
+  constructor() {
+    this.customerProfileClient = new CustomerProfileClient();
   }
 
   // todo: make sure the email logic is correct

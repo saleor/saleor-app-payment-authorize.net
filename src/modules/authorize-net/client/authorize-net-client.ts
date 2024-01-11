@@ -1,6 +1,6 @@
 import AuthorizeNet from "authorizenet";
 import { z } from "zod";
-import { type AuthorizeProviderConfig } from "../authorize-net-config";
+import { getAuthorizeConfig, type AuthorizeConfig } from "../authorize-net-config";
 import { AuthorizeNetError } from "../authorize-net-error";
 import { createLogger } from "@/lib/logger";
 
@@ -31,9 +31,11 @@ export class AuthorizeNetClient {
     name: "AuthorizeNetClient",
   });
 
-  config: AuthorizeProviderConfig.FullShape;
+  config: AuthorizeConfig;
 
-  constructor(config: AuthorizeProviderConfig.FullShape) {
+  constructor() {
+    const config = getAuthorizeConfig();
+
     const merchantAuthenticationType = new ApiContracts.MerchantAuthenticationType();
     merchantAuthenticationType.setName(config.apiLoginId);
     merchantAuthenticationType.setTransactionKey(config.transactionKey);

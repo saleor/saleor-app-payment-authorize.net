@@ -1,11 +1,32 @@
 import { z } from "zod";
 import { createAuthorizeWebhooksFetch } from "./create-authorize-webhooks-fetch";
 import { createLogger } from "@/lib/logger";
-import {
-  webhookSchema,
-  type AuthorizeProviderConfig,
-  type AuthorizeNetWebhookInput,
-} from "@/modules/authorize-net/authorize-net-config";
+import { type AuthorizeConfig } from "@/modules/authorize-net/authorize-net-config";
+
+export const authorizeNetEventSchema = z.enum([
+  "net.authorize.payment.authorization.created",
+  "net.authorize.payment.authcapture.created",
+  "net.authorize.payment.capture.created",
+  "net.authorize.payment.refund.created",
+  "net.authorize.payment.priorAuthCapture.created",
+  "net.authorize.payment.void.created",
+]);
+
+export type AuthorizeNetEvent = z.infer<typeof authorizeNetEventSchema>;
+
+const webhookInputSchema = z.object({
+  url: z.string(),
+  eventTypes: z.array(authorizeNetEventSchema),
+  status: z.enum(["active", "inactive"]),
+});
+
+export type AuthorizeNetWebhookInput = z.infer<typeof webhookInputSchema>;
+
+const webhookSchema = webhookInputSchema.and(
+  z.object({
+    webhookId: z.string(),
+  }),
+);
 
 const webhookResponseSchema = z
   .object({
@@ -16,6 +37,8 @@ const webhookResponseSchema = z
     }),
   })
   .and(webhookSchema);
+
+const listWebhooksResponseSchema = z.array(webhookSchema);
 
 /**
  * @description Authorize.net has a separate API for registering webhooks. This class communicates with that API.
@@ -28,7 +51,7 @@ export class AuthorizeNetWebhookClient {
     name: "AuthorizeNetWebhookClient",
   });
 
-  constructor(config: AuthorizeProviderConfig.FullShape) {
+  constructor(config: AuthorizeConfig) {
     this.fetch = createAuthorizeWebhooksFetch(config);
   }
 
@@ -43,6 +66,20 @@ export class AuthorizeNetWebhookClient {
     this.logger.trace({ result }, "registerWebhook response:");
 
     const parsedResult = webhookResponseSchema.parse(result);
+
+    return parsedResult;
+  }
+
+  async listWebhooks() {
+    const response = await this.fetch({
+      method: "GET",
+    });
+
+    const result = await response.json();
+
+    this.logger.trace({ result }, "listWebhooks response:");
+
+    const parsedResult = listWebhooksResponseSchema.parse(result);
 
     return parsedResult;
   }

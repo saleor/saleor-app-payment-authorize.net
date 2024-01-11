@@ -3,15 +3,16 @@ import AuthorizeNet from "authorizenet";
 import { z } from "zod";
 import {
   authorizeEnvironmentSchema,
-  type AuthorizeProviderConfig,
+  type AuthorizeConfig,
+  getAuthorizeConfig,
 } from "../authorize-net/authorize-net-config";
 import {
   HostedPaymentPageClient,
   type GetHostedPaymentPageResponse,
 } from "../authorize-net/client/hosted-payment-page-client";
-import { CustomerProfileManager } from "../customer-profile/customer-profile-manager";
-import { saleorTransactionIdConverter } from "../authorize-net/synchronized-transaction/saleor-transaction-id-converter";
 import { createSynchronizedTransactionRequest } from "../authorize-net/synchronized-transaction/create-synchronized-transaction-request";
+import { saleorTransactionIdConverter } from "../authorize-net/synchronized-transaction/saleor-transaction-id-converter";
+import { CustomerProfileManager } from "../customer-profile/customer-profile-manager";
 import { type TransactionInitializeSessionEventFragment } from "generated/graphql";
 
 import { BaseError } from "@/errors";
@@ -44,18 +45,16 @@ type TransactionInitializeSessionResponseData = z.infer<
 >;
 
 export class TransactionInitializeSessionService {
-  private authorizeConfig: AuthorizeProviderConfig.FullShape;
+  private authorizeConfig: AuthorizeConfig;
   private customerProfileManager: CustomerProfileManager;
 
   private logger = createLogger({
     name: "TransactionInitializeSessionService",
   });
 
-  constructor({ authorizeConfig }: { authorizeConfig: AuthorizeProviderConfig.FullShape }) {
-    this.authorizeConfig = authorizeConfig;
-    this.customerProfileManager = new CustomerProfileManager({
-      authorizeConfig,
-    });
+  constructor() {
+    this.authorizeConfig = getAuthorizeConfig();
+    this.customerProfileManager = new CustomerProfileManager();
   }
 
   private async buildTransactionFromPayload(
@@ -191,7 +190,7 @@ export class TransactionInitializeSessionService {
     const transactionInput = await this.buildTransactionFromPayload(payload);
     const settingsInput = this.getHostedPaymentPageSettings();
 
-    const hostedPaymentPageClient = new HostedPaymentPageClient(this.authorizeConfig);
+    const hostedPaymentPageClient = new HostedPaymentPageClient();
 
     const hostedPaymentPageResponse = await hostedPaymentPageClient.getHostedPaymentPageRequest({
       transactionInput,

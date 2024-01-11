@@ -1,15 +1,14 @@
 import { type Client } from "urql";
 import { z } from "zod";
-import { type AuthorizeProviderConfig } from "../authorize-net/authorize-net-config";
 import {
   TransactionDetailsClient,
   type GetTransactionDetailsResponse,
 } from "../authorize-net/client/transaction-details-client";
 import { TransactionMetadataManager } from "../configuration/transaction-metadata-manager";
-import { type TransactionProcessSessionEventFragment } from "generated/graphql";
-import { type TransactionProcessSessionResponse } from "@/schemas/TransactionProcessSession/TransactionProcessSessionResponse.mjs";
-import { createLogger } from "@/lib/logger";
 import { BaseError } from "@/errors";
+import { createLogger } from "@/lib/logger";
+import { type TransactionProcessSessionResponse } from "@/schemas/TransactionProcessSession/TransactionProcessSessionResponse.mjs";
+import { type TransactionProcessSessionEventFragment } from "generated/graphql";
 
 export const TransactionProcessError = BaseError.subclass("TransactionProcessError");
 
@@ -22,21 +21,13 @@ const transactionProcessPayloadDataSchema = z.object({
 });
 
 export class TransactionProcessSessionService {
-  private authorizeConfig: AuthorizeProviderConfig.FullShape;
   private apiClient: Client;
 
   private logger = createLogger({
     name: "TransactionProcessSessionService",
   });
 
-  constructor({
-    authorizeConfig,
-    apiClient,
-  }: {
-    authorizeConfig: AuthorizeProviderConfig.FullShape;
-    apiClient: Client;
-  }) {
-    this.authorizeConfig = authorizeConfig;
+  constructor({ apiClient }: { apiClient: Client }) {
     this.apiClient = apiClient;
   }
 
@@ -106,7 +97,7 @@ export class TransactionProcessSessionService {
       authorizeTransactionId,
     });
 
-    const transactionDetailsClient = new TransactionDetailsClient(this.authorizeConfig);
+    const transactionDetailsClient = new TransactionDetailsClient();
     const details = await transactionDetailsClient.getTransactionDetailsRequest({
       transactionId: authorizeTransactionId,
     });
