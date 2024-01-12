@@ -1,4 +1,4 @@
-fragment OrderOrCheckoutLines on OrderOrCheckout {
+fragment OrderOrCheckout on OrderOrCheckout {
   __typename
   ... on Checkout {
     channel {

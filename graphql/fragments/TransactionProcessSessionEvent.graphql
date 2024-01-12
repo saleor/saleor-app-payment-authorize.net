@@ -30,7 +30,7 @@ fragment TransactionProcessSessionEvent on TransactionProcessSession {
           ...Money
         }
       }
-      ...OrderOrCheckoutLines
+      ...OrderOrCheckout
     }
     ... on Order {
       id
@@ -47,7 +47,7 @@ fragment TransactionProcessSessionEvent on TransactionProcessSession {
           ...Money
         }
       }
-      ...OrderOrCheckoutLines
+      ...OrderOrCheckout
     }
   }
 }

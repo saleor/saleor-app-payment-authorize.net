@@ -19,7 +19,7 @@ fragment OrderOrCheckoutSourceObject on OrderOrCheckout {
         ...Money
       }
     }
-    ...OrderOrCheckoutLines
+    ...OrderOrCheckout
   }
   ... on Order {
     id
@@ -40,6 +40,6 @@ fragment OrderOrCheckoutSourceObject on OrderOrCheckout {
         ...Money
       }
     }
-    ...OrderOrCheckoutLines
+    ...OrderOrCheckout
   }
 }
