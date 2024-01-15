@@ -162,6 +162,10 @@ export class TransactionInitializeSessionService {
          * @see: createSynchronizedTransactionRequest */
         show: false,
       },
+      hostedPaymentBillingAddressOptions: {
+        show: false, // hide because the address form will be outside of the payment form iframe
+        required: false,
+      },
     };
 
     const settingsArray: AuthorizeNet.APIContracts.SettingType[] = [];
