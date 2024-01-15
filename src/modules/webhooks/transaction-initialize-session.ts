@@ -3,21 +3,21 @@ import AuthorizeNet from "authorizenet";
 import { z } from "zod";
 import {
   authorizeEnvironmentSchema,
-  type AuthorizeConfig,
   getAuthorizeConfig,
+  type AuthorizeConfig,
 } from "../authorize-net/authorize-net-config";
 import {
   HostedPaymentPageClient,
   type GetHostedPaymentPageResponse,
 } from "../authorize-net/client/hosted-payment-page-client";
-import { createSynchronizedTransactionRequest } from "../authorize-net/synchronized-transaction/create-synchronized-transaction-request";
-import { saleorTransactionIdConverter } from "../authorize-net/synchronized-transaction/saleor-transaction-id-converter";
 import { CustomerProfileManager } from "../customer-profile/customer-profile-manager";
+import { AuthorizeTransactionBuilder } from "../authorize-net/authorize-transaction-builder";
 import { type TransactionInitializeSessionEventFragment } from "generated/graphql";
 
 import { BaseError } from "@/errors";
 import { createLogger } from "@/lib/logger";
 import { type TransactionInitializeSessionResponse } from "@/schemas/TransactionInitializeSession/TransactionInitializeSessionResponse.mjs";
+import { invariant } from "@/lib/invariant";
 
 const ApiContracts = AuthorizeNet.APIContracts;
 
@@ -60,23 +60,27 @@ export class TransactionInitializeSessionService {
   private async buildTransactionFromPayload(
     payload: TransactionInitializeSessionEventFragment,
   ): Promise<AuthorizeNet.APIContracts.TransactionRequestType> {
-    const saleorTransactionId = saleorTransactionIdConverter.fromSaleorTransaction(
+    const transactionBuilder = new AuthorizeTransactionBuilder();
+    const transactionRequest = transactionBuilder.buildTransactionRequestFromTransactionFragment(
       payload.transaction,
     );
-
-    this.logger.trace({ saleorTransactionId }, "Saleor transaction id");
-
-    const transactionRequest = createSynchronizedTransactionRequest({
-      saleorTransactionId,
-    });
 
     transactionRequest.setTransactionType(ApiContracts.TransactionTypeEnum.AUTHONLYTRANSACTION);
     transactionRequest.setAmount(payload.action.amount);
 
-    const order = new ApiContracts.OrderType();
-    order.setDescription(saleorTransactionId);
+    const lineItems = transactionBuilder.buildLineItemsFromOrderOrCheckout(payload.sourceObject);
+    transactionRequest.setLineItems(lineItems);
 
-    transactionRequest.setOrder(order);
+    invariant(payload.sourceObject.billingAddress, "Billing address is missing from payload.");
+    const billTo = transactionBuilder.buildBillTo(payload.sourceObject.billingAddress);
+    transactionRequest.setBillTo(billTo);
+
+    invariant(payload.sourceObject.shippingAddress, "Shipping address is missing from payload.");
+    const shipTo = transactionBuilder.buildShipTo(payload.sourceObject.shippingAddress);
+    transactionRequest.setShipTo(shipTo);
+
+    const poNumber = transactionBuilder.buildPoNumber(payload.sourceObject);
+    transactionRequest.setPoNumber(poNumber);
 
     const userEmail = payload.sourceObject.userEmail;
 

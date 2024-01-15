@@ -20,34 +20,34 @@ fragment TransactionProcessSessionEvent on TransactionProcessSession {
       languageCode
       userEmail: email
       billingAddress {
-        ...TransactionInitializeSessionAddress
+        ...Address
       }
       shippingAddress {
-        ...TransactionInitializeSessionAddress
+        ...Address
       }
       total: totalPrice {
         gross {
           ...Money
         }
       }
-      ...OrderOrCheckoutLines
+      ...OrderOrCheckout
     }
     ... on Order {
       id
       languageCodeEnum
       userEmail
       billingAddress {
-        ...TransactionInitializeSessionAddress
+        ...Address
       }
       shippingAddress {
-        ...TransactionInitializeSessionAddress
+        ...Address
       }
       total {
         gross {
           ...Money
         }
       }
-      ...OrderOrCheckoutLines
+      ...OrderOrCheckout
     }
   }
 }

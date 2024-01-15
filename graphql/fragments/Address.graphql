@@ -1,4 +1,4 @@
-fragment TransactionInitializeSessionAddress on Address {
+fragment Address on Address {
   firstName
   lastName
   phone

@@ -1,4 +1,4 @@
-fragment OrderOrCheckoutLines on OrderOrCheckout {
+fragment OrderOrCheckout on OrderOrCheckout {
   __typename
   ... on Checkout {
     channel {
@@ -54,6 +54,7 @@ fragment OrderOrCheckoutLines on OrderOrCheckout {
     }
   }
   ... on Order {
+    number
     channel {
       id
       slug

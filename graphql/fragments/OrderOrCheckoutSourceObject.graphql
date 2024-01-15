@@ -9,17 +9,17 @@ fragment OrderOrCheckoutSourceObject on OrderOrCheckout {
     }
     userEmail: email
     billingAddress {
-      ...TransactionInitializeSessionAddress
+      ...Address
     }
     shippingAddress {
-      ...TransactionInitializeSessionAddress
+      ...Address
     }
     total: totalPrice {
       gross {
         ...Money
       }
     }
-    ...OrderOrCheckoutLines
+    ...OrderOrCheckout
   }
   ... on Order {
     id
@@ -30,16 +30,16 @@ fragment OrderOrCheckoutSourceObject on OrderOrCheckout {
       slug
     }
     billingAddress {
-      ...TransactionInitializeSessionAddress
+      ...Address
     }
     shippingAddress {
-      ...TransactionInitializeSessionAddress
+      ...Address
     }
     total {
       gross {
         ...Money
       }
     }
-    ...OrderOrCheckoutLines
+    ...OrderOrCheckout
   }
 }
