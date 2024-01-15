@@ -17,6 +17,10 @@ export const TransactionRefundRequestedError = BaseError.subclass(
   "TransactionRefundRequestedError",
 );
 
+const TransactionRefundAuthorizeTransactionIdError = TransactionRefundRequestedError.subclass(
+  "TransactionRefundAuthorizeTransactionIdError",
+);
+
 export class TransactionRefundRequestedService {
   private apiClient: Client;
 
@@ -58,9 +62,8 @@ export class TransactionRefundRequestedService {
     );
 
     if (!authorizeTransactionId) {
-      // todo: replace with custom error
-      throw new TransactionRefundRequestedError(
-        "Transaction metadata is missing authorizeTransactionId",
+      throw new TransactionRefundAuthorizeTransactionIdError(
+        "The transaction payload of TransactionRefundRequested is missing authorizeTransactionId",
       );
     }
 
