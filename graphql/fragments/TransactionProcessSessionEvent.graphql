@@ -20,10 +20,10 @@ fragment TransactionProcessSessionEvent on TransactionProcessSession {
       languageCode
       userEmail: email
       billingAddress {
-        ...TransactionInitializeSessionAddress
+        ...Address
       }
       shippingAddress {
-        ...TransactionInitializeSessionAddress
+        ...Address
       }
       total: totalPrice {
         gross {
@@ -37,10 +37,10 @@ fragment TransactionProcessSessionEvent on TransactionProcessSession {
       languageCodeEnum
       userEmail
       billingAddress {
-        ...TransactionInitializeSessionAddress
+        ...Address
       }
       shippingAddress {
-        ...TransactionInitializeSessionAddress
+        ...Address
       }
       total {
         gross {

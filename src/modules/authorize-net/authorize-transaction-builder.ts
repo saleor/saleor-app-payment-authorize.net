@@ -1,6 +1,10 @@
 import AuthorizeNet from "authorizenet";
 import { transactionId } from "./transaction-id-utils";
-import { type OrderOrCheckoutFragment, type TransactionFragment } from "generated/graphql";
+import {
+  type AddressFragment,
+  type OrderOrCheckoutFragment,
+  type TransactionFragment,
+} from "generated/graphql";
 
 const ApiContracts = AuthorizeNet.APIContracts;
 
@@ -8,7 +12,8 @@ const ApiContracts = AuthorizeNet.APIContracts;
 // - [ ] - order data
 // - [x] - line data
 // - [ ] - tax data
-// - [ ] - shipping amount
+// - [ ] - shipping address
+// - [x] - billing address
 // - [ ] - customer data
 
 /**
@@ -55,6 +60,19 @@ export class AuthorizeTransactionBuilder {
     arrayOfLineItems.setLineItem(lineItems);
 
     return arrayOfLineItems;
+  }
+
+  buildBillTo(fragment: AddressFragment) {
+    const billTo = new ApiContracts.CustomerAddressType();
+
+    billTo.setFirstName(fragment.firstName);
+    billTo.setLastName(fragment.lastName);
+    billTo.setAddress(fragment.streetAddress1 + " " + fragment.streetAddress2);
+    billTo.setCity(fragment.city);
+    billTo.setState(fragment.countryArea);
+    billTo.setZip(fragment.postalCode);
+
+    return billTo;
   }
 
   buildTransactionRequestFromTransactionFragment(

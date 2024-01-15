@@ -70,6 +70,17 @@ export class TransactionInitializeSessionService {
     const lineItems = transactionBuilder.buildLineItemsFromOrderOrCheckout(payload.sourceObject);
     transactionRequest.setLineItems(lineItems);
 
+    const billingAddress = payload.sourceObject.billingAddress;
+
+    if (!billingAddress) {
+      throw new TransactionInitializeUnexpectedDataError(
+        "Billing address is missing from payload.",
+      );
+    }
+
+    const billTo = transactionBuilder.buildBillTo(payload.sourceObject.billingAddress);
+    transactionRequest.setBillTo(billTo);
+
     const userEmail = payload.sourceObject.userEmail;
 
     if (!userEmail) {
