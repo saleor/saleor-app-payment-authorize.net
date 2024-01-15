@@ -17,6 +17,7 @@ import { type TransactionInitializeSessionEventFragment } from "generated/graphq
 import { BaseError } from "@/errors";
 import { createLogger } from "@/lib/logger";
 import { type TransactionInitializeSessionResponse } from "@/schemas/TransactionInitializeSession/TransactionInitializeSessionResponse.mjs";
+import { invariant } from "@/lib/invariant";
 
 const ApiContracts = AuthorizeNet.APIContracts;
 
@@ -70,16 +71,13 @@ export class TransactionInitializeSessionService {
     const lineItems = transactionBuilder.buildLineItemsFromOrderOrCheckout(payload.sourceObject);
     transactionRequest.setLineItems(lineItems);
 
-    const billingAddress = payload.sourceObject.billingAddress;
-
-    if (!billingAddress) {
-      throw new TransactionInitializeUnexpectedDataError(
-        "Billing address is missing from payload.",
-      );
-    }
-
+    invariant(payload.sourceObject.billingAddress, "Billing address is missing from payload.");
     const billTo = transactionBuilder.buildBillTo(payload.sourceObject.billingAddress);
     transactionRequest.setBillTo(billTo);
+
+    invariant(payload.sourceObject.shippingAddress, "Shipping address is missing from payload.");
+    const shipTo = transactionBuilder.buildShipTo(payload.sourceObject.shippingAddress);
+    transactionRequest.setShipTo(shipTo);
 
     const userEmail = payload.sourceObject.userEmail;
 

@@ -12,7 +12,7 @@ const ApiContracts = AuthorizeNet.APIContracts;
 // - [ ] - order data
 // - [x] - line data
 // - [ ] - tax data
-// - [ ] - shipping address
+// - [x] - shipping address
 // - [x] - billing address
 // - [ ] - customer data
 
@@ -62,17 +62,36 @@ export class AuthorizeTransactionBuilder {
     return arrayOfLineItems;
   }
 
+  private concatAddressLines(address: AddressFragment) {
+    return `${address.streetAddress1} ${address.streetAddress2}`;
+  }
+
   buildBillTo(fragment: AddressFragment) {
     const billTo = new ApiContracts.CustomerAddressType();
 
     billTo.setFirstName(fragment.firstName);
     billTo.setLastName(fragment.lastName);
-    billTo.setAddress(fragment.streetAddress1 + " " + fragment.streetAddress2);
+    billTo.setAddress(this.concatAddressLines(fragment));
     billTo.setCity(fragment.city);
     billTo.setState(fragment.countryArea);
     billTo.setZip(fragment.postalCode);
+    billTo.setCountry(fragment.country.code);
 
     return billTo;
+  }
+
+  buildShipTo(fragment: AddressFragment) {
+    const shipTo = new ApiContracts.CustomerAddressType();
+
+    shipTo.setFirstName(fragment.firstName);
+    shipTo.setLastName(fragment.lastName);
+    shipTo.setAddress(this.concatAddressLines(fragment));
+    shipTo.setCity(fragment.city);
+    shipTo.setState(fragment.countryArea);
+    shipTo.setZip(fragment.postalCode);
+    shipTo.setCountry(fragment.country.code);
+
+    return shipTo;
   }
 
   buildTransactionRequestFromTransactionFragment(
