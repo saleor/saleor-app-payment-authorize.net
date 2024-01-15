@@ -1,8 +1,10 @@
 import AuthorizeNet from "authorizenet";
 import { type Client } from "urql";
 import { CreateTransactionClient } from "../authorize-net/client/create-transaction";
-import { createSynchronizedTransactionRequest } from "../authorize-net/synchronized-transaction/create-synchronized-transaction-request";
-import { SynchronizedTransactionIdResolver } from "../authorize-net/synchronized-transaction/synchronized-transaction-id-resolver";
+
+import { buildAuthorizeTransactionRequest } from "../authorize-net/authorize-transaction-builder";
+
+import { transactionId } from "../authorize-net/transaction-id-utils";
 import { type TransactionCancelationRequestedEventFragment } from "generated/graphql";
 
 import { BaseError } from "@/errors";
@@ -34,7 +36,7 @@ export class TransactionCancelationRequestedService {
     authorizeTransactionId: string;
     saleorTransactionId: string;
   }): Promise<AuthorizeNet.APIContracts.TransactionRequestType> {
-    const transactionRequest = createSynchronizedTransactionRequest({
+    const transactionRequest = buildAuthorizeTransactionRequest({
       saleorTransactionId,
       authorizeTransactionId,
     });
@@ -51,10 +53,17 @@ export class TransactionCancelationRequestedService {
 
     invariant(payload.transaction, "Transaction is missing");
 
-    const idResolver = new SynchronizedTransactionIdResolver(this.apiClient);
-    const { saleorTransactionId, authorizeTransactionId } = await idResolver.resolveFromTransaction(
+    const authorizeTransactionId = transactionId.resolveAuthorizeTransactionId(payload.transaction);
+    const saleorTransactionId = transactionId.saleorTransactionIdConverter.fromSaleorTransaction(
       payload.transaction,
     );
+
+    if (!authorizeTransactionId) {
+      // todo: replace with custom error
+      throw new TransactionCancelationRequestedError(
+        "Transaction is missing authorizeTransactionId",
+      );
+    }
 
     const transactionInput = await this.buildTransactionFromPayload({
       authorizeTransactionId,
@@ -62,7 +71,6 @@ export class TransactionCancelationRequestedService {
     });
 
     const createTransactionClient = new CreateTransactionClient();
-
     await createTransactionClient.createTransaction(transactionInput);
 
     this.logger.debug("Successfully voided the transaction");

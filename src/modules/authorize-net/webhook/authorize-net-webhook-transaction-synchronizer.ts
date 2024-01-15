@@ -1,6 +1,7 @@
 import { type Client } from "urql";
 import { AuthorizeNetError } from "../authorize-net-error";
 import { TransactionDetailsClient } from "../client/transaction-details-client";
+import { transactionId } from "../transaction-id-utils";
 import { type AuthorizeNetEvent } from "./authorize-net-webhook-client";
 import { type EventPayload } from "./authorize-net-webhook-handler";
 import {
@@ -9,7 +10,6 @@ import {
   type TransactionEventReportMutation,
   type TransactionEventReportMutationVariables,
 } from "generated/graphql";
-import { saleorTransactionIdConverter } from "@/modules/authorize-net/synchronized-transaction/saleor-transaction-id-converter";
 
 const TransactionEventReportMutationError = AuthorizeNetError.subclass(
   "TransactionEventReportMutationError",
@@ -52,12 +52,11 @@ export class AuthorizeNetWebhookTransactionSynchronizer {
   }
 
   async synchronizeTransaction(eventPayload: EventPayload) {
-    const transactionId = eventPayload.payload.id;
-    const authorizeTransaction = await this.getAuthorizeTransaction({ id: transactionId });
+    const id = eventPayload.payload.id;
+    const authorizeTransaction = await this.getAuthorizeTransaction({ id });
 
     const saleorTransactionId =
-      saleorTransactionIdConverter.fromAuthorizeNetTransaction(authorizeTransaction);
-
+      transactionId.saleorTransactionIdConverter.fromAuthorizeNetTransaction(authorizeTransaction);
     const authorizeTransactionId = authorizeTransaction.transaction.transId;
 
     const type = this.mapEventType(eventPayload.eventType);

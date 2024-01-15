@@ -3,17 +3,17 @@ import { BaseError } from "@/errors";
 import { createLogger } from "@/lib/logger";
 import {
   UpdatePrivateMetadataDocument,
-  type MetadataItem,
   type UpdatePrivateMetadata,
   type UpdatePrivateMetadataMutationVariables,
 } from "generated/graphql";
 
 const TransactionMetadataMutationError = BaseError.subclass("TransactionMetadataMutationError");
-const TransactionMetadataQueryError = BaseError.subclass("TransactionMetadataQueryError");
+
+export const TRANSACTION_METADATA_KEY = "authorizeTransactionId";
 
 export class TransactionMetadataManager {
   private apiClient: Client;
-  private transactionMetadataKey = "authorizeTransactionId";
+  private transactionMetadataKey = TRANSACTION_METADATA_KEY;
   private logger = createLogger({
     name: "TransactionMetadataManager",
   });
@@ -50,23 +50,5 @@ export class TransactionMetadataManager {
     }
 
     this.logger.debug("Transaction metadata saved");
-  }
-
-  async getAuthorizeTransactionId({
-    metadata,
-  }: {
-    metadata: readonly MetadataItem[];
-  }): Promise<string> {
-    const transactionId = metadata.find(
-      (metadataEntry) => metadataEntry?.key === this.transactionMetadataKey,
-    )?.value;
-
-    if (!transactionId) {
-      throw new TransactionMetadataQueryError("transactionId not found in transaction metadata");
-    }
-
-    this.logger.debug("Returning authorizeTransactionId from transaction metadata");
-
-    return transactionId;
   }
 }
