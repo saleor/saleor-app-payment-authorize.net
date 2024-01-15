@@ -54,6 +54,7 @@ fragment OrderOrCheckout on OrderOrCheckout {
     }
   }
   ... on Order {
+    number
     channel {
       id
       slug

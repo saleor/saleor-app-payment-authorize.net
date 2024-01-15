@@ -8,14 +8,6 @@ import {
 
 const ApiContracts = AuthorizeNet.APIContracts;
 
-// todo:
-// - [ ] - order data
-// - [x] - line data
-// - [ ] - tax data
-// - [x] - shipping address
-// - [x] - billing address
-// - [ ] - customer data
-
 /**
  *
  * @description This function is used to build a "synchronized" Authorize.net transaction.
@@ -76,6 +68,7 @@ export class AuthorizeTransactionBuilder {
     billTo.setState(fragment.countryArea);
     billTo.setZip(fragment.postalCode);
     billTo.setCountry(fragment.country.code);
+    billTo.setPhoneNumber(fragment.phone);
 
     return billTo;
   }
@@ -90,8 +83,17 @@ export class AuthorizeTransactionBuilder {
     shipTo.setState(fragment.countryArea);
     shipTo.setZip(fragment.postalCode);
     shipTo.setCountry(fragment.country.code);
+    shipTo.setPhoneNumber(fragment.phone);
 
     return shipTo;
+  }
+
+  buildPoNumber(fragment: OrderOrCheckoutFragment) {
+    if (fragment.__typename === "Checkout") {
+      return "";
+    }
+
+    return fragment.number;
   }
 
   buildTransactionRequestFromTransactionFragment(

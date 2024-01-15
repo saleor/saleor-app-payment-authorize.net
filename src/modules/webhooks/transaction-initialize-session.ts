@@ -79,6 +79,9 @@ export class TransactionInitializeSessionService {
     const shipTo = transactionBuilder.buildShipTo(payload.sourceObject.shippingAddress);
     transactionRequest.setShipTo(shipTo);
 
+    const poNumber = transactionBuilder.buildPoNumber(payload.sourceObject);
+    transactionRequest.setPoNumber(poNumber);
+
     const userEmail = payload.sourceObject.userEmail;
 
     if (!userEmail) {
