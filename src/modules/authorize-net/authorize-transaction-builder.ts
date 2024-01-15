@@ -41,7 +41,8 @@ export class AuthorizeTransactionBuilder {
   ): AuthorizeNet.APIContracts.ArrayOfLineItem {
     const lineItems = fragment.lines.map((line) => {
       const lineItem = new ApiContracts.LineItemType();
-      lineItem.setItemId(line.id.slice(0, 30));
+      lineItem.setItemId(line.id.slice(0, 31)); // Authorize.net only allows 31 characters for this field.
+
       if (line.__typename === "CheckoutLine") {
         lineItem.setName(line.checkoutVariant.product.name);
       }
