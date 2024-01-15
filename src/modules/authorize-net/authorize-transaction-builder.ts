@@ -41,9 +41,17 @@ export class AuthorizeTransactionBuilder {
   ): AuthorizeNet.APIContracts.ArrayOfLineItem {
     const lineItems = fragment.lines.map((line) => {
       const lineItem = new ApiContracts.LineItemType();
-      lineItem.setItemId(line.id);
+      lineItem.setItemId(line.id.slice(0, 30));
+      if (line.__typename === "CheckoutLine") {
+        lineItem.setName(line.checkoutVariant.product.name);
+      }
+
+      if (line.__typename === "OrderLine") {
+        lineItem.setName(line.orderVariant?.product.name);
+      }
+
       lineItem.setQuantity(line.quantity);
-      lineItem.setTotalAmount(line.totalPrice.gross.amount);
+      lineItem.setUnitPrice(line.totalPrice.gross.amount);
 
       return lineItem;
     });
@@ -83,7 +91,6 @@ export class AuthorizeTransactionBuilder {
     shipTo.setState(fragment.countryArea);
     shipTo.setZip(fragment.postalCode);
     shipTo.setCountry(fragment.country.code);
-    shipTo.setPhoneNumber(fragment.phone);
 
     return shipTo;
   }
