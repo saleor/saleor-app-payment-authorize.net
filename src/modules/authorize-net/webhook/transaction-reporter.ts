@@ -18,7 +18,7 @@ const TransactionEventReportMutationError = AuthorizeNetError.subclass(
 /**
  * @description This class is used to synchronize Authorize.net transactions with Saleor transactions
  */
-export class AuthorizeNetWebhookTransactionSynchronizer {
+export class TransactionEventReporter {
   private client: Client;
 
   constructor({ client }: { client: Client }) {
@@ -51,7 +51,7 @@ export class AuthorizeNetWebhookTransactionSynchronizer {
     return transactionDetailsClient.getTransactionDetailsRequest({ transactionId: id });
   }
 
-  async synchronizeTransaction(eventPayload: EventPayload) {
+  async reportEvent(eventPayload: EventPayload) {
     const id = eventPayload.payload.id;
     const authorizeTransaction = await this.getAuthorizeTransaction({ id });
 

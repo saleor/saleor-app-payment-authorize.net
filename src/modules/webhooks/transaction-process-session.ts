@@ -41,6 +41,7 @@ export class TransactionProcessSessionService {
     saleorTransactionId: string;
     authorizeTransactionId: string;
   }) {
+    // todo: do I even need it? or can I read transactionid from pspreference?
     const metadataManager = new TransactionMetadataManager({ apiClient: this.apiClient });
 
     await metadataManager.saveTransactionId({

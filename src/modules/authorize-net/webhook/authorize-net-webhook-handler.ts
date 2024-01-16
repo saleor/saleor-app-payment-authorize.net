@@ -7,7 +7,7 @@ import { getAuthorizeConfig, type AuthorizeConfig } from "../authorize-net-confi
 import { AuthorizeNetInvalidWebhookSignatureError } from "../authorize-net-error";
 import { authorizeNetEventSchema } from "./authorize-net-webhook-client";
 import { MissingAuthDataError } from "./authorize-net-webhook-errors";
-import { AuthorizeNetWebhookTransactionSynchronizer } from "./authorize-net-webhook-transaction-synchronizer";
+import { TransactionEventReporter } from "./transaction-reporter";
 import { saleorApp } from "@/saleor-app";
 import { createLogger } from "@/lib/logger";
 import { createServerClient } from "@/lib/create-graphq-client";
@@ -109,13 +109,13 @@ export class AuthorizeNetWebhookHandler {
 
   private async processAuthorizeWebhook(eventPayload: EventPayload) {
     const authData = await this.getAuthData();
-
     const client = createServerClient(authData.saleorApiUrl, authData.token);
 
-    const synchronizer = new AuthorizeNetWebhookTransactionSynchronizer({
+    const reporter = new TransactionEventReporter({
       client,
     });
-    return synchronizer.synchronizeTransaction(eventPayload);
+
+    return reporter.reportEvent(eventPayload);
   }
 
   async handle() {

@@ -59,9 +59,7 @@ export class AppWebhookManager implements PaymentsWebhooks {
   async transactionCancelationRequested(
     payload: TransactionCancelationRequestedEventFragment,
   ): Promise<TransactionCancelationRequestedResponse> {
-    const service = new TransactionCancelationRequestedService({
-      apiClient: this.apiClient,
-    });
+    const service = new TransactionCancelationRequestedService();
 
     return service.execute(payload);
   }
