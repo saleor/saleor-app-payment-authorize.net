@@ -10,9 +10,14 @@ import {
   type TransactionEventReportMutation,
   type TransactionEventReportMutationVariables,
 } from "generated/graphql";
+import { createLogger } from "@/lib/logger";
 
 const TransactionEventReportMutationError = AuthorizeNetError.subclass(
   "TransactionEventReportMutationError",
+);
+
+const TransactionEventReportUnsupportedTypeError = AuthorizeNetError.subclass(
+  "TransactionEventReportUnsupportedTypeError",
 );
 
 /**
@@ -20,21 +25,30 @@ const TransactionEventReportMutationError = AuthorizeNetError.subclass(
  */
 export class TransactionEventReporter {
   private client: Client;
+  private logger = createLogger({
+    name: "TransactionEventReporter",
+  });
 
   constructor({ client }: { client: Client }) {
     this.client = client;
   }
 
   private mapEventType(authorizeTransactionType: AuthorizeNetEvent): TransactionEventTypeEnum {
+    this.logger.debug({ authorizeTransactionType }, "Mapping Authorize transaction event type");
     switch (authorizeTransactionType) {
-      // todo:
+      case "net.authorize.payment.priorAuthCapture.created":
+        return TransactionEventTypeEnum.ChargeSuccess;
+      case "net.authorize.payment.void.created":
+        return TransactionEventTypeEnum.ChargeFailure;
       default:
-        return TransactionEventTypeEnum.AuthorizationActionRequired;
+        throw new TransactionEventReportUnsupportedTypeError(
+          `${authorizeTransactionType} is not a supported transaction event type`,
+        );
     }
   }
 
   private async transactionEventReport(variables: TransactionEventReportMutationVariables) {
-    const { error: mutationError } = await this.client
+    const { data, error: mutationError } = await this.client
       .mutation<TransactionEventReportMutation>(TransactionEventReportDocument, variables)
       .toPromise();
 
@@ -44,6 +58,8 @@ export class TransactionEventReporter {
         { cause: mutationError.message },
       );
     }
+
+    this.logger.trace({ data }, "Transaction event response");
   }
 
   private getAuthorizeTransaction({ id }: { id: string }) {
@@ -61,13 +77,19 @@ export class TransactionEventReporter {
 
     const type = this.mapEventType(eventPayload.eventType);
 
-    await this.transactionEventReport({
+    const eventReportPayload = {
       amount: authorizeTransaction.transaction.authAmount,
       availableActions: [],
       pspReference: authorizeTransactionId,
-      time: authorizeTransaction.transaction.submitTimeLocal,
+      time: eventPayload.eventDate,
       transactionId: saleorTransactionId,
       type,
-    });
+    };
+
+    this.logger.debug({ eventReportPayload }, "Reporting transaction event");
+
+    await this.transactionEventReport(eventReportPayload);
+
+    this.logger.info("Successfully synchronized Saleor transaction with Authorize transaction");
   }
 }

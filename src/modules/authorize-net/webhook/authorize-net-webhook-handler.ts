@@ -123,6 +123,6 @@ export class AuthorizeNetWebhookHandler {
     const eventPayload = await this.parseWebhookBody();
     await this.processAuthorizeWebhook(eventPayload);
 
-    this.logger.info("Finished processing webhook");
+    this.logger.debug("Finished processing webhook");
   }
 }
