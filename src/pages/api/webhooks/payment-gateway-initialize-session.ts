@@ -4,7 +4,10 @@ import { z } from "zod";
 import { normalizeError } from "@/errors";
 import { createLogger } from "@/lib/logger";
 import { SynchronousWebhookResponseBuilder } from "@/lib/webhook-response-builder";
-import { getAuthorizeConfig } from "@/modules/authorize-net/authorize-net-config";
+import {
+  authorizeEnvironmentSchema,
+  getAuthorizeConfig,
+} from "@/modules/authorize-net/authorize-net-config";
 import { AuthorizeWebhookManager } from "@/modules/authorize-net/webhook/authorize-net-webhook-manager";
 import { createAppWebhookManager } from "@/modules/webhooks/webhook-manager-service";
 import { saleorApp } from "@/saleor-app";
@@ -19,6 +22,11 @@ export const config = {
   },
 };
 
+const acceptHostedPaymentGatewaySchema = z.object({
+  formToken: z.string().min(1),
+  environment: authorizeEnvironmentSchema,
+});
+
 export const paymentGatewayInitializeSessionSyncWebhook =
   new SaleorSyncWebhook<PaymentGatewayInitializeSessionEventFragment>({
     name: "PaymentGatewayInitializeSession",
@@ -29,16 +37,14 @@ export const paymentGatewayInitializeSessionSyncWebhook =
   });
 
 // todo: JSON schema?
-const acceptHostedSchema = z.object({
-  formToken: z.string().min(1),
-});
-
-const applePaySchema = z.object({});
+const applePayPaymentGatewaySchema = z.object({});
 
 const dataSchema = z.object({
-  acceptHosted: acceptHostedSchema.optional(),
-  applePay: applePaySchema.optional(),
+  acceptHosted: acceptHostedPaymentGatewaySchema.optional(),
+  applePay: applePayPaymentGatewaySchema.optional(),
 });
+
+export type PaymentGatewayInitializeSessionData = z.infer<typeof dataSchema>;
 
 const errorSchema = z.unknown({});
 
@@ -47,7 +53,7 @@ const paymentGatewayInitializeSessionSchema = z.object({
   error: errorSchema.optional(),
 });
 
-type PaymentGatewayInitializeSessionResponse = z.infer<
+export type PaymentGatewayInitializeSessionResponse = z.infer<
   typeof paymentGatewayInitializeSessionSchema
 >;
 
@@ -58,6 +64,8 @@ export default paymentGatewayInitializeSessionSyncWebhook.createHandler(
     const logger = createLogger({
       name: ctx.event,
     });
+
+    logger.debug("PaymentGatewayInitializeSession webhook received");
     const responseBuilder = new WebhookResponseBuilder(res);
 
     try {
@@ -67,15 +75,15 @@ export default paymentGatewayInitializeSessionSyncWebhook.createHandler(
       });
       await authorizeWebhookManager.register();
 
-      const _appWebhookManager = await createAppWebhookManager({
+      const appWebhookManager = await createAppWebhookManager({
         authData,
         authorizeConfig,
       });
 
-      logger.debug("called");
+      const data = await appWebhookManager.paymentGatewayInitializeSession(ctx.payload);
 
       return responseBuilder.ok({
-        data: {},
+        data,
       });
     } catch (error) {
       Sentry.captureException(error);
