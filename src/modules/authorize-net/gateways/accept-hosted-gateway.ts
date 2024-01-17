@@ -5,12 +5,12 @@ import {
   getAuthorizeConfig,
   type AuthorizeConfig,
   authorizeEnvironmentSchema,
-} from "../../authorize-net/authorize-net-config";
-import { AuthorizeTransactionBuilder } from "../../authorize-net/authorize-transaction-builder";
+} from "../authorize-net-config";
+import { AuthorizeTransactionBuilder } from "../authorize-transaction-builder";
 import {
   HostedPaymentPageClient,
   type GetHostedPaymentPageResponse,
-} from "../../authorize-net/client/hosted-payment-page-client";
+} from "../client/hosted-payment-page-client";
 import { CustomerProfileManager } from "../../customer-profile/customer-profile-manager";
 import { type PaymentGatewayInitializeSessionEventFragment } from "generated/graphql";
 

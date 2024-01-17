@@ -1,4 +1,4 @@
-import { AcceptHostedGateway } from "./gateways/accept-hosted-gateway";
+import { AcceptHostedGateway } from "../authorize-net/gateways/accept-hosted-gateway";
 import { type PaymentGatewayInitializeSessionData } from "@/pages/api/webhooks/payment-gateway-initialize-session";
 import { type PaymentGatewayInitializeSessionEventFragment } from "generated/graphql";
 
