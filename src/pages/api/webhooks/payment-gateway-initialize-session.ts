@@ -4,10 +4,9 @@ import { z } from "zod";
 import { normalizeError } from "@/errors";
 import { createLogger } from "@/lib/logger";
 import { SynchronousWebhookResponseBuilder } from "@/lib/webhook-response-builder";
-import {
-  authorizeEnvironmentSchema,
-  getAuthorizeConfig,
-} from "@/modules/authorize-net/authorize-net-config";
+import { getAuthorizeConfig } from "@/modules/authorize-net/authorize-net-config";
+import { acceptHostedPaymentGatewaySchema } from "@/modules/authorize-net/gateways/accept-hosted-gateway";
+import { applePayPaymentGatewaySchema } from "@/modules/authorize-net/gateways/apple-pay-gateway";
 import { AuthorizeWebhookManager } from "@/modules/authorize-net/webhook/authorize-net-webhook-manager";
 import { createAppWebhookManager } from "@/modules/webhooks/webhook-manager-service";
 import { saleorApp } from "@/saleor-app";
@@ -16,16 +15,25 @@ import {
   type PaymentGatewayInitializeSessionEventFragment,
 } from "generated/graphql";
 
+const paymentGatewaySchema = z.union([
+  acceptHostedPaymentGatewaySchema,
+  applePayPaymentGatewaySchema,
+]);
+
+export type AuthorizePaymentGateway = z.infer<typeof paymentGatewaySchema>;
+
+const dataSchema = z.object({
+  acceptHosted: acceptHostedPaymentGatewaySchema.optional(),
+  applePay: applePayPaymentGatewaySchema.optional(),
+});
+
+export type PaymentGatewayInitializeSessionData = z.infer<typeof dataSchema>;
+
 export const config = {
   api: {
     bodyParser: false,
   },
 };
-
-const acceptHostedPaymentGatewaySchema = z.object({
-  formToken: z.string().min(1),
-  environment: authorizeEnvironmentSchema,
-});
 
 export const paymentGatewayInitializeSessionSyncWebhook =
   new SaleorSyncWebhook<PaymentGatewayInitializeSessionEventFragment>({
@@ -35,16 +43,6 @@ export const paymentGatewayInitializeSessionSyncWebhook =
     query: UntypedPaymentGatewayInitializeSessionDocument,
     webhookPath: "/api/webhooks/payment-gateway-initialize-session",
   });
-
-// todo: JSON schema?
-const applePayPaymentGatewaySchema = z.object({});
-
-const dataSchema = z.object({
-  acceptHosted: acceptHostedPaymentGatewaySchema.optional(),
-  applePay: applePayPaymentGatewaySchema.optional(),
-});
-
-export type PaymentGatewayInitializeSessionData = z.infer<typeof dataSchema>;
 
 const errorSchema = z.unknown({});
 

@@ -1,29 +1,24 @@
 import { env } from "process";
 import AuthorizeNet from "authorizenet";
 import { z } from "zod";
+import { CustomerProfileManager } from "../../customer-profile/customer-profile-manager";
 import {
+  authorizeEnvironmentSchema,
   getAuthorizeConfig,
   type AuthorizeConfig,
-  authorizeEnvironmentSchema,
 } from "../authorize-net-config";
 import { AuthorizeTransactionBuilder } from "../authorize-transaction-builder";
 import {
   HostedPaymentPageClient,
   type GetHostedPaymentPageResponse,
 } from "../client/hosted-payment-page-client";
-import { CustomerProfileManager } from "../../customer-profile/customer-profile-manager";
+
 import { type PaymentGatewayInitializeSessionEventFragment } from "generated/graphql";
 
 import { BaseError } from "@/errors";
 import { invariant } from "@/lib/invariant";
 import { createLogger } from "@/lib/logger";
-
-export const acceptHostedPaymentGatewaySchema = z.object({
-  formToken: z.string().min(1),
-  environment: authorizeEnvironmentSchema,
-});
-
-type AcceptHostedPaymentGatewayData = z.infer<typeof acceptHostedPaymentGatewaySchema>;
+import { type AuthorizeGateway } from "@/modules/webhooks/payment-gateway-initialize-session";
 
 const ApiContracts = AuthorizeNet.APIContracts;
 
@@ -33,7 +28,14 @@ const transactionInitializeSessionPayloadDataSchema = z.object({
   shouldCreateCustomerProfile: z.boolean().optional().default(false),
 });
 
-export class AcceptHostedGateway {
+export const acceptHostedPaymentGatewaySchema = z.object({
+  formToken: z.string().min(1),
+  environment: authorizeEnvironmentSchema,
+});
+
+export type AcceptHostedPaymentGatewayData = z.infer<typeof acceptHostedPaymentGatewaySchema>;
+
+export class AcceptHostedGateway implements AuthorizeGateway {
   private authorizeConfig: AuthorizeConfig;
   private customerProfileManager: CustomerProfileManager;
 

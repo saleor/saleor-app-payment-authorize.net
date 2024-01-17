@@ -2,30 +2,30 @@ import { type AuthData } from "@saleor/app-sdk/APL";
 import { type Client } from "urql";
 import { type AuthorizeConfig } from "../authorize-net/authorize-net-config";
 
-import { PaymentGatewayInitializeSessionService } from "./payment-gateway-initialize-session";
 import { TransactionCancelationRequestedService } from "./transaction-cancelation-requested";
 import { TransactionProcessSessionService } from "./transaction-process-session";
 import { TransactionRefundRequestedService } from "./transaction-refund-requested";
 
 import { TransactionInitializeSessionService } from "./transaction-initialize-session";
+import { PaymentGatewayInitializeSessionService } from "./payment-gateway-initialize-session";
 import { createServerClient } from "@/lib/create-graphq-client";
 import { type PaymentGatewayInitializeSessionData } from "@/pages/api/webhooks/payment-gateway-initialize-session";
 import { type TransactionCancelationRequestedResponse } from "@/schemas/TransactionCancelationRequested/TransactionCancelationRequestedResponse.mjs";
+import { type TransactionInitializeSessionResponse } from "@/schemas/TransactionInitializeSession/TransactionInitializeSessionResponse.mjs";
 import { type TransactionProcessSessionResponse } from "@/schemas/TransactionProcessSession/TransactionProcessSessionResponse.mjs";
 import { type TransactionRefundRequestedResponse } from "@/schemas/TransactionRefundRequested/TransactionRefundRequestedResponse.mjs";
 import {
-  type TransactionInitializeSessionEventFragment,
   type PaymentGatewayInitializeSessionEventFragment,
   type TransactionCancelationRequestedEventFragment,
+  type TransactionInitializeSessionEventFragment,
   type TransactionProcessSessionEventFragment,
   type TransactionRefundRequestedEventFragment,
 } from "generated/graphql";
-import { type TransactionInitializeSessionResponse } from "@/schemas/TransactionInitializeSession/TransactionInitializeSessionResponse.mjs";
 
 export interface PaymentsWebhooks {
-  // transactionInitializeSession: (
-  //   payload: TransactionInitializeSessionEventFragment,
-  // ) => Promise<TransactionInitializeSessionResponse>;
+  transactionInitializeSession: (
+    payload: TransactionInitializeSessionEventFragment,
+  ) => Promise<TransactionInitializeSessionResponse>;
   transactionProcessSession: (
     payload: TransactionProcessSessionEventFragment,
   ) => Promise<TransactionProcessSessionResponse>;

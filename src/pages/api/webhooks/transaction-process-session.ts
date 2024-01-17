@@ -35,11 +35,7 @@ const logger = createLogger({
 class WebhookResponseBuilder extends SynchronousWebhookResponseBuilder<TransactionProcessSessionResponse> {}
 
 /**
- * In the Authorize.net Accept Hosted flow, this webhook is called after the Accept Hosted payment form was submitted.
- * This webhook handler does the following:
- * 1. Checks the `data` for the `transactionId` to call the Authorize.net API to get the transaction status.
- * 2. Checks the `data` for the `customerProfileId`. If the customerProfileId was passed from Accept Hosted form, updates the stored customerProfileId x userEmail mapping.
- * 3. Returns to Saleor the transaction result: `AUTHORIZATION_SUCCESS`, `AUTHORIZATION_FAILURE` or `AUTHORIZATION_REQUESTED`.
+ * This webhook can be used to synchronize the transaction status with Saleor. It calls Authorize transaction API, and then maps the response to Saleor's transaction.
  */
 export default transactionProcessSessionSyncWebhook.createHandler(
   async (req, res, { authData, ...ctx }) => {
