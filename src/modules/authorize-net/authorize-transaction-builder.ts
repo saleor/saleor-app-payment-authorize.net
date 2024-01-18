@@ -13,7 +13,7 @@ const ApiContracts = AuthorizeNet.APIContracts;
  * @description This function is used to build a "synchronized" Authorize.net transaction.
  * Synchronization means that it has a reference to the original transaction (if there was a prior transaction), as well as to the Saleor transaction.
  */
-export function buildAuthorizeTransactionRequest({
+function buildAuthorizeTransactionRequest({
   saleorTransactionId,
   authorizeTransactionId,
 }: {
@@ -35,7 +35,11 @@ export function buildAuthorizeTransactionRequest({
   return transactionRequest;
 }
 
-export class AuthorizeTransactionBuilder {
+function concatAddressLines(address: AddressFragment) {
+  return `${address.streetAddress1} ${address.streetAddress2}`;
+}
+
+export const authorizeTransaction = {
   buildLineItemsFromOrderOrCheckout(
     fragment: OrderOrCheckoutFragment,
   ): AuthorizeNet.APIContracts.ArrayOfLineItem {
@@ -61,18 +65,14 @@ export class AuthorizeTransactionBuilder {
     arrayOfLineItems.setLineItem(lineItems);
 
     return arrayOfLineItems;
-  }
-
-  private concatAddressLines(address: AddressFragment) {
-    return `${address.streetAddress1} ${address.streetAddress2}`;
-  }
+  },
 
   buildBillTo(fragment: AddressFragment) {
     const billTo = new ApiContracts.CustomerAddressType();
 
     billTo.setFirstName(fragment.firstName);
     billTo.setLastName(fragment.lastName);
-    billTo.setAddress(this.concatAddressLines(fragment));
+    billTo.setAddress(concatAddressLines(fragment));
     billTo.setCity(fragment.city);
     billTo.setState(fragment.countryArea);
     billTo.setZip(fragment.postalCode);
@@ -80,21 +80,21 @@ export class AuthorizeTransactionBuilder {
     billTo.setPhoneNumber(fragment.phone);
 
     return billTo;
-  }
+  },
 
   buildShipTo(fragment: AddressFragment) {
     const shipTo = new ApiContracts.CustomerAddressType();
 
     shipTo.setFirstName(fragment.firstName);
     shipTo.setLastName(fragment.lastName);
-    shipTo.setAddress(this.concatAddressLines(fragment));
+    shipTo.setAddress(concatAddressLines(fragment));
     shipTo.setCity(fragment.city);
     shipTo.setState(fragment.countryArea);
     shipTo.setZip(fragment.postalCode);
     shipTo.setCountry(fragment.country.code);
 
     return shipTo;
-  }
+  },
 
   buildPoNumber(fragment: OrderOrCheckoutFragment) {
     if (fragment.__typename === "Checkout") {
@@ -102,7 +102,7 @@ export class AuthorizeTransactionBuilder {
     }
 
     return fragment.number;
-  }
+  },
 
   buildTransactionRequestFromTransactionFragment(
     fragment: TransactionFragment,
@@ -115,5 +115,6 @@ export class AuthorizeTransactionBuilder {
       authorizeTransactionId,
       saleorTransactionId,
     });
-  }
-}
+  },
+  buildAuthorizeTransactionRequest,
+};

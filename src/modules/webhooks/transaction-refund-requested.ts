@@ -3,7 +3,7 @@ import { type Client } from "urql";
 import { CreateTransactionClient } from "../authorize-net/client/create-transaction";
 
 import { transactionId } from "../authorize-net/transaction-id-utils";
-import { buildAuthorizeTransactionRequest } from "../authorize-net/authorize-transaction-builder";
+import { authorizeTransaction } from "../authorize-net/authorize-transaction-builder";
 import { type TransactionRefundRequestedEventFragment } from "generated/graphql";
 
 import { BaseError } from "@/errors";
@@ -39,7 +39,7 @@ export class TransactionRefundRequestedService {
     authorizeTransactionId: string;
     saleorTransactionId: string;
   }): Promise<AuthorizeNet.APIContracts.TransactionRequestType> {
-    const transactionRequest = buildAuthorizeTransactionRequest({
+    const transactionRequest = authorizeTransaction.buildAuthorizeTransactionRequest({
       saleorTransactionId,
       authorizeTransactionId,
     });

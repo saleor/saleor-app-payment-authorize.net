@@ -7,7 +7,7 @@ import {
   getAuthorizeConfig,
   type AuthorizeConfig,
 } from "../authorize-net-config";
-import { AuthorizeTransactionBuilder } from "../authorize-transaction-builder";
+import { authorizeTransaction } from "../authorize-transaction-builder";
 import {
   HostedPaymentPageClient,
   type GetHostedPaymentPageResponse,
@@ -18,7 +18,7 @@ import { type PaymentGatewayInitializeSessionEventFragment } from "generated/gra
 import { BaseError } from "@/errors";
 import { invariant } from "@/lib/invariant";
 import { createLogger } from "@/lib/logger";
-import { type AuthorizeGateway } from "@/modules/webhooks/payment-gateway-initialize-session";
+import { type PaymentGateway } from "@/modules/webhooks/payment-gateway-initialize-session";
 
 const ApiContracts = AuthorizeNet.APIContracts;
 
@@ -35,7 +35,7 @@ export const acceptHostedPaymentGatewaySchema = z.object({
 
 export type AcceptHostedPaymentGatewayData = z.infer<typeof acceptHostedPaymentGatewaySchema>;
 
-export class AcceptHostedGateway implements AuthorizeGateway {
+export class AcceptHostedGateway implements PaymentGateway {
   private authorizeConfig: AuthorizeConfig;
   private customerProfileManager: CustomerProfileManager;
 
@@ -51,24 +51,23 @@ export class AcceptHostedGateway implements AuthorizeGateway {
   private async buildTransactionFromPayload(
     payload: PaymentGatewayInitializeSessionEventFragment,
   ): Promise<AuthorizeNet.APIContracts.TransactionRequestType> {
-    const transactionBuilder = new AuthorizeTransactionBuilder();
     const transactionRequest = new ApiContracts.TransactionRequestType();
 
     transactionRequest.setTransactionType(ApiContracts.TransactionTypeEnum.AUTHONLYTRANSACTION);
     transactionRequest.setAmount(payload.amount);
 
-    const lineItems = transactionBuilder.buildLineItemsFromOrderOrCheckout(payload.sourceObject);
+    const lineItems = authorizeTransaction.buildLineItemsFromOrderOrCheckout(payload.sourceObject);
     transactionRequest.setLineItems(lineItems);
 
     invariant(payload.sourceObject.billingAddress, "Billing address is missing from payload.");
-    const billTo = transactionBuilder.buildBillTo(payload.sourceObject.billingAddress);
+    const billTo = authorizeTransaction.buildBillTo(payload.sourceObject.billingAddress);
     transactionRequest.setBillTo(billTo);
 
     invariant(payload.sourceObject.shippingAddress, "Shipping address is missing from payload.");
-    const shipTo = transactionBuilder.buildShipTo(payload.sourceObject.shippingAddress);
+    const shipTo = authorizeTransaction.buildShipTo(payload.sourceObject.shippingAddress);
     transactionRequest.setShipTo(shipTo);
 
-    const poNumber = transactionBuilder.buildPoNumber(payload.sourceObject);
+    const poNumber = authorizeTransaction.buildPoNumber(payload.sourceObject);
     transactionRequest.setPoNumber(poNumber);
 
     const userEmail = payload.sourceObject.userEmail;

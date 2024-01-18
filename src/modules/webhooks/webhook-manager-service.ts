@@ -2,12 +2,13 @@ import { type AuthData } from "@saleor/app-sdk/APL";
 import { type Client } from "urql";
 import { type AuthorizeConfig } from "../authorize-net/authorize-net-config";
 
+import { ApplePayGateway } from "../authorize-net/gateways/apple-pay-gateway";
 import { TransactionCancelationRequestedService } from "./transaction-cancelation-requested";
 import { TransactionProcessSessionService } from "./transaction-process-session";
 import { TransactionRefundRequestedService } from "./transaction-refund-requested";
 
-import { TransactionInitializeSessionService } from "./transaction-initialize-session";
 import { PaymentGatewayInitializeSessionService } from "./payment-gateway-initialize-session";
+import { TransactionInitializeSessionService } from "./transaction-initialize-session";
 import { createServerClient } from "@/lib/create-graphq-client";
 import { type PaymentGatewayInitializeSessionData } from "@/pages/api/webhooks/payment-gateway-initialize-session";
 import { type TransactionCancelationRequestedResponse } from "@/schemas/TransactionCancelationRequested/TransactionCancelationRequestedResponse.mjs";
@@ -44,7 +45,10 @@ export class AppWebhookManager implements PaymentsWebhooks {
   async transactionInitializeSession(
     payload: TransactionInitializeSessionEventFragment,
   ): Promise<TransactionInitializeSessionResponse> {
-    const service = new TransactionInitializeSessionService();
+    // todo: check what gateway to use based on payload.data
+    const paymentGateway = new ApplePayGateway();
+
+    const service = new TransactionInitializeSessionService(paymentGateway);
 
     return service.execute(payload);
   }
