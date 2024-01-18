@@ -10,8 +10,10 @@ import { authorizeNetAppId } from "./lib/common";
 import { PaymentForm } from "./payment-form";
 import { Status } from "./pages/cart";
 
+export const authorizeEnvironmentSchema = z.enum(["sandbox", "production"]);
+
 const responseDataSchema = z.object({
-	environment: z.enum(["sandbox", "production"]),
+	environment: authorizeEnvironmentSchema,
 	formToken: z.string(),
 });
 
