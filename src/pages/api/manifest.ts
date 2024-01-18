@@ -4,7 +4,7 @@ import { type AppManifest } from "@saleor/app-sdk/types";
 import packageJson from "../../../package.json";
 import { paymentGatewayInitializeSessionSyncWebhook } from "./webhooks/payment-gateway-initialize-session";
 import { transactionCancelationRequestedSyncWebhook } from "./webhooks/transaction-cancelation-requested";
-import { transactionProcessSessionSyncWebhook } from "./webhooks/transaction-process-session";
+import { transactionInitializeSessionSyncWebhook } from "./webhooks/transaction-initialize-session";
 import { transactionRefundRequestedSyncWebhook } from "./webhooks/transaction-refund-requested";
 
 export default createManifestHandler({
@@ -18,7 +18,7 @@ export default createManifestHandler({
       version: packageJson.version,
       requiredSaleorVersion: ">=3.13",
       webhooks: [
-        transactionProcessSessionSyncWebhook.getWebhookManifest(context.appBaseUrl),
+        transactionInitializeSessionSyncWebhook.getWebhookManifest(context.appBaseUrl),
         transactionCancelationRequestedSyncWebhook.getWebhookManifest(context.appBaseUrl),
         transactionRefundRequestedSyncWebhook.getWebhookManifest(context.appBaseUrl),
         paymentGatewayInitializeSessionSyncWebhook.getWebhookManifest(context.appBaseUrl),

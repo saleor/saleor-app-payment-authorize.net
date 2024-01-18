@@ -7,33 +7,40 @@ import {
 	PaymentGatewayInitializeMutationVariables,
 } from "../generated/graphql";
 import { authorizeNetAppId } from "./lib/common";
-import { authorizeEnvironmentSchema } from "./pay-button";
 
-const applePayPaymentGatewaySchema = z.object({});
+import { AcceptHostedForm } from "./accept-hosted-form";
+import { getCheckoutId } from "./pages/cart";
 
-const acceptHostedPaymentGatewaySchema = z.object({
+const authorizeEnvironmentSchema = z.enum(["sandbox", "production"]);
+
+const applePayPaymentGatewayInitializeData = z.object({});
+
+export const acceptHostedPaymentGatewaySchema = z.object({
 	formToken: z.string().min(1),
 	environment: authorizeEnvironmentSchema,
 });
 
+export type AcceptHostedData = z.infer<typeof acceptHostedPaymentGatewaySchema>;
+
+const paypalPaymentGatewayDataSchema = z.object({});
+
 const dataSchema = z.object({
 	acceptHosted: acceptHostedPaymentGatewaySchema.optional(),
-	applePay: applePayPaymentGatewaySchema.optional(),
+	applePay: applePayPaymentGatewayInitializeData.optional(),
+	paypal: paypalPaymentGatewayDataSchema.optional(),
 });
 
 type PaymentMethods = z.infer<typeof dataSchema>;
 
-const errorSchema = z.unknown({});
+const paymentGatewayInitializeSessionSchema = dataSchema;
 
-const paymentGatewayInitializeSessionSchema = z.object({
-	data: dataSchema.optional(),
-	error: errorSchema.optional(),
-});
-
-export const PaymentMethods = ({ checkoutId }: { checkoutId: string }) => {
+export const PaymentMethods = () => {
 	const [isLoading, setIsLoading] = React.useState(false);
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	const [paymentMethods, setPaymentMethods] = React.useState<PaymentMethods>();
+
+	const checkoutId = getCheckoutId();
+
 	const [initializePaymentGateways] = useMutation<
 		PaymentGatewayInitializeMutation,
 		PaymentGatewayInitializeMutationVariables
@@ -57,9 +64,11 @@ export const PaymentMethods = ({ checkoutId }: { checkoutId: string }) => {
 			throw new Error("No payment gateway found");
 		}
 
-		const { data, error } = paymentGatewayInitializeSessionSchema.parse(gateway.data);
+		console.log(gateway.data);
 
-		if (!data || error) {
+		const data = paymentGatewayInitializeSessionSchema.parse(gateway.data);
+
+		if (!data) {
 			throw new Error("No data found");
 		}
 
@@ -74,6 +83,23 @@ export const PaymentMethods = ({ checkoutId }: { checkoutId: string }) => {
 		<div>
 			<h2>Payment Methods</h2>
 			{isLoading && <p>Loading...</p>}
+			<ul className="flex gap-4 items-center">
+				{paymentMethods?.acceptHosted && (
+					<li>
+						<AcceptHostedForm acceptData={paymentMethods.acceptHosted} />
+					</li>
+				)}
+				{paymentMethods?.applePay && (
+					<li>
+						<button>Apple Pay</button>
+					</li>
+				)}
+				{paymentMethods?.paypal && (
+					<li>
+						<button>PayPal</button>
+					</li>
+				)}
+			</ul>
 		</div>
 	);
 };

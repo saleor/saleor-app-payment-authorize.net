@@ -14,9 +14,11 @@ const getTransactionDetailsSchema = baseAuthorizeObjectSchema.and(
       authAmount: z.number(),
       responseReasonDescription: z.string().min(1),
       submitTimeLocal: z.string().min(1),
-      order: z.object({
-        description: z.string().min(1),
-      }),
+      order: z
+        .object({
+          description: z.string().min(1),
+        })
+        .optional(),
     }),
   }),
 );

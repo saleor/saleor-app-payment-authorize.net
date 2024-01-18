@@ -27,19 +27,17 @@ export function mapTransactionInitializeResponse(
   };
 }
 
-const transactionInitializeDataSchema = z.object({
-  paymentMethod: z.union([
-    applePayTransactionInitializeDataSchema,
-    acceptHostedTransactionInitializeDataSchema,
-    paypalTransactionInitializeDataSchema,
-  ]),
-});
+const transactionInitializeDataSchema = z.union([
+  applePayTransactionInitializeDataSchema,
+  acceptHostedTransactionInitializeDataSchema,
+  paypalTransactionInitializeDataSchema,
+]);
 
 export class TransactionInitializeSessionService {
   execute(
     payload: TransactionInitializeSessionEventFragment,
   ): Promise<TransactionInitializeSessionResponse> {
-    const { paymentMethod } = transactionInitializeDataSchema.parse(payload.data);
+    const paymentMethod = transactionInitializeDataSchema.parse(payload.data);
 
     if (paymentMethod.type === "acceptHosted") {
       const gateway = new AcceptHostedGateway();

@@ -44,7 +44,7 @@ class WebhookResponseBuilder extends SynchronousWebhookResponseBuilder<Transacti
 export default transactionInitializeSessionSyncWebhook.createHandler(
   async (req, res, { authData, ...ctx }) => {
     const responseBuilder = new WebhookResponseBuilder(res);
-    logger.info({ action: ctx.payload.action }, "called with:");
+    logger.info({ payload: ctx.payload.action }, "called with:");
 
     try {
       const authorizeConfig = getAuthorizeConfig();
