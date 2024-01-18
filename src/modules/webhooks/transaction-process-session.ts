@@ -99,7 +99,7 @@ export class TransactionProcessSessionService {
     });
 
     const transactionDetailsClient = new TransactionDetailsClient();
-    const details = await transactionDetailsClient.getTransactionDetailsRequest({
+    const details = await transactionDetailsClient.getTransactionDetails({
       transactionId: authorizeTransactionId,
     });
 

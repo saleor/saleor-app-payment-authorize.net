@@ -1,63 +1,64 @@
-import AuthorizeNet from "authorizenet";
-import { authorizeTransaction } from "../authorize-net/authorize-transaction-builder";
-import { CreateTransactionClient } from "../authorize-net/client/create-transaction";
-import { type ExternalPaymentGateway } from "./payment-gateway-initialize-session";
+import { z } from "zod";
+import {
+  AcceptHostedGateway,
+  acceptHostedTransactionInitializeDataSchema,
+} from "../authorize-net/gateways/accept-hosted-gateway";
+import {
+  ApplePayGateway,
+  applePayTransactionInitializeDataSchema,
+} from "../authorize-net/gateways/apple-pay-gateway";
+import {
+  PaypalGateway,
+  paypalTransactionInitializeDataSchema,
+} from "../authorize-net/gateways/paypal-gateway";
 import { type TransactionInitializeSessionEventFragment } from "generated/graphql";
 
-import { invariant } from "@/lib/invariant";
-import { createLogger } from "@/lib/logger";
 import { type TransactionInitializeSessionResponse } from "@/schemas/TransactionInitializeSession/TransactionInitializeSessionResponse.mjs";
 
-const ApiContracts = AuthorizeNet.APIContracts;
+export function mapTransactionInitializeResponse(
+  payload: TransactionInitializeSessionEventFragment,
+): Pick<TransactionInitializeSessionResponse, "amount" | "result" | "data" | "pspReference"> {
+  const amount = payload.transaction.authorizedAmount.amount;
+
+  return {
+    amount,
+    result: "AUTHORIZATION_SUCCESS",
+    data: {},
+  };
+}
+
+const transactionInitializeDataSchema = z.object({
+  paymentMethod: z.union([
+    applePayTransactionInitializeDataSchema,
+    acceptHostedTransactionInitializeDataSchema,
+    paypalTransactionInitializeDataSchema,
+  ]),
+});
 
 export class TransactionInitializeSessionService {
-  private logger = createLogger({
-    name: "TransactionInitializeSessionService",
-  });
-
-  constructor(private paymentGateway: ExternalPaymentGateway) {}
-
-  private async buildTransactionFromPayload(
-    payload: TransactionInitializeSessionEventFragment,
-  ): Promise<AuthorizeNet.APIContracts.TransactionRequestType> {
-    const transactionRequest = await this.paymentGateway.buildTransactionRequest(payload);
-
-    transactionRequest.setTransactionType(ApiContracts.TransactionTypeEnum.AUTHONLYTRANSACTION);
-    transactionRequest.setAmount(payload.action.amount);
-
-    const lineItems = authorizeTransaction.buildLineItemsFromOrderOrCheckout(payload.sourceObject);
-    transactionRequest.setLineItems(lineItems);
-
-    invariant(payload.sourceObject.billingAddress, "Billing address is missing from payload.");
-    const billTo = authorizeTransaction.buildBillTo(payload.sourceObject.billingAddress);
-    transactionRequest.setBillTo(billTo);
-
-    invariant(payload.sourceObject.shippingAddress, "Shipping address is missing from payload.");
-    const shipTo = authorizeTransaction.buildShipTo(payload.sourceObject.shippingAddress);
-    transactionRequest.setShipTo(shipTo);
-
-    const poNumber = authorizeTransaction.buildPoNumber(payload.sourceObject);
-    transactionRequest.setPoNumber(poNumber);
-
-    return transactionRequest;
-  }
-
-  async execute(
+  execute(
     payload: TransactionInitializeSessionEventFragment,
   ): Promise<TransactionInitializeSessionResponse> {
-    const transactionRequest = await this.buildTransactionFromPayload(payload);
+    const { paymentMethod } = transactionInitializeDataSchema.parse(payload.data);
 
-    const createTransactionClient = new CreateTransactionClient();
-    await createTransactionClient.createTransaction(transactionRequest);
+    if (paymentMethod.type === "acceptHosted") {
+      const gateway = new AcceptHostedGateway();
 
-    this.logger.debug("Successfully created the transaction");
+      return gateway.initializeTransaction(payload);
+    }
 
-    const amount = payload.transaction.authorizedAmount.amount;
+    if (paymentMethod.type === "applePay") {
+      const gateway = new ApplePayGateway();
 
-    return {
-      amount,
-      result: "AUTHORIZATION_SUCCESS",
-      data: {},
-    };
+      return gateway.initializeTransaction(payload);
+    }
+
+    if (paymentMethod.type === "paypal") {
+      const gateway = new PaypalGateway();
+
+      return gateway.initializeTransaction(payload);
+    }
+
+    throw new Error("Unsupported payment method type");
   }
 }

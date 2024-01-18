@@ -2,7 +2,6 @@ import { type AuthData } from "@saleor/app-sdk/APL";
 import { type Client } from "urql";
 import { type AuthorizeConfig } from "../authorize-net/authorize-net-config";
 
-import { ApplePayGateway } from "../authorize-net/gateways/apple-pay-gateway";
 import { TransactionCancelationRequestedService } from "./transaction-cancelation-requested";
 import { TransactionProcessSessionService } from "./transaction-process-session";
 import { TransactionRefundRequestedService } from "./transaction-refund-requested";
@@ -10,7 +9,7 @@ import { TransactionRefundRequestedService } from "./transaction-refund-requeste
 import { PaymentGatewayInitializeSessionService } from "./payment-gateway-initialize-session";
 import { TransactionInitializeSessionService } from "./transaction-initialize-session";
 import { createServerClient } from "@/lib/create-graphq-client";
-import { type PaymentGatewayInitializeSessionData } from "@/pages/api/webhooks/payment-gateway-initialize-session";
+import { type PaymentGatewayInitializeSessionResponse } from "@/pages/api/webhooks/payment-gateway-initialize-session";
 import { type TransactionCancelationRequestedResponse } from "@/schemas/TransactionCancelationRequested/TransactionCancelationRequestedResponse.mjs";
 import { type TransactionInitializeSessionResponse } from "@/schemas/TransactionInitializeSession/TransactionInitializeSessionResponse.mjs";
 import { type TransactionProcessSessionResponse } from "@/schemas/TransactionProcessSession/TransactionProcessSessionResponse.mjs";
@@ -45,10 +44,7 @@ export class AppWebhookManager implements PaymentsWebhooks {
   async transactionInitializeSession(
     payload: TransactionInitializeSessionEventFragment,
   ): Promise<TransactionInitializeSessionResponse> {
-    // todo: check what gateway to use based on payload.data
-    const paymentGateway = new ApplePayGateway();
-
-    const service = new TransactionInitializeSessionService(paymentGateway);
+    const service = new TransactionInitializeSessionService();
 
     return service.execute(payload);
   }
@@ -83,10 +79,14 @@ export class AppWebhookManager implements PaymentsWebhooks {
 
   async paymentGatewayInitializeSession(
     payload: PaymentGatewayInitializeSessionEventFragment,
-  ): Promise<PaymentGatewayInitializeSessionData> {
+  ): Promise<PaymentGatewayInitializeSessionResponse> {
     const service = new PaymentGatewayInitializeSessionService();
 
-    return service.execute(payload);
+    const data = await service.execute(payload);
+
+    return {
+      data,
+    };
   }
 }
 

@@ -13,12 +13,17 @@ import {
   type GetHostedPaymentPageResponse,
 } from "../client/hosted-payment-page-client";
 
-import { type PaymentGatewayInitializeSessionEventFragment } from "generated/graphql";
+import { TransactionDetailsClient } from "../client/transaction-details-client";
+import {
+  type TransactionInitializeSessionEventFragment,
+  type PaymentGatewayInitializeSessionEventFragment,
+} from "generated/graphql";
 
 import { BaseError } from "@/errors";
 import { invariant } from "@/lib/invariant";
 import { createLogger } from "@/lib/logger";
 import { type PaymentGateway } from "@/modules/webhooks/payment-gateway-initialize-session";
+import { type TransactionInitializeSessionResponse } from "@/schemas/TransactionInitializeSession/TransactionInitializeSessionResponse.mjs";
 
 const ApiContracts = AuthorizeNet.APIContracts;
 
@@ -28,12 +33,19 @@ const transactionInitializeSessionPayloadDataSchema = z.object({
   shouldCreateCustomerProfile: z.boolean().optional().default(false),
 });
 
-export const acceptHostedPaymentGatewaySchema = z.object({
+export const acceptHostedPaymentGatewayDataSchema = z.object({
   formToken: z.string().min(1),
   environment: authorizeEnvironmentSchema,
 });
 
-export type AcceptHostedPaymentGatewayData = z.infer<typeof acceptHostedPaymentGatewaySchema>;
+type AcceptHostedPaymentGatewayData = z.infer<typeof acceptHostedPaymentGatewayDataSchema>;
+
+export const acceptHostedTransactionInitializeDataSchema = z.object({
+  type: z.literal("acceptHosted"),
+  data: z.object({
+    authorizeTransactionId: z.string(),
+  }),
+});
 
 export class AcceptHostedGateway implements PaymentGateway {
   private authorizeConfig: AuthorizeConfig;
@@ -116,7 +128,7 @@ export class AcceptHostedGateway implements PaymentGateway {
   private mapResponseToWebhookData(
     response: GetHostedPaymentPageResponse,
   ): AcceptHostedPaymentGatewayData {
-    const dataParseResult = acceptHostedPaymentGatewaySchema.safeParse({
+    const dataParseResult = acceptHostedPaymentGatewayDataSchema.safeParse({
       formToken: response.token,
       environment: this.authorizeConfig.environment,
     });
@@ -169,7 +181,7 @@ export class AcceptHostedGateway implements PaymentGateway {
     return arrayOfSettings;
   }
 
-  async initialize(
+  async initializePaymentGateway(
     payload: PaymentGatewayInitializeSessionEventFragment,
   ): Promise<AcceptHostedPaymentGatewayData> {
     this.logger.debug("Getting hosted payment page settings for transaction");
@@ -191,5 +203,28 @@ export class AcceptHostedGateway implements PaymentGateway {
     this.logger.trace("Successfully built Accept Hosted payment gateway data.");
 
     return data;
+  }
+
+  private getTransactionDetails(payload: TransactionInitializeSessionEventFragment) {
+    const client = new TransactionDetailsClient();
+    const { data } = acceptHostedTransactionInitializeDataSchema.parse(payload.data);
+
+    const transactionId = data.authorizeTransactionId;
+    const transactionDetails = client.getTransactionDetails({ transactionId });
+
+    return transactionDetails;
+  }
+
+  async initializeTransaction(
+    payload: TransactionInitializeSessionEventFragment,
+  ): Promise<TransactionInitializeSessionResponse> {
+    const transactionDetails = await this.getTransactionDetails(payload);
+
+    return {
+      amount: transactionDetails.transaction.authAmount,
+      pspReference: transactionDetails.transaction.transId,
+      result: "AUTHORIZATION_SUCCESS",
+      data: {},
+    };
   }
 }
