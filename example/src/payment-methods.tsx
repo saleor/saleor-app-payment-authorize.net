@@ -9,6 +9,7 @@ import {
 import { authorizeNetAppId } from "./lib/common";
 
 import { AcceptHostedForm } from "./accept-hosted-form";
+import { PayPalWrapper } from "./paypal-wrapper";
 import { getCheckoutId } from "./pages/cart";
 
 const authorizeEnvironmentSchema = z.enum(["sandbox", "production"]);
@@ -96,7 +97,7 @@ export const PaymentMethods = () => {
 				)}
 				{paymentMethods?.paypal && (
 					<li>
-						<button>PayPal</button>
+						<PayPalWrapper />
 					</li>
 				)}
 			</ul>
