@@ -1,9 +1,10 @@
 import { SaleorSyncWebhook } from "@saleor/app-sdk/handlers/next";
 import * as Sentry from "@sentry/nextjs";
-import { AuthorizeWebhookManager } from "@/modules/authorize-net/webhook/authorize-net-webhook-manager";
+import { normalizeError } from "@/errors";
 import { createLogger } from "@/lib/logger";
 import { SynchronousWebhookResponseBuilder } from "@/lib/webhook-response-builder";
-import { TransactionProcessError } from "@/modules/webhooks/transaction-process-session";
+import { getAuthorizeConfig } from "@/modules/authorize-net/authorize-net-config";
+import { AuthorizeWebhookManager } from "@/modules/authorize-net/webhook/authorize-net-webhook-manager";
 import { createAppWebhookManager } from "@/modules/webhooks/webhook-manager-service";
 import { saleorApp } from "@/saleor-app";
 import { type TransactionProcessSessionResponse } from "@/schemas/TransactionProcessSession/TransactionProcessSessionResponse.mjs";
@@ -11,7 +12,6 @@ import {
   UntypedTransactionProcessSessionDocument,
   type TransactionProcessSessionEventFragment,
 } from "generated/graphql";
-import { getAuthorizeConfig } from "@/modules/authorize-net/authorize-net-config";
 
 export const config = {
   api: {
@@ -73,7 +73,7 @@ export default transactionProcessSessionSyncWebhook.createHandler(
     } catch (error) {
       Sentry.captureException(error);
 
-      const normalizedError = TransactionProcessError.normalize(error);
+      const normalizedError = normalizeError(error);
       return responseBuilder.ok({
         amount: ctx.payload.action.amount,
         result: "AUTHORIZATION_FAILURE",

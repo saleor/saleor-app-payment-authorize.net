@@ -2,8 +2,9 @@ import { SaleorSyncWebhook } from "@saleor/app-sdk/handlers/next";
 import * as Sentry from "@sentry/nextjs";
 import { createLogger } from "@/lib/logger";
 import { SynchronousWebhookResponseBuilder } from "@/lib/webhook-response-builder";
-import { TransactionRefundRequestedError } from "@/modules/webhooks/transaction-refund-requested";
 
+import { normalizeError } from "@/errors";
+import { getAuthorizeConfig } from "@/modules/authorize-net/authorize-net-config";
 import { AuthorizeWebhookManager } from "@/modules/authorize-net/webhook/authorize-net-webhook-manager";
 import { createAppWebhookManager } from "@/modules/webhooks/webhook-manager-service";
 import { saleorApp } from "@/saleor-app";
@@ -12,7 +13,6 @@ import {
   UntypedTransactionRefundRequestedDocument,
   type TransactionRefundRequestedEventFragment,
 } from "generated/graphql";
-import { getAuthorizeConfig } from "@/modules/authorize-net/authorize-net-config";
 
 export const config = {
   api: {
@@ -63,7 +63,7 @@ export default transactionRefundRequestedSyncWebhook.createHandler(
     } catch (error) {
       Sentry.captureException(error);
 
-      const normalizedError = TransactionRefundRequestedError.normalize(error);
+      const normalizedError = normalizeError(error);
       return responseBuilder.ok({
         result: "REFUND_FAILURE",
         pspReference: "", // todo: add

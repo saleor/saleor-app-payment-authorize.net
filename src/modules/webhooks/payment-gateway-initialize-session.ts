@@ -1,5 +1,6 @@
 import { AcceptHostedGateway } from "../authorize-net/gateways/accept-hosted-gateway";
 import { ApplePayGateway } from "../authorize-net/gateways/apple-pay-gateway";
+import { PaypalGateway } from "../authorize-net/gateways/paypal-gateway";
 import { type PaymentGatewayInitializeSessionData } from "@/pages/api/webhooks/payment-gateway-initialize-session";
 import { type PaymentGatewayInitializeSessionResponse } from "@/schemas/PaymentGatewayInitializeSession/PaymentGatewayInitializeSessionResponse.mjs";
 import { type TransactionInitializeSessionResponse } from "@/schemas/TransactionInitializeSession/TransactionInitializeSessionResponse.mjs";
@@ -32,14 +33,19 @@ export class PaymentGatewayInitializeSessionService {
     const applePayGateway = new ApplePayGateway();
     const initializeApplePay = applePayGateway.initializePaymentGateway(payload);
 
-    const [acceptHosted, applePay] = await Promise.all([
+    const paypalGateway = new PaypalGateway();
+    const initializePaypal = paypalGateway.initializePaymentGateway(payload);
+
+    const [acceptHosted, applePay, paypal] = await Promise.all([
       initializeAcceptHosted,
       initializeApplePay,
+      initializePaypal,
     ]);
 
     return {
       acceptHosted,
       applePay,
+      paypal,
     };
   }
 }

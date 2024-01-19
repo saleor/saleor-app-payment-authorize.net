@@ -223,7 +223,8 @@ export class AcceptHostedGateway implements PaymentGateway {
     return {
       amount: transactionDetails.transaction.authAmount,
       pspReference: transactionDetails.transaction.transId,
-      result: "AUTHORIZATION_SUCCESS",
+      result: "AUTHORIZATION_ACTION_REQUIRED",
+      actions: ["CANCEL", "REFUND"],
       data: {},
     };
   }

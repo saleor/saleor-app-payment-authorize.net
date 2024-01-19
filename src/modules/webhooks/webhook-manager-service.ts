@@ -52,9 +52,7 @@ export class AppWebhookManager implements PaymentsWebhooks {
   async transactionProcessSession(
     payload: TransactionProcessSessionEventFragment,
   ): Promise<TransactionProcessSessionResponse> {
-    const service = new TransactionProcessSessionService({
-      apiClient: this.apiClient,
-    });
+    const service = new TransactionProcessSessionService();
 
     return service.execute(payload);
   }

@@ -37,6 +37,8 @@ export class CreateTransactionClient extends AuthorizeNetClient {
           // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           const apiResponse = transactionController.getResponse();
           const response = new ApiContracts.CreateTransactionResponse(apiResponse);
+
+          this.logger.trace({ response }, "CreateTransactionResponse");
           const parsedResponse = createTransactionSchema.parse(response);
 
           this.resolveResponseErrors(parsedResponse);

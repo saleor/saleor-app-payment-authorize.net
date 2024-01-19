@@ -1,7 +1,5 @@
-import { TRANSACTION_METADATA_KEY } from "../configuration/transaction-metadata-manager";
 import { type GetTransactionDetailsResponse } from "./client/transaction-details-client";
 import { invariant } from "@/lib/invariant";
-import { createLogger } from "@/lib/logger";
 import { type TransactionFragment } from "generated/graphql";
 
 /**
@@ -26,29 +24,7 @@ const saleorTransactionIdConverter = {
 };
 
 function resolveAuthorizeTransactionIdFromTransaction(transaction: TransactionFragment) {
-  const logger = createLogger({
-    name: "resolveAuthorizeTransactionIdFromTransaction",
-  });
-
-  const metadata = transaction.privateMetadata;
-
-  if (!metadata) {
-    logger.warn("Missing metadata in payload");
-    return undefined;
-  }
-
-  const authorizeTransactionId = metadata.find(
-    (metadataEntry) => metadataEntry?.key === TRANSACTION_METADATA_KEY,
-  )?.value;
-
-  if (!authorizeTransactionId) {
-    logger.warn("Missing authorizeTransactionId in metadata");
-    return undefined;
-  }
-
-  logger.debug("Returning authorizeTransactionId from transaction metadata");
-
-  return authorizeTransactionId;
+  return transaction.pspReference;
 }
 
 export const transactionId = {

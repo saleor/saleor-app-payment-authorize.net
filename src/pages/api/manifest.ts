@@ -6,6 +6,7 @@ import { paymentGatewayInitializeSessionSyncWebhook } from "./webhooks/payment-g
 import { transactionCancelationRequestedSyncWebhook } from "./webhooks/transaction-cancelation-requested";
 import { transactionInitializeSessionSyncWebhook } from "./webhooks/transaction-initialize-session";
 import { transactionRefundRequestedSyncWebhook } from "./webhooks/transaction-refund-requested";
+import { transactionProcessSessionSyncWebhook } from "./webhooks/transaction-process-session";
 
 export default createManifestHandler({
   async manifestFactory(context) {
@@ -19,6 +20,7 @@ export default createManifestHandler({
       requiredSaleorVersion: ">=3.13",
       webhooks: [
         transactionInitializeSessionSyncWebhook.getWebhookManifest(context.appBaseUrl),
+        transactionProcessSessionSyncWebhook.getWebhookManifest(context.appBaseUrl),
         transactionCancelationRequestedSyncWebhook.getWebhookManifest(context.appBaseUrl),
         transactionRefundRequestedSyncWebhook.getWebhookManifest(context.appBaseUrl),
         paymentGatewayInitializeSessionSyncWebhook.getWebhookManifest(context.appBaseUrl),

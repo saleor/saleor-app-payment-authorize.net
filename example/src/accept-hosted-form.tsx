@@ -6,6 +6,9 @@ import {
 	TransactionInitializeDocument,
 	TransactionInitializeMutation,
 	TransactionInitializeMutationVariables,
+	TransactionProcessDocument,
+	TransactionProcessMutation,
+	TransactionProcessMutationVariables,
 } from "../generated/graphql";
 import { authorizeNetAppId } from "./lib/common";
 import { getCheckoutId } from "./pages/cart";
@@ -33,6 +36,10 @@ export function AcceptHostedForm({ acceptData }: { acceptData: AcceptHostedData 
 		TransactionInitializeMutation,
 		TransactionInitializeMutationVariables
 	>(gql(TransactionInitializeDocument.toString()));
+
+	const [processTransaction] = useMutation<TransactionProcessMutation, TransactionProcessMutationVariables>(
+		gql(TransactionProcessDocument.toString()),
+	);
 
 	const transactionResponseHandler = React.useCallback(
 		async (rawResponse: unknown) => {
@@ -62,9 +69,29 @@ export function AcceptHostedForm({ acceptData }: { acceptData: AcceptHostedData 
 				throw new Error("Failed to initialize transaction");
 			}
 
+			const transactionId = initializeTransactionResponse.data?.transactionInitialize?.transaction?.id;
+
+			if (!transactionId) {
+				throw new Error("Transaction id not found in response");
+			}
+
+			const processTransactionResponse = await processTransaction({
+				variables: {
+					transactionId,
+					data: {},
+				},
+			});
+
+			if (
+				processTransactionResponse.data?.transactionProcess?.errors?.length &&
+				processTransactionResponse.data?.transactionProcess?.errors?.length > 0
+			) {
+				throw new Error("Failed to process transaction");
+			}
+
 			router.push("/success");
 		},
-		[checkoutId, initializeTransaction, router],
+		[checkoutId, initializeTransaction, processTransaction, router],
 	);
 
 	return (

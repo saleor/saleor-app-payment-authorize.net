@@ -13,9 +13,7 @@ import { type TransactionRefundRequestedResponse } from "@/schemas/TransactionRe
 
 const ApiContracts = AuthorizeNet.APIContracts;
 
-export const TransactionRefundRequestedError = BaseError.subclass(
-  "TransactionRefundRequestedError",
-);
+const TransactionRefundRequestedError = BaseError.subclass("TransactionRefundRequestedError");
 
 const TransactionRefundAuthorizeTransactionIdError = TransactionRefundRequestedError.subclass(
   "TransactionRefundAuthorizeTransactionIdError",
