@@ -14,16 +14,22 @@ export const authorizeNetEventSchema = z.enum([
 
 export type AuthorizeNetEvent = z.infer<typeof authorizeNetEventSchema>;
 
-const webhookInputSchema = z.object({
+const baseWebhookSchema = z.object({
   url: z.string(),
-  eventTypes: z.array(authorizeNetEventSchema),
   status: z.enum(["active", "inactive"]),
 });
 
+const webhookInputSchema = baseWebhookSchema.and(
+  z.object({
+    eventTypes: z.array(authorizeNetEventSchema),
+  }),
+);
+
 export type AuthorizeNetWebhookInput = z.infer<typeof webhookInputSchema>;
 
-const webhookSchema = webhookInputSchema.and(
+const webhookSchema = baseWebhookSchema.and(
   z.object({
+    eventTypes: z.array(z.string()),
     webhookId: z.string(),
   }),
 );

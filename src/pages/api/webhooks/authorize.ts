@@ -2,9 +2,10 @@ import { type NextApiRequest, type NextApiResponse } from "next";
 import { createLogger } from "@/lib/logger";
 
 import { AuthorizeNetWebhookHandler } from "@/modules/authorize-net/webhook/authorize-net-webhook-handler";
+import { normalizeError } from "@/errors";
 
 const logger = createLogger({
-  name: "AuthorizeNetWebhooksHandler",
+  name: "Authorize.net webhook API route",
 });
 
 export const config = {
@@ -23,8 +24,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     await handler.handle();
     res.status(200).end();
   } catch (error) {
+    const normalizedError = normalizeError(error);
     // eslint-disable-next-line @saleor/saleor-app/logger-leak
-    logger.error({ error }, "Error in webhook handler");
-    res.status(500).json({ error });
+    logger.error({ error: normalizedError }, "Error in webhook handler");
+    res.status(500).json({ error: normalizedError });
   }
 }
