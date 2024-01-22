@@ -3,9 +3,9 @@ import AuthorizeNet from "authorizenet";
 import { z } from "zod";
 import { CustomerProfileManager } from "../../customer-profile/customer-profile-manager";
 import {
-  authorizeEnvironmentSchema,
   getAuthorizeConfig,
   type AuthorizeConfig,
+  authorizeEnvironmentSchema,
 } from "../authorize-net-config";
 import { authorizeTransaction } from "../authorize-transaction-builder";
 import {
@@ -15,8 +15,9 @@ import {
 
 import { TransactionDetailsClient } from "../client/transaction-details-client";
 import {
-  type TransactionInitializeSessionEventFragment,
   type PaymentGatewayInitializeSessionEventFragment,
+  type TransactionInitializeSessionEventFragment,
+  type TransactionProcessSessionEventFragment,
 } from "generated/graphql";
 
 import { BaseError } from "@/errors";
@@ -24,27 +25,34 @@ import { invariant } from "@/lib/invariant";
 import { createLogger } from "@/lib/logger";
 import { type PaymentGateway } from "@/modules/webhooks/payment-gateway-initialize-session";
 import { type TransactionInitializeSessionResponse } from "@/schemas/TransactionInitializeSession/TransactionInitializeSessionResponse.mjs";
+import { type TransactionProcessSessionResponse } from "@/schemas/TransactionProcessSession/TransactionProcessSessionResponse.mjs";
 
 const ApiContracts = AuthorizeNet.APIContracts;
 
 const AcceptHostedPaymentGatewayError = BaseError.subclass("AcceptHostedPaymentGatewayError");
 
-const transactionInitializeSessionPayloadDataSchema = z.object({
-  shouldCreateCustomerProfile: z.boolean().optional().default(false),
-});
-
-export const acceptHostedPaymentGatewayDataSchema = z.object({
-  formToken: z.string().min(1),
-  environment: authorizeEnvironmentSchema,
-});
+export const acceptHostedPaymentGatewayDataSchema = z.object({});
 
 type AcceptHostedPaymentGatewayData = z.infer<typeof acceptHostedPaymentGatewayDataSchema>;
 
 export const acceptHostedTransactionInitializeDataSchema = z.object({
   type: z.literal("acceptHosted"),
   data: z.object({
-    authorizeTransactionId: z.string(),
+    shouldCreateCustomerProfile: z.boolean().optional().default(false),
   }),
+});
+
+const acceptHostedTransactionInitializeResponseDataSchema = z.object({
+  formToken: z.string().min(1),
+  environment: authorizeEnvironmentSchema,
+});
+
+type AcceptHostedTransactionInitializeResponseData = z.infer<
+  typeof acceptHostedTransactionInitializeResponseDataSchema
+>;
+
+const acceptHostedTransactionProcessDataSchema = z.object({
+  authorizeTransactionId: z.string().min(1),
 });
 
 export class AcceptHostedGateway implements PaymentGateway {
@@ -61,12 +69,13 @@ export class AcceptHostedGateway implements PaymentGateway {
   }
 
   private async buildTransactionFromPayload(
-    payload: PaymentGatewayInitializeSessionEventFragment,
+    payload: TransactionInitializeSessionEventFragment,
   ): Promise<AuthorizeNet.APIContracts.TransactionRequestType> {
     const transactionRequest = new ApiContracts.TransactionRequestType();
 
     transactionRequest.setTransactionType(ApiContracts.TransactionTypeEnum.AUTHONLYTRANSACTION);
-    transactionRequest.setAmount(payload.amount);
+    transactionRequest.setAmount(payload.action.amount);
+    transactionRequest.setCurrencyCode(payload.action.currency);
 
     const lineItems = authorizeTransaction.buildLineItemsFromOrderOrCheckout(payload.sourceObject);
     transactionRequest.setLineItems(lineItems);
@@ -90,15 +99,18 @@ export class AcceptHostedGateway implements PaymentGateway {
       return transactionRequest;
     }
 
-    const dataParseResult = transactionInitializeSessionPayloadDataSchema.safeParse(payload.data);
+    const dataParseResult = acceptHostedTransactionInitializeDataSchema.safeParse(payload.data);
 
     if (!dataParseResult.success) {
+      this.logger.error({ error: dataParseResult.error.format() });
       throw new AcceptHostedPaymentGatewayError("`data` object has unexpected structure.", {
         cause: dataParseResult.error,
       });
     }
 
-    const { shouldCreateCustomerProfile } = dataParseResult.data;
+    const {
+      data: { shouldCreateCustomerProfile },
+    } = dataParseResult.data;
 
     if (!shouldCreateCustomerProfile) {
       this.logger.trace("Skipping customerProfileId lookup.");
@@ -125,15 +137,16 @@ export class AcceptHostedGateway implements PaymentGateway {
     return transactionRequest;
   }
 
-  private mapResponseToWebhookData(
+  private mapResponseToTransactionInitializeData(
     response: GetHostedPaymentPageResponse,
-  ): AcceptHostedPaymentGatewayData {
-    const dataParseResult = acceptHostedPaymentGatewayDataSchema.safeParse({
+  ): AcceptHostedTransactionInitializeResponseData {
+    const dataParseResult = acceptHostedTransactionInitializeResponseDataSchema.safeParse({
       formToken: response.token,
       environment: this.authorizeConfig.environment,
     });
 
     if (!dataParseResult.success) {
+      this.logger.error({ error: dataParseResult.error.format() });
       throw new AcceptHostedPaymentGatewayError("`data` object has unexpected structure.", {
         cause: dataParseResult.error,
       });
@@ -182,10 +195,14 @@ export class AcceptHostedGateway implements PaymentGateway {
   }
 
   async initializePaymentGateway(
-    payload: PaymentGatewayInitializeSessionEventFragment,
+    _payload: PaymentGatewayInitializeSessionEventFragment,
   ): Promise<AcceptHostedPaymentGatewayData> {
-    this.logger.debug("Getting hosted payment page settings for transaction");
+    return {};
+  }
 
+  async initializeTransaction(
+    payload: TransactionInitializeSessionEventFragment,
+  ): Promise<TransactionInitializeSessionResponse> {
     const transactionInput = await this.buildTransactionFromPayload(payload);
     const settingsInput = this.getHostedPaymentPageSettings();
 
@@ -198,33 +215,37 @@ export class AcceptHostedGateway implements PaymentGateway {
 
     this.logger.trace("Successfully called getHostedPaymentPageRequest");
 
-    const data = this.mapResponseToWebhookData(hostedPaymentPageResponse);
+    const data = this.mapResponseToTransactionInitializeData(hostedPaymentPageResponse);
 
-    this.logger.trace("Successfully built Accept Hosted payment gateway data.");
-
-    return data;
+    return {
+      amount: payload.action.amount,
+      result: "AUTHORIZATION_ACTION_REQUIRED",
+      data,
+    };
   }
 
-  private getTransactionDetails(payload: TransactionInitializeSessionEventFragment) {
+  private getTransactionDetails(payload: TransactionProcessSessionEventFragment) {
     const client = new TransactionDetailsClient();
-    const { data } = acceptHostedTransactionInitializeDataSchema.parse(payload.data);
+    const { authorizeTransactionId } = acceptHostedTransactionProcessDataSchema.parse(payload.data);
 
-    const transactionId = data.authorizeTransactionId;
-    const transactionDetails = client.getTransactionDetails({ transactionId });
+    const transactionDetails = client.getTransactionDetails({
+      transactionId: authorizeTransactionId,
+    });
 
     return transactionDetails;
   }
 
-  async initializeTransaction(
-    payload: TransactionInitializeSessionEventFragment,
-  ): Promise<TransactionInitializeSessionResponse> {
+  async processTransaction(
+    payload: TransactionProcessSessionEventFragment,
+  ): Promise<TransactionProcessSessionResponse> {
     const transactionDetails = await this.getTransactionDetails(payload);
 
     return {
       amount: transactionDetails.transaction.authAmount,
+      result: "AUTHORIZATION_SUCCESS",
       pspReference: transactionDetails.transaction.transId,
-      result: "AUTHORIZATION_ACTION_REQUIRED",
       actions: ["CANCEL", "REFUND"],
+      time: transactionDetails.transaction.submitTimeLocal,
       data: {},
     };
   }

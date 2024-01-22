@@ -4,7 +4,9 @@ import { PaypalGateway } from "../authorize-net/gateways/paypal-gateway";
 import { type PaymentGatewayInitializeSessionData } from "@/pages/api/webhooks/payment-gateway-initialize-session";
 import { type PaymentGatewayInitializeSessionResponse } from "@/schemas/PaymentGatewayInitializeSession/PaymentGatewayInitializeSessionResponse.mjs";
 import { type TransactionInitializeSessionResponse } from "@/schemas/TransactionInitializeSession/TransactionInitializeSessionResponse.mjs";
+import { type TransactionProcessSessionResponse } from "@/schemas/TransactionProcessSession/TransactionProcessSessionResponse.mjs";
 import {
+  type TransactionProcessSessionEventFragment,
   type PaymentGatewayInitializeSessionEventFragment,
   type TransactionInitializeSessionEventFragment,
 } from "generated/graphql";
@@ -21,6 +23,9 @@ export interface PaymentGateway {
   initializeTransaction(
     payload: TransactionInitializeSessionEventFragment,
   ): Promise<TransactionInitializeSessionResponse>;
+  processTransaction?(
+    payload: TransactionProcessSessionEventFragment,
+  ): Promise<TransactionProcessSessionResponse>;
 }
 
 export class PaymentGatewayInitializeSessionService {

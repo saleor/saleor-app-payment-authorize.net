@@ -12,14 +12,9 @@ import { AcceptHostedForm } from "./accept-hosted-form";
 import { PayPalWrapper } from "./paypal-wrapper";
 import { getCheckoutId } from "./pages/cart";
 
-const authorizeEnvironmentSchema = z.enum(["sandbox", "production"]);
-
 const applePayPaymentGatewayInitializeData = z.object({});
 
-export const acceptHostedPaymentGatewaySchema = z.object({
-	formToken: z.string().min(1),
-	environment: authorizeEnvironmentSchema,
-});
+const acceptHostedPaymentGatewaySchema = z.object({});
 
 export type AcceptHostedData = z.infer<typeof acceptHostedPaymentGatewaySchema>;
 
@@ -87,7 +82,7 @@ export const PaymentMethods = () => {
 			<ul className="flex gap-4 items-center">
 				{paymentMethods?.acceptHosted && (
 					<li>
-						<AcceptHostedForm acceptData={paymentMethods.acceptHosted} />
+						<AcceptHostedForm />
 					</li>
 				)}
 				{paymentMethods?.applePay && (

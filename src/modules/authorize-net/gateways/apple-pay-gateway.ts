@@ -1,8 +1,8 @@
 import AuthorizeNet from "authorizenet";
 import { z } from "zod";
 import { CreateTransactionClient } from "../client/create-transaction";
-import { type PaymentGateway } from "@/modules/webhooks/payment-gateway-initialize-session";
 import { buildTransactionFromTransactionInitializePayload } from "@/modules/webhooks/buildTransactionFromTransactionInitializePayload";
+import { type PaymentGateway } from "@/modules/webhooks/payment-gateway-initialize-session";
 import { type TransactionInitializeSessionResponse } from "@/schemas/TransactionInitializeSession/TransactionInitializeSessionResponse.mjs";
 import {
   type PaymentGatewayInitializeSessionEventFragment,
@@ -67,6 +67,9 @@ export class ApplePayGateway implements PaymentGateway {
     return {
       amount: payload.action.amount,
       pspReference: response.transactionResponse.transId,
+      data: {},
+      time: new Date().toISOString(),
+      actions: ["CHARGE", "REFUND"],
       result: "AUTHORIZATION_SUCCESS",
     };
   }

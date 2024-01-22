@@ -12,25 +12,26 @@ import {
 } from "../generated/graphql";
 import { authorizeNetAppId } from "./lib/common";
 import { getCheckoutId } from "./pages/cart";
-import { AcceptHostedData } from "./payment-methods";
 import { useRouter } from "next/router";
-
-const acceptHostedTransactionInitializeDataSchema = z.object({
-	type: z.literal("acceptHosted"),
-	data: z.object({
-		authorizeTransactionId: z.string(),
-	}),
-});
-
-type AcceptHostedTransactionInitializeData = z.infer<typeof acceptHostedTransactionInitializeDataSchema>;
 
 const acceptHostedTransactionResponseSchema = z.object({
 	transId: z.string(),
 });
 
-export function AcceptHostedForm({ acceptData }: { acceptData: AcceptHostedData }) {
+const authorizeEnvironmentSchema = z.enum(["sandbox", "production"]);
+
+const acceptHostedTransactionInitializeResponseDataSchema = z.object({
+	formToken: z.string().min(1),
+	environment: authorizeEnvironmentSchema,
+});
+
+type AcceptHostedData = z.infer<typeof acceptHostedTransactionInitializeResponseDataSchema>;
+
+export function AcceptHostedForm() {
 	const checkoutId = getCheckoutId();
 	const router = useRouter();
+	const [acceptData, setAcceptData] = React.useState<AcceptHostedData>();
+	const [transactionId, setTransactionId] = React.useState<string>();
 
 	const [initializeTransaction] = useMutation<
 		TransactionInitializeMutation,
@@ -41,44 +42,69 @@ export function AcceptHostedForm({ acceptData }: { acceptData: AcceptHostedData 
 		gql(TransactionProcessDocument.toString()),
 	);
 
+	const getAcceptData = async () => {
+		const initializeTransactionResponse = await initializeTransaction({
+			variables: {
+				checkoutId,
+				paymentGateway: authorizeNetAppId,
+				data: {
+					type: "acceptHosted",
+					data: {
+						shouldCreateCustomerProfile: true,
+					},
+				},
+			},
+		});
+
+		if (
+			initializeTransactionResponse.data?.transactionInitialize?.errors?.length &&
+			initializeTransactionResponse.data?.transactionInitialize?.errors?.length > 0
+		) {
+			throw new Error("Failed to initialize transaction");
+		}
+
+		const nextTransactionId = initializeTransactionResponse.data?.transactionInitialize?.transaction?.id;
+
+		if (!nextTransactionId) {
+			throw new Error("Transaction id not found in response");
+		}
+
+		setTransactionId(nextTransactionId);
+
+		const data = initializeTransactionResponse.data?.transactionInitialize?.data;
+
+		if (!data) {
+			throw new Error("No data found in response");
+		}
+
+		console.log(data);
+
+		const nextAcceptData = acceptHostedTransactionInitializeResponseDataSchema.parse(data);
+		setAcceptData(nextAcceptData);
+	};
+
+	React.useEffect(() => {
+		getAcceptData();
+	}, []);
+
 	const transactionResponseHandler = React.useCallback(
 		async (rawResponse: unknown) => {
 			console.log("✅ transactionResponseHandler called");
 
 			const authorizeResponse = acceptHostedTransactionResponseSchema.parse(rawResponse);
 
-			const data: AcceptHostedTransactionInitializeData = {
-				data: {
-					authorizeTransactionId: authorizeResponse.transId,
-				},
-				type: "acceptHosted",
+			const data = {
+				authorizeTransactionId: authorizeResponse.transId,
 			};
 
-			const initializeTransactionResponse = await initializeTransaction({
-				variables: {
-					checkoutId,
-					paymentGateway: authorizeNetAppId,
-					data,
-				},
-			});
-
-			if (
-				initializeTransactionResponse.data?.transactionInitialize?.errors?.length &&
-				initializeTransactionResponse.data?.transactionInitialize?.errors?.length > 0
-			) {
-				throw new Error("Failed to initialize transaction");
-			}
-
-			const transactionId = initializeTransactionResponse.data?.transactionInitialize?.transaction?.id;
-
 			if (!transactionId) {
-				throw new Error("Transaction id not found in response");
+				throw new Error("Transaction id not found");
 			}
 
 			const processTransactionResponse = await processTransaction({
 				variables: {
 					transactionId,
-					data: {},
+					data,
 				},
 			});
 
@@ -91,23 +117,27 @@ export function AcceptHostedForm({ acceptData }: { acceptData: AcceptHostedData 
 
 			router.push("/success");
 		},
-		[checkoutId, initializeTransaction, processTransaction, router],
+		[processTransaction, router, transactionId],
 	);
 
 	return (
-		<AcceptHosted
-			integration="iframe"
-			formToken={acceptData.formToken}
-			environment={acceptData.environment.toUpperCase() as "SANDBOX" | "PRODUCTION"}
-			onTransactionResponse={transactionResponseHandler}
-		>
-			<AcceptHosted.Button className="mt-2 rounded-md border bg-slate-900 px-8 py-2 text-lg text-white hover:bg-slate-800">
-				Pay
-			</AcceptHosted.Button>
-			<AcceptHosted.IFrameBackdrop />
-			<AcceptHosted.IFrameContainer>
-				<AcceptHosted.IFrame />
-			</AcceptHosted.IFrameContainer>
-		</AcceptHosted>
+		<>
+			{acceptData && (
+				<AcceptHosted
+					integration="iframe"
+					formToken={acceptData.formToken}
+					environment={acceptData.environment.toUpperCase() as "SANDBOX" | "PRODUCTION"}
+					onTransactionResponse={transactionResponseHandler}
+				>
+					<AcceptHosted.Button className="mt-2 rounded-md border bg-slate-900 px-8 py-2 text-lg text-white hover:bg-slate-800">
+						Pay
+					</AcceptHosted.Button>
+					<AcceptHosted.IFrameBackdrop />
+					<AcceptHosted.IFrameContainer>
+						<AcceptHosted.IFrame />
+					</AcceptHosted.IFrameContainer>
+				</AcceptHosted>
+			)}
+		</>
 	);
 }
