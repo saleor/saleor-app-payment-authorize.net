@@ -1,8 +1,8 @@
 import AuthorizeNet from "authorizenet";
 import { z } from "zod";
 import { CreateTransactionClient } from "../client/create-transaction";
+import { authorizeTransaction } from "../authorize-transaction-builder";
 import { gatewayUtils } from "./gateway-utils";
-import { buildTransactionFromTransactionInitializePayload } from "@/modules/webhooks/buildTransactionFromTransactionInitializePayload";
 import { type PaymentGateway } from "@/modules/webhooks/payment-gateway-initialize-session";
 import { type TransactionInitializeSessionResponse } from "@/schemas/TransactionInitializeSession/TransactionInitializeSessionResponse.mjs";
 import {
@@ -37,7 +37,8 @@ export class ApplePayGateway implements PaymentGateway {
     payload: TransactionInitializeSessionEventFragment,
   ): AuthorizeNet.APIContracts.TransactionRequestType {
     // todo: add apple pay logic here
-    const transactionRequest = buildTransactionFromTransactionInitializePayload(payload);
+    const transactionRequest =
+      authorizeTransaction.buildTransactionFromTransactionInitializePayload(payload);
 
     //https://developer.authorize.net/api/reference/index.html#mobile-in-app-transactions-create-an-apple-pay-transaction
     const opaqueData = new ApiContracts.OpaqueDataType();

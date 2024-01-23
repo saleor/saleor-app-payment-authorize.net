@@ -1,8 +1,8 @@
 import type AuthorizeNet from "authorizenet";
 import { z } from "zod";
 import { CreateTransactionClient } from "../client/create-transaction";
+import { authorizeTransaction } from "../authorize-transaction-builder";
 import { gatewayUtils } from "./gateway-utils";
-import { buildTransactionFromTransactionInitializePayload } from "@/modules/webhooks/buildTransactionFromTransactionInitializePayload";
 import { type PaymentGateway } from "@/modules/webhooks/payment-gateway-initialize-session";
 import { type TransactionInitializeSessionResponse } from "@/schemas/TransactionInitializeSession/TransactionInitializeSessionResponse.mjs";
 import {
@@ -32,8 +32,9 @@ export class PaypalGateway implements PaymentGateway {
   private buildTransactionRequest(
     payload: TransactionInitializeSessionEventFragment,
   ): AuthorizeNet.APIContracts.TransactionRequestType {
-    const transactionRequest = buildTransactionFromTransactionInitializePayload(payload);
     // todo: put everything specific about PayPal transaction request here
+    const transactionRequest =
+      authorizeTransaction.buildTransactionFromTransactionInitializePayload(payload);
 
     return transactionRequest;
   }

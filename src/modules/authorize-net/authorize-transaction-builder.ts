@@ -1,12 +1,17 @@
 import AuthorizeNet from "authorizenet";
 import { transactionId } from "./transaction-id-utils";
+import { invariant } from "@/lib/invariant";
 import {
   type AddressFragment,
   type OrderOrCheckoutFragment,
-  type TransactionFragment,
+  type TransactionInitializeSessionEventFragment,
 } from "generated/graphql";
 
 const ApiContracts = AuthorizeNet.APIContracts;
+
+function concatAddressLines(address: AddressFragment) {
+  return `${address.streetAddress1} ${address.streetAddress2}`;
+}
 
 /**
  *
@@ -35,8 +40,37 @@ function buildAuthorizeTransactionRequest({
   return transactionRequest;
 }
 
-function concatAddressLines(address: AddressFragment) {
-  return `${address.streetAddress1} ${address.streetAddress2}`;
+function buildTransactionFromTransactionInitializePayload(
+  payload: TransactionInitializeSessionEventFragment,
+): AuthorizeNet.APIContracts.TransactionRequestType {
+  const authorizeTransactionId = transactionId.resolveAuthorizeTransactionId(payload.transaction);
+  const saleorTransactionId = transactionId.saleorTransactionIdConverter.fromSaleorTransaction(
+    payload.transaction,
+  );
+
+  const transactionRequest = buildAuthorizeTransactionRequest({
+    authorizeTransactionId,
+    saleorTransactionId,
+  });
+
+  transactionRequest.setTransactionType(ApiContracts.TransactionTypeEnum.AUTHONLYTRANSACTION);
+  transactionRequest.setAmount(payload.action.amount);
+
+  const lineItems = authorizeTransaction.buildLineItemsFromOrderOrCheckout(payload.sourceObject);
+  transactionRequest.setLineItems(lineItems);
+
+  invariant(payload.sourceObject.billingAddress, "Billing address is missing from payload.");
+  const billTo = authorizeTransaction.buildBillTo(payload.sourceObject.billingAddress);
+  transactionRequest.setBillTo(billTo);
+
+  invariant(payload.sourceObject.shippingAddress, "Shipping address is missing from payload.");
+  const shipTo = authorizeTransaction.buildShipTo(payload.sourceObject.shippingAddress);
+  transactionRequest.setShipTo(shipTo);
+
+  const poNumber = authorizeTransaction.buildPoNumber(payload.sourceObject);
+  transactionRequest.setPoNumber(poNumber);
+
+  return transactionRequest;
 }
 
 export const authorizeTransaction = {
@@ -104,17 +138,6 @@ export const authorizeTransaction = {
     return fragment.number;
   },
 
-  buildTransactionRequestFromTransactionFragment(
-    fragment: TransactionFragment,
-  ): AuthorizeNet.APIContracts.TransactionRequestType {
-    const authorizeTransactionId = transactionId.resolveAuthorizeTransactionId(fragment);
-    const saleorTransactionId =
-      transactionId.saleorTransactionIdConverter.fromSaleorTransaction(fragment);
-
-    return buildAuthorizeTransactionRequest({
-      authorizeTransactionId,
-      saleorTransactionId,
-    });
-  },
   buildAuthorizeTransactionRequest,
+  buildTransactionFromTransactionInitializePayload,
 };
