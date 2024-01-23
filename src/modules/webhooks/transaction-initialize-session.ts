@@ -1,7 +1,7 @@
 import { z } from "zod";
 import {
   AcceptHostedGateway,
-  acceptHostedTransactionInitializeDataSchema,
+  acceptHostedTransactionInitializeRequestDataSchema,
 } from "../authorize-net/gateways/accept-hosted-gateway";
 import {
   ApplePayGateway,
@@ -9,7 +9,7 @@ import {
 } from "../authorize-net/gateways/apple-pay-gateway";
 import {
   PaypalGateway,
-  paypalTransactionInitializeDataSchema,
+  paypalTransactionInitializeRequestDataSchema,
 } from "../authorize-net/gateways/paypal-gateway";
 import { type TransactionInitializeSessionEventFragment } from "generated/graphql";
 
@@ -29,8 +29,8 @@ export function mapTransactionInitializeResponse(
 
 const transactionInitializeDataSchema = z.union([
   applePayTransactionInitializeDataSchema,
-  acceptHostedTransactionInitializeDataSchema,
-  paypalTransactionInitializeDataSchema,
+  acceptHostedTransactionInitializeRequestDataSchema,
+  paypalTransactionInitializeRequestDataSchema,
 ]);
 
 export class TransactionInitializeSessionService {

@@ -1,12 +1,10 @@
 import { SaleorSyncWebhook } from "@saleor/app-sdk/handlers/next";
-import * as Sentry from "@sentry/nextjs";
 import { z } from "zod";
-import { normalizeError } from "@/errors";
 import { createLogger } from "@/lib/logger";
 import { SynchronousWebhookResponseBuilder } from "@/lib/webhook-response-builder";
 import { getAuthorizeConfig } from "@/modules/authorize-net/authorize-net-config";
 import { acceptHostedPaymentGatewayDataSchema } from "@/modules/authorize-net/gateways/accept-hosted-gateway";
-import { applePayPaymentGatewayDataSchema } from "@/modules/authorize-net/gateways/apple-pay-gateway";
+import { applePayPaymentGatewayResponseDataSchema } from "@/modules/authorize-net/gateways/apple-pay-gateway";
 import { AuthorizeWebhookManager } from "@/modules/authorize-net/webhook/authorize-net-webhook-manager";
 import { createAppWebhookManager } from "@/modules/webhooks/webhook-manager-service";
 import { saleorApp } from "@/saleor-app";
@@ -14,19 +12,20 @@ import {
   UntypedPaymentGatewayInitializeSessionDocument,
   type PaymentGatewayInitializeSessionEventFragment,
 } from "generated/graphql";
-import { paypalPaymentGatewayDataSchema } from "@/modules/authorize-net/gateways/paypal-gateway";
+import { paypalPaymentGatewayResponseDataSchema } from "@/modules/authorize-net/gateways/paypal-gateway";
+import { errorUtils } from "@/error-utils";
 
 const paymentGatewaySchema = z.union([
   acceptHostedPaymentGatewayDataSchema,
-  applePayPaymentGatewayDataSchema,
+  applePayPaymentGatewayResponseDataSchema,
 ]);
 
 export type AuthorizePaymentGateway = z.infer<typeof paymentGatewaySchema>;
 
 const dataSchema = z.object({
   acceptHosted: acceptHostedPaymentGatewayDataSchema.optional(),
-  applePay: applePayPaymentGatewayDataSchema.optional(),
-  paypal: paypalPaymentGatewayDataSchema.optional(),
+  applePay: applePayPaymentGatewayResponseDataSchema.optional(),
+  paypal: paypalPaymentGatewayResponseDataSchema.optional(),
 });
 
 export type PaymentGatewayInitializeSessionData = z.infer<typeof dataSchema>;
@@ -83,9 +82,8 @@ export default paymentGatewayInitializeSessionSyncWebhook.createHandler(
       const response = await appWebhookManager.paymentGatewayInitializeSession(ctx.payload);
       return responseBuilder.ok(response);
     } catch (error) {
-      Sentry.captureException(error);
-
-      const normalizedError = normalizeError(error);
+      const normalizedError = errorUtils.normalize(error);
+      errorUtils.capture(normalizedError);
       return responseBuilder.ok({
         error: {
           message: normalizedError.message,

@@ -1,11 +1,10 @@
 import { SaleorSyncWebhook } from "@saleor/app-sdk/handlers/next";
-import * as Sentry from "@sentry/nextjs";
+
 import { createLogger } from "@/lib/logger";
 import { SynchronousWebhookResponseBuilder } from "@/lib/webhook-response-builder";
 
 import { AuthorizeWebhookManager } from "@/modules/authorize-net/webhook/authorize-net-webhook-manager";
 
-import { normalizeError } from "@/errors";
 import { getAuthorizeConfig } from "@/modules/authorize-net/authorize-net-config";
 import { createAppWebhookManager } from "@/modules/webhooks/webhook-manager-service";
 import { saleorApp } from "@/saleor-app";
@@ -14,6 +13,7 @@ import {
   UntypedTransactionCancelationRequestedDocument,
   type TransactionCancelationRequestedEventFragment,
 } from "generated/graphql";
+import { errorUtils } from "@/error-utils";
 
 export const config = {
   api: {
@@ -62,9 +62,9 @@ export default transactionCancelationRequestedSyncWebhook.createHandler(
       logger.info({ response }, "Responding with:");
       return responseBuilder.ok(response);
     } catch (error) {
-      Sentry.captureException(error);
+      const normalizedError = errorUtils.normalize(error);
+      errorUtils.capture(normalizedError);
 
-      const normalizedError = normalizeError(error);
       return responseBuilder.ok({
         result: "CANCEL_FAILURE",
         pspReference: "", // todo: add

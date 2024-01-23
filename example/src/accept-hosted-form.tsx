@@ -89,7 +89,7 @@ export function AcceptHostedForm() {
 
 	const transactionResponseHandler = React.useCallback(
 		async (rawResponse: unknown) => {
-			console.log("✅ transactionResponseHandler called");
+			console.log({ rawResponse }, "✅ transactionResponseHandler called");
 
 			const authorizeResponse = acceptHostedTransactionResponseSchema.parse(rawResponse);
 
@@ -108,10 +108,11 @@ export function AcceptHostedForm() {
 				},
 			});
 
-			if (
-				processTransactionResponse.data?.transactionProcess?.errors?.length &&
-				processTransactionResponse.data?.transactionProcess?.errors?.length > 0
-			) {
+			const isProcessTransactionSuccessful =
+				processTransactionResponse?.data?.transactionProcess?.transactionEvent?.type ===
+				"AUTHORIZATION_SUCCESS";
+
+			if (!isProcessTransactionSuccessful) {
 				throw new Error("Failed to process transaction");
 			}
 

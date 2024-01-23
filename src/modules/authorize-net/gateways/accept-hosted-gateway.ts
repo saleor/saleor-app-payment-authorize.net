@@ -1,11 +1,10 @@
-import { env } from "process";
 import AuthorizeNet from "authorizenet";
 import { z } from "zod";
 import { CustomerProfileManager } from "../../customer-profile/customer-profile-manager";
 import {
+  authorizeEnvironmentSchema,
   getAuthorizeConfig,
   type AuthorizeConfig,
-  authorizeEnvironmentSchema,
 } from "../authorize-net-config";
 import { authorizeTransaction } from "../authorize-transaction-builder";
 import {
@@ -13,19 +12,18 @@ import {
   type GetHostedPaymentPageResponse,
 } from "../client/hosted-payment-page-client";
 
-import { TransactionDetailsClient } from "../client/transaction-details-client";
+import { gatewayUtils } from "./gateway-utils";
 import {
   type PaymentGatewayInitializeSessionEventFragment,
   type TransactionInitializeSessionEventFragment,
-  type TransactionProcessSessionEventFragment,
 } from "generated/graphql";
 
 import { BaseError } from "@/errors";
+import { env } from "@/lib/env.mjs";
 import { invariant } from "@/lib/invariant";
 import { createLogger } from "@/lib/logger";
 import { type PaymentGateway } from "@/modules/webhooks/payment-gateway-initialize-session";
 import { type TransactionInitializeSessionResponse } from "@/schemas/TransactionInitializeSession/TransactionInitializeSessionResponse.mjs";
-import { type TransactionProcessSessionResponse } from "@/schemas/TransactionProcessSession/TransactionProcessSessionResponse.mjs";
 
 const ApiContracts = AuthorizeNet.APIContracts;
 
@@ -35,12 +33,13 @@ export const acceptHostedPaymentGatewayDataSchema = z.object({});
 
 type AcceptHostedPaymentGatewayData = z.infer<typeof acceptHostedPaymentGatewayDataSchema>;
 
-export const acceptHostedTransactionInitializeDataSchema = z.object({
-  type: z.literal("acceptHosted"),
-  data: z.object({
-    shouldCreateCustomerProfile: z.boolean().optional().default(false),
-  }),
-});
+export const acceptHostedTransactionInitializeRequestDataSchema =
+  gatewayUtils.createGatewayDataSchema(
+    "acceptHosted",
+    z.object({
+      shouldCreateCustomerProfile: z.boolean().optional().default(false),
+    }),
+  );
 
 const acceptHostedTransactionInitializeResponseDataSchema = z.object({
   formToken: z.string().min(1),
@@ -50,10 +49,6 @@ const acceptHostedTransactionInitializeResponseDataSchema = z.object({
 type AcceptHostedTransactionInitializeResponseData = z.infer<
   typeof acceptHostedTransactionInitializeResponseDataSchema
 >;
-
-const acceptHostedTransactionProcessDataSchema = z.object({
-  authorizeTransactionId: z.string().min(1),
-});
 
 export class AcceptHostedGateway implements PaymentGateway {
   private authorizeConfig: AuthorizeConfig;
@@ -99,7 +94,9 @@ export class AcceptHostedGateway implements PaymentGateway {
       return transactionRequest;
     }
 
-    const dataParseResult = acceptHostedTransactionInitializeDataSchema.safeParse(payload.data);
+    const dataParseResult = acceptHostedTransactionInitializeRequestDataSchema.safeParse(
+      payload.data,
+    );
 
     if (!dataParseResult.success) {
       this.logger.error({ error: dataParseResult.error.format() });
@@ -221,32 +218,6 @@ export class AcceptHostedGateway implements PaymentGateway {
       amount: payload.action.amount,
       result: "AUTHORIZATION_ACTION_REQUIRED",
       data,
-    };
-  }
-
-  private getTransactionDetails(payload: TransactionProcessSessionEventFragment) {
-    const client = new TransactionDetailsClient();
-    const { authorizeTransactionId } = acceptHostedTransactionProcessDataSchema.parse(payload.data);
-
-    const transactionDetails = client.getTransactionDetails({
-      transactionId: authorizeTransactionId,
-    });
-
-    return transactionDetails;
-  }
-
-  async processTransaction(
-    payload: TransactionProcessSessionEventFragment,
-  ): Promise<TransactionProcessSessionResponse> {
-    const transactionDetails = await this.getTransactionDetails(payload);
-
-    return {
-      amount: transactionDetails.transaction.authAmount,
-      result: "AUTHORIZATION_SUCCESS",
-      pspReference: transactionDetails.transaction.transId,
-      actions: ["CANCEL", "REFUND"],
-      time: transactionDetails.transaction.submitTimeLocal,
-      data: {},
     };
   }
 }

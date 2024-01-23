@@ -1,12 +1,8 @@
 import { AcceptHostedGateway } from "../authorize-net/gateways/accept-hosted-gateway";
-import { ApplePayGateway } from "../authorize-net/gateways/apple-pay-gateway";
-import { PaypalGateway } from "../authorize-net/gateways/paypal-gateway";
 import { type PaymentGatewayInitializeSessionData } from "@/pages/api/webhooks/payment-gateway-initialize-session";
 import { type PaymentGatewayInitializeSessionResponse } from "@/schemas/PaymentGatewayInitializeSession/PaymentGatewayInitializeSessionResponse.mjs";
 import { type TransactionInitializeSessionResponse } from "@/schemas/TransactionInitializeSession/TransactionInitializeSessionResponse.mjs";
-import { type TransactionProcessSessionResponse } from "@/schemas/TransactionProcessSession/TransactionProcessSessionResponse.mjs";
 import {
-  type TransactionProcessSessionEventFragment,
   type PaymentGatewayInitializeSessionEventFragment,
   type TransactionInitializeSessionEventFragment,
 } from "generated/graphql";
@@ -23,9 +19,6 @@ export interface PaymentGateway {
   initializeTransaction(
     payload: TransactionInitializeSessionEventFragment,
   ): Promise<TransactionInitializeSessionResponse>;
-  processTransaction?(
-    payload: TransactionProcessSessionEventFragment,
-  ): Promise<TransactionProcessSessionResponse>;
 }
 
 export class PaymentGatewayInitializeSessionService {
@@ -35,22 +28,15 @@ export class PaymentGatewayInitializeSessionService {
     const acceptHostedGateway = new AcceptHostedGateway();
     const initializeAcceptHosted = acceptHostedGateway.initializePaymentGateway(payload);
 
-    const applePayGateway = new ApplePayGateway();
-    const initializeApplePay = applePayGateway.initializePaymentGateway(payload);
+    /**
+     * @see: ApplePayGateway, PaypalGateway
+     * Import once they are implemented.
+     */
 
-    const paypalGateway = new PaypalGateway();
-    const initializePaypal = paypalGateway.initializePaymentGateway(payload);
-
-    const [acceptHosted, applePay, paypal] = await Promise.all([
-      initializeAcceptHosted,
-      initializeApplePay,
-      initializePaypal,
-    ]);
+    const [acceptHosted] = await Promise.all([initializeAcceptHosted]);
 
     return {
       acceptHosted,
-      applePay,
-      paypal,
     };
   }
 }

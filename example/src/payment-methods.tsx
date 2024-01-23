@@ -12,18 +12,15 @@ import { AcceptHostedForm } from "./accept-hosted-form";
 import { PayPalWrapper } from "./paypal-wrapper";
 import { getCheckoutId } from "./pages/cart";
 
-const applePayPaymentGatewayInitializeData = z.object({});
-
 const acceptHostedPaymentGatewaySchema = z.object({});
 
 export type AcceptHostedData = z.infer<typeof acceptHostedPaymentGatewaySchema>;
 
-const paypalPaymentGatewayDataSchema = z.object({});
-
+// currently, Payment Gateway Initialize doesnt return any config data
 const dataSchema = z.object({
-	acceptHosted: acceptHostedPaymentGatewaySchema.optional(),
-	applePay: applePayPaymentGatewayInitializeData.optional(),
-	paypal: paypalPaymentGatewayDataSchema.optional(),
+	acceptHosted: z.unknown().optional(),
+	applePay: z.unknown().optional(),
+	paypal: z.unknown().optional(),
 });
 
 type PaymentMethods = z.infer<typeof dataSchema>;
@@ -80,17 +77,17 @@ export const PaymentMethods = () => {
 			<h2>Payment Methods</h2>
 			{isLoading && <p>Loading...</p>}
 			<ul className="flex gap-4 items-center">
-				{paymentMethods?.acceptHosted && (
+				{paymentMethods?.acceptHosted !== undefined && (
 					<li>
 						<AcceptHostedForm />
 					</li>
 				)}
-				{paymentMethods?.applePay && (
+				{paymentMethods?.applePay !== undefined && (
 					<li>
 						<button>Apple Pay</button>
 					</li>
 				)}
-				{paymentMethods?.paypal && (
+				{paymentMethods?.paypal !== undefined && (
 					<li>
 						<PayPalWrapper />
 					</li>

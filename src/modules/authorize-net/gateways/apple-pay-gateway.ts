@@ -1,6 +1,7 @@
 import AuthorizeNet from "authorizenet";
 import { z } from "zod";
 import { CreateTransactionClient } from "../client/create-transaction";
+import { gatewayUtils } from "./gateway-utils";
 import { buildTransactionFromTransactionInitializePayload } from "@/modules/webhooks/buildTransactionFromTransactionInitializePayload";
 import { type PaymentGateway } from "@/modules/webhooks/payment-gateway-initialize-session";
 import { type TransactionInitializeSessionResponse } from "@/schemas/TransactionInitializeSession/TransactionInitializeSessionResponse.mjs";
@@ -12,17 +13,17 @@ import {
 const ApiContracts = AuthorizeNet.APIContracts;
 
 // feel free to migrate it to JSON schema
-export const applePayPaymentGatewayDataSchema = z.object({});
+export const applePayPaymentGatewayResponseDataSchema = z.object({});
 
-type ApplePayPaymentGatewayData = z.infer<typeof applePayPaymentGatewayDataSchema>;
+type ApplePayPaymentGatewayData = z.infer<typeof applePayPaymentGatewayResponseDataSchema>;
 
-export const applePayTransactionInitializeDataSchema = z.object({
-  type: z.literal("applePay"),
-  data: z.object({
+export const applePayTransactionInitializeDataSchema = gatewayUtils.createGatewayDataSchema(
+  "applePay",
+  z.object({
     dataDescriptor: z.string(),
     dataValue: z.string(),
   }),
-});
+);
 
 export class ApplePayGateway implements PaymentGateway {
   async initializePaymentGateway(

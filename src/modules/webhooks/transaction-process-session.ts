@@ -1,52 +1,46 @@
-import AuthorizeNet from "authorizenet";
-import { authorizeTransaction } from "../authorize-net/authorize-transaction-builder";
-import { CreateTransactionClient } from "../authorize-net/client/create-transaction";
+import { z } from "zod";
+import { TransactionDetailsClient } from "../authorize-net/client/transaction-details-client";
 import { BaseError } from "@/errors";
 import { createLogger } from "@/lib/logger";
 import { type TransactionProcessSessionResponse } from "@/schemas/TransactionProcessSession/TransactionProcessSessionResponse.mjs";
 import { type TransactionProcessSessionEventFragment } from "generated/graphql";
 
-const ApiContracts = AuthorizeNet.APIContracts;
-
 export const TransactionProcessError = BaseError.subclass("TransactionProcessError");
 
-export const TransactionProcessUnexpectedDataError = TransactionProcessError.subclass(
-  "TransactionProcessUnexpectedDataError",
-);
+const acceptHostedTransactionProcessRequestDataSchema = z.object({
+  authorizeTransactionId: z.string().min(1),
+});
 
 export class TransactionProcessSessionService {
   private logger = createLogger({
     name: "TransactionProcessSessionService",
   });
 
-  private buildTransactionFromPayload(payload: TransactionProcessSessionEventFragment) {
-    const transactionRequest = authorizeTransaction.buildTransactionRequestFromTransactionFragment(
-      payload.transaction,
+  private getTransactionDetails(payload: TransactionProcessSessionEventFragment) {
+    const client = new TransactionDetailsClient();
+    const { authorizeTransactionId } = acceptHostedTransactionProcessRequestDataSchema.parse(
+      payload.data,
     );
 
-    transactionRequest.setTransactionType(ApiContracts.TransactionTypeEnum.AUTHONLYTRANSACTION);
+    const transactionDetails = client.getTransactionDetails({
+      transactionId: authorizeTransactionId,
+    });
 
-    return transactionRequest;
+    return transactionDetails;
   }
 
   async execute(
     payload: TransactionProcessSessionEventFragment,
   ): Promise<TransactionProcessSessionResponse> {
-    this.logger.debug({ id: payload.transaction?.id }, "Mapping the state of transaction");
-
-    // todo: decide whether I can take it from transaction pspReference? or from metadata
-    const authorizeTransactionId = payload.transaction.pspReference;
-
-    const createTransactionClient = new CreateTransactionClient();
-    const transactionRequest = this.buildTransactionFromPayload(payload);
-    await createTransactionClient.createTransaction(transactionRequest);
+    const transactionDetails = await this.getTransactionDetails(payload);
 
     return {
-      amount: payload.action.amount,
+      amount: transactionDetails.transaction.authAmount,
       result: "AUTHORIZATION_SUCCESS",
-      actions: [],
-      message: "",
-      pspReference: authorizeTransactionId,
+      pspReference: transactionDetails.transaction.transId,
+      actions: ["CANCEL", "REFUND"],
+      time: transactionDetails.transaction.submitTimeLocal,
+      data: {},
     };
   }
 }

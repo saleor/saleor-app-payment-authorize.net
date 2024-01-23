@@ -1,6 +1,7 @@
-import { z } from "zod";
 import type AuthorizeNet from "authorizenet";
+import { z } from "zod";
 import { CreateTransactionClient } from "../client/create-transaction";
+import { gatewayUtils } from "./gateway-utils";
 import { buildTransactionFromTransactionInitializePayload } from "@/modules/webhooks/buildTransactionFromTransactionInitializePayload";
 import { type PaymentGateway } from "@/modules/webhooks/payment-gateway-initialize-session";
 import { type TransactionInitializeSessionResponse } from "@/schemas/TransactionInitializeSession/TransactionInitializeSessionResponse.mjs";
@@ -13,12 +14,12 @@ const paypalPaymentGatewaySchema = z.object({});
 
 type PaypalPaymentGatewayData = z.infer<typeof paypalPaymentGatewaySchema>;
 
-export const paypalTransactionInitializeDataSchema = z.object({
-  type: z.literal("paypal"),
-  data: z.object({}),
-});
+export const paypalTransactionInitializeRequestDataSchema = gatewayUtils.createGatewayDataSchema(
+  "paypal",
+  z.object({}),
+);
 
-export const paypalPaymentGatewayDataSchema = z.object({});
+export const paypalPaymentGatewayResponseDataSchema = z.object({});
 
 export class PaypalGateway implements PaymentGateway {
   async initializePaymentGateway(
