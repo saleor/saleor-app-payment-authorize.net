@@ -9,7 +9,6 @@ import {
 import { authorizeNetAppId } from "./lib/common";
 
 import { AcceptHostedForm } from "./accept-hosted-form";
-import { PayPalWrapper } from "./paypal-wrapper";
 import { getCheckoutId } from "./pages/cart";
 
 const acceptHostedPaymentGatewaySchema = z.object({});
@@ -89,7 +88,7 @@ export const PaymentMethods = () => {
 				)}
 				{paymentMethods?.paypal !== undefined && (
 					<li>
-						<PayPalWrapper />
+						<button>PayPal</button>
 					</li>
 				)}
 			</ul>
