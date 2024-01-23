@@ -14,6 +14,11 @@ import {
 import { type TransactionInitializeSessionEventFragment } from "generated/graphql";
 
 import { type TransactionInitializeSessionResponse } from "@/schemas/TransactionInitializeSession/TransactionInitializeSessionResponse.mjs";
+import { BaseError } from "@/errors";
+
+const TransactionProcessUnsupportedPaymentMethodError = BaseError.subclass(
+  "TransactionProcessUnsupportedPaymentMethodError",
+);
 
 export function mapTransactionInitializeResponse(
   payload: TransactionInitializeSessionEventFragment,
@@ -39,24 +44,29 @@ export class TransactionInitializeSessionService {
   ): Promise<TransactionInitializeSessionResponse> {
     const paymentMethod = transactionInitializeDataSchema.parse(payload.data);
 
-    if (paymentMethod.type === "acceptHosted") {
-      const gateway = new AcceptHostedGateway();
+    switch (paymentMethod.type) {
+      case "acceptHosted": {
+        const gateway = new AcceptHostedGateway();
 
-      return gateway.initializeTransaction(payload);
+        return gateway.initializeTransaction(payload);
+      }
+
+      case "applePay": {
+        const gateway = new ApplePayGateway();
+
+        return gateway.initializeTransaction(payload);
+      }
+
+      case "paypal": {
+        const gateway = new PaypalGateway();
+
+        return gateway.initializeTransaction(payload);
+      }
+
+      default:
+        throw new TransactionProcessUnsupportedPaymentMethodError(
+          "Unsupported payment method type",
+        );
     }
-
-    if (paymentMethod.type === "applePay") {
-      const gateway = new ApplePayGateway();
-
-      return gateway.initializeTransaction(payload);
-    }
-
-    if (paymentMethod.type === "paypal") {
-      const gateway = new PaypalGateway();
-
-      return gateway.initializeTransaction(payload);
-    }
-
-    throw new Error("Unsupported payment method type");
   }
 }
