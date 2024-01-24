@@ -10,7 +10,7 @@ import {
 const ApiContracts = AuthorizeNet.APIContracts;
 
 function concatAddressLines(address: AddressFragment) {
-  return `${address.streetAddress1} ${address.streetAddress2}`;
+  return [address.streetAddress1, address.streetAddress2].map(a => a.trim()).filter(Boolean).join(' ');
 }
 
 /**
