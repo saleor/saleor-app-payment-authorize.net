@@ -20,7 +20,6 @@ import {
 
 import { BaseError } from "@/errors";
 import { env } from "@/lib/env.mjs";
-import { invariant } from "@/lib/invariant";
 import { createLogger } from "@/lib/logger";
 import { type PaymentGateway } from "@/modules/webhooks/payment-gateway-initialize-session";
 import { type TransactionInitializeSessionResponse } from "@/schemas/TransactionInitializeSession/TransactionInitializeSessionResponse.mjs";
@@ -66,25 +65,8 @@ export class AcceptHostedGateway implements PaymentGateway {
   private async buildTransactionFromPayload(
     payload: TransactionInitializeSessionEventFragment,
   ): Promise<AuthorizeNet.APIContracts.TransactionRequestType> {
-    const transactionRequest = new ApiContracts.TransactionRequestType();
-
-    transactionRequest.setTransactionType(ApiContracts.TransactionTypeEnum.AUTHONLYTRANSACTION);
-    transactionRequest.setAmount(payload.action.amount);
-    transactionRequest.setCurrencyCode(payload.action.currency);
-
-    const lineItems = authorizeTransaction.buildLineItemsFromOrderOrCheckout(payload.sourceObject);
-    transactionRequest.setLineItems(lineItems);
-
-    invariant(payload.sourceObject.billingAddress, "Billing address is missing from payload.");
-    const billTo = authorizeTransaction.buildBillTo(payload.sourceObject.billingAddress);
-    transactionRequest.setBillTo(billTo);
-
-    invariant(payload.sourceObject.shippingAddress, "Shipping address is missing from payload.");
-    const shipTo = authorizeTransaction.buildShipTo(payload.sourceObject.shippingAddress);
-    transactionRequest.setShipTo(shipTo);
-
-    const poNumber = authorizeTransaction.buildPoNumber(payload.sourceObject);
-    transactionRequest.setPoNumber(poNumber);
+    const transactionRequest =
+      authorizeTransaction.buildTransactionFromTransactionInitializePayload(payload);
 
     const userEmail = payload.sourceObject.userEmail;
 

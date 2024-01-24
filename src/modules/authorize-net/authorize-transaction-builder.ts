@@ -10,7 +10,10 @@ import {
 const ApiContracts = AuthorizeNet.APIContracts;
 
 function concatAddressLines(address: AddressFragment) {
-  return [address.streetAddress1, address.streetAddress2].map(a => a.trim()).filter(Boolean).join(' ');
+  return [address.streetAddress1, address.streetAddress2]
+    .map((a) => a.trim())
+    .filter(Boolean)
+    .join(" ");
 }
 
 /**
@@ -55,6 +58,7 @@ function buildTransactionFromTransactionInitializePayload(
 
   transactionRequest.setTransactionType(ApiContracts.TransactionTypeEnum.AUTHONLYTRANSACTION);
   transactionRequest.setAmount(payload.action.amount);
+  transactionRequest.setCurrencyCode(payload.action.currency);
 
   const lineItems = authorizeTransaction.buildLineItemsFromOrderOrCheckout(payload.sourceObject);
   transactionRequest.setLineItems(lineItems);
