@@ -28,7 +28,6 @@ const paymentGatewayInitializeSessionSchema = dataSchema;
 
 export const PaymentMethods = () => {
 	const [isLoading, setIsLoading] = React.useState(false);
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	const [paymentMethods, setPaymentMethods] = React.useState<PaymentMethods>();
 
 	const checkoutId = getCheckoutId();
@@ -38,7 +37,7 @@ export const PaymentMethods = () => {
 		PaymentGatewayInitializeMutationVariables
 	>(gql(PaymentGatewayInitializeDocument.toString()));
 
-	async function getPaymentGateways() {
+	const getPaymentGateways = React.useCallback(async () => {
 		setIsLoading(true);
 		const response = await initializePaymentGateways({
 			variables: {
@@ -65,7 +64,7 @@ export const PaymentMethods = () => {
 		}
 
 		setPaymentMethods(data);
-	}
+	}, [initializePaymentGateways, checkoutId]);
 
 	React.useEffect(() => {
 		getPaymentGateways();
