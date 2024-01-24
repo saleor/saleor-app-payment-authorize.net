@@ -4,10 +4,6 @@ import { createLogger } from "./lib/logger";
 import { BaseError } from "./errors";
 
 function normalizeError(error: unknown) {
-  if (error instanceof ZodError) {
-    return BaseError.normalize(error);
-  }
-
   return BaseError.normalize(error);
 }
 
