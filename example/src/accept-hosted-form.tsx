@@ -42,7 +42,7 @@ export function AcceptHostedForm() {
 		gql(TransactionProcessDocument.toString()),
 	);
 
-	const getAcceptData = async () => {
+	const getAcceptData = React.useCallback(async () => {
 		const initializeTransactionResponse = await initializeTransaction({
 			variables: {
 				checkoutId,
@@ -56,9 +56,7 @@ export function AcceptHostedForm() {
 			},
 		});
 
-		if (
-			initializeTransactionResponse.data?.transactionInitialize?.errors?.length
-		) {
+		if (initializeTransactionResponse.data?.transactionInitialize?.errors?.length) {
 			throw new Error("Failed to initialize transaction");
 		}
 
@@ -80,7 +78,7 @@ export function AcceptHostedForm() {
 
 		const nextAcceptData = acceptHostedTransactionInitializeResponseDataSchema.parse(data);
 		setAcceptData(nextAcceptData);
-	};
+	}, [initializeTransaction, checkoutId]);
 
 	React.useEffect(() => {
 		getAcceptData();
