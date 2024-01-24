@@ -57,8 +57,7 @@ export function AcceptHostedForm() {
 		});
 
 		if (
-			initializeTransactionResponse.data?.transactionInitialize?.errors?.length &&
-			initializeTransactionResponse.data?.transactionInitialize?.errors?.length > 0
+			initializeTransactionResponse.data?.transactionInitialize?.errors?.length
 		) {
 			throw new Error("Failed to initialize transaction");
 		}
