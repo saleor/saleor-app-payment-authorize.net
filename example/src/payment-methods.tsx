@@ -69,7 +69,7 @@ export const PaymentMethods = () => {
 
 	React.useEffect(() => {
 		getPaymentGateways();
-	}, []);
+	}, [getPaymentGateways]);
 
 	return (
 		<div>
