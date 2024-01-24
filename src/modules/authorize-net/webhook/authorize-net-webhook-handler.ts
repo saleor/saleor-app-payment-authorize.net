@@ -11,6 +11,7 @@ import { TransactionEventReporter } from "./transaction-reporter";
 import { saleorApp } from "@/saleor-app";
 import { createLogger } from "@/lib/logger";
 import { createServerClient } from "@/lib/create-graphq-client";
+import { unpackThrowable } from "@/lib/utils";
 
 const eventPayloadSchema = z.object({
   notificationId: z.string(),
@@ -29,7 +30,7 @@ export type EventPayload = z.infer<typeof eventPayloadSchema>;
  * @description This class is used to handle webhook calls from Authorize.net
  */
 export class AuthorizeNetWebhookHandler {
-  private authorizeSignature = "x-anet-signature";
+  private readonly authorizeSignature = "x-anet-signature";
   private authData: AuthData | null = null;
   private authorizeConfig: AuthorizeConfig | null = null;
 
@@ -86,7 +87,10 @@ export class AuthorizeNetWebhookHandler {
 
     const validSignature = `sha512=${hash.toUpperCase()}`;
 
-    if (validSignature !== xAnetSignature) {
+    if (
+      validSignature.length !== xAnetSignature.length ||
+      !crypto.timingSafeEqual(Buffer.from(validSignature), Buffer.from(xAnetSignature))
+    ) {
       throw new AuthorizeNetInvalidWebhookSignatureError("The signature does not match");
     }
 
@@ -95,7 +99,11 @@ export class AuthorizeNetWebhookHandler {
 
   private async parseWebhookBody() {
     const rawBody = await this.getRawBody();
-    const body = JSON.parse(rawBody);
+    const [parsingError, body] = unpackThrowable(() => JSON.parse(rawBody));
+    if (parsingError) {
+      throw new AuthorizeNetInvalidWebhookSignatureError("Unexpected webhook body (not JSON)");
+    }
+
     const parseResult = eventPayloadSchema.safeParse(body);
 
     if (!parseResult.success) {
