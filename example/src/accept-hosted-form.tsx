@@ -84,7 +84,7 @@ export function AcceptHostedForm() {
 
 	React.useEffect(() => {
 		getAcceptData();
-	}, []);
+	}, [getAcceptData]);
 
 	const transactionResponseHandler = React.useCallback(
 		async (rawResponse: unknown) => {
