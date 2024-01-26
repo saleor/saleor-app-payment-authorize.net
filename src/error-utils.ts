@@ -1,15 +1,12 @@
 import * as Sentry from "@sentry/nextjs";
-import { ZodError } from "zod";
-import { createLogger } from "./lib/logger";
 import { BaseError } from "./errors";
 
 function normalizeError(error: unknown) {
   return BaseError.normalize(error);
 }
 
-function captureError(error: Error, logger = createLogger({ name: "errorUtils" })) {
+function captureError(error: Error) {
   Sentry.captureException(error);
-  logger.error(error, "Error caught:");
 }
 
 function buildErrorResponse(error: Error) {

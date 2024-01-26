@@ -73,6 +73,7 @@ export default transactionProcessSessionSyncWebhook.createHandler(
     } catch (error) {
       const normalizedError = errorUtils.normalize(error);
       errorUtils.capture(normalizedError);
+      logger.error(normalizedError);
 
       return responseBuilder.ok({
         amount: ctx.payload.action.amount,
