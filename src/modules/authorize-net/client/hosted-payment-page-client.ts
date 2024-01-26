@@ -49,7 +49,7 @@ export class HostedPaymentPageClient extends AuthorizeNetClient {
           this.logger.trace({ response }, "getHostedPaymentPageRequest response");
           const parsedResponse = getHostedPaymentPageResponseSchema.parse(response);
 
-          this.resolveResponseErrors(parsedResponse);
+          this.resolveAndThrowResponseErrors(parsedResponse);
 
           this.logger.debug("Returning response from getHostedPaymentPageRequest");
 

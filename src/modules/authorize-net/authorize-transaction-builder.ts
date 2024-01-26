@@ -4,7 +4,9 @@ import { invariant } from "@/lib/invariant";
 import {
   type AddressFragment,
   type OrderOrCheckoutFragment,
-  type TransactionInitializeSessionEventFragment,
+  type OrderOrCheckoutSourceObjectFragment,
+  type TransactionFragment,
+  type TransactionProcessActionFragment,
 } from "generated/graphql";
 
 const ApiContracts = AuthorizeNet.APIContracts;
@@ -43,13 +45,18 @@ function buildAuthorizeTransactionRequest({
   return transactionRequest;
 }
 
-function buildTransactionFromTransactionInitializePayload(
-  payload: TransactionInitializeSessionEventFragment,
-): AuthorizeNet.APIContracts.TransactionRequestType {
-  const authorizeTransactionId = transactionId.resolveAuthorizeTransactionId(payload.transaction);
-  const saleorTransactionId = transactionId.saleorTransactionIdConverter.fromSaleorTransaction(
-    payload.transaction,
-  );
+function buildTransactionFromCommonFragments({
+  transaction,
+  action,
+  sourceObject,
+}: {
+  transaction: TransactionFragment;
+  action: TransactionProcessActionFragment;
+  sourceObject: OrderOrCheckoutSourceObjectFragment;
+}): AuthorizeNet.APIContracts.TransactionRequestType {
+  const authorizeTransactionId = transactionId.resolveAuthorizeTransactionId(transaction);
+  const saleorTransactionId =
+    transactionId.saleorTransactionIdConverter.fromSaleorTransaction(transaction);
 
   const transactionRequest = buildAuthorizeTransactionRequest({
     authorizeTransactionId,
@@ -57,21 +64,21 @@ function buildTransactionFromTransactionInitializePayload(
   });
 
   transactionRequest.setTransactionType(ApiContracts.TransactionTypeEnum.AUTHONLYTRANSACTION);
-  transactionRequest.setAmount(payload.action.amount);
-  transactionRequest.setCurrencyCode(payload.action.currency);
+  transactionRequest.setAmount(action.amount);
+  transactionRequest.setCurrencyCode(action.currency);
 
-  const lineItems = authorizeTransaction.buildLineItemsFromOrderOrCheckout(payload.sourceObject);
+  const lineItems = authorizeTransaction.buildLineItemsFromOrderOrCheckout(sourceObject);
   transactionRequest.setLineItems(lineItems);
 
-  invariant(payload.sourceObject.billingAddress, "Billing address is missing from payload.");
-  const billTo = authorizeTransaction.buildBillTo(payload.sourceObject.billingAddress);
+  invariant(sourceObject.billingAddress, "Billing address is missing from payload.");
+  const billTo = authorizeTransaction.buildBillTo(sourceObject.billingAddress);
   transactionRequest.setBillTo(billTo);
 
-  invariant(payload.sourceObject.shippingAddress, "Shipping address is missing from payload.");
-  const shipTo = authorizeTransaction.buildShipTo(payload.sourceObject.shippingAddress);
+  invariant(sourceObject.shippingAddress, "Shipping address is missing from payload.");
+  const shipTo = authorizeTransaction.buildShipTo(sourceObject.shippingAddress);
   transactionRequest.setShipTo(shipTo);
 
-  const poNumber = authorizeTransaction.buildPoNumber(payload.sourceObject);
+  const poNumber = authorizeTransaction.buildPoNumber(sourceObject);
   transactionRequest.setPoNumber(poNumber);
 
   return transactionRequest;
@@ -143,5 +150,5 @@ export const authorizeTransaction = {
   },
 
   buildAuthorizeTransactionRequest,
-  buildTransactionFromTransactionInitializePayload,
+  buildTransactionFromCommonFragments,
 };

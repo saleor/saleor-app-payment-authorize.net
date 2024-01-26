@@ -10,7 +10,6 @@ const getTransactionDetailsSchema = baseAuthorizeObjectSchema.and(
   z.object({
     transaction: z.object({
       transId: z.string().min(1),
-      transactionStatus: z.string().min(1),
       authAmount: z.number(),
       responseReasonDescription: z.string().min(1),
       submitTimeLocal: z.string().min(1),
@@ -24,9 +23,6 @@ const getTransactionDetailsSchema = baseAuthorizeObjectSchema.and(
 );
 
 export type GetTransactionDetailsResponse = z.infer<typeof getTransactionDetailsSchema>;
-
-export type AuthorizeTransactionStatus =
-  GetTransactionDetailsResponse["transaction"]["transactionStatus"];
 
 export class TransactionDetailsClient extends AuthorizeNetClient {
   async getTransactionDetails({
@@ -54,7 +50,7 @@ export class TransactionDetailsClient extends AuthorizeNetClient {
           this.logger.trace({ response }, "getTransactionDetails response");
           const parsedResponse = getTransactionDetailsSchema.parse(response);
 
-          this.resolveResponseErrors(parsedResponse);
+          this.resolveAndThrowResponseErrors(parsedResponse);
 
           resolve(parsedResponse);
         } catch (error) {

@@ -1,15 +1,8 @@
-import { z } from "zod";
 import { TransactionDetailsClient } from "../authorize-net/client/transaction-details-client";
-import { BaseError } from "@/errors";
+import { transactionId } from "../authorize-net/transaction-id-utils";
 import { createLogger } from "@/lib/logger";
 import { type TransactionProcessSessionResponse } from "@/schemas/TransactionProcessSession/TransactionProcessSessionResponse.mjs";
 import { type TransactionProcessSessionEventFragment } from "generated/graphql";
-
-export const TransactionProcessError = BaseError.subclass("TransactionProcessError");
-
-const acceptHostedTransactionProcessRequestDataSchema = z.object({
-  authorizeTransactionId: z.string().min(1),
-});
 
 export class TransactionProcessSessionService {
   private logger = createLogger({
@@ -18,9 +11,7 @@ export class TransactionProcessSessionService {
 
   private getTransactionDetails(payload: TransactionProcessSessionEventFragment) {
     const client = new TransactionDetailsClient();
-    const { authorizeTransactionId } = acceptHostedTransactionProcessRequestDataSchema.parse(
-      payload.data,
-    );
+    const authorizeTransactionId = transactionId.resolveAuthorizeTransactionId(payload.transaction);
 
     const transactionDetails = client.getTransactionDetails({
       transactionId: authorizeTransactionId,

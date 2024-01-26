@@ -13,6 +13,7 @@ import {
 	UpdateDeliveryMutationVariables,
 	UpdateDeliveryDocument,
 } from "../../generated/graphql";
+import { checkoutIdUtils } from "../lib/checkoutIdUtils";
 
 export default function Page() {
 	const { data, loading } = useQuery<ProductListQuery, ProductListQueryVariables>(
@@ -53,7 +54,7 @@ export default function Page() {
 
 		await updateDelivery({ variables: { checkoutId: response.data.checkoutCreate.checkout.id, methodId } });
 
-		sessionStorage.setItem("checkoutId", response.data.checkoutCreate.checkout.id);
+		checkoutIdUtils.set(response.data.checkoutCreate.checkout.id);
 		return router.push("/cart");
 	};
 

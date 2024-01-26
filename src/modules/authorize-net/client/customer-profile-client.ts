@@ -55,7 +55,7 @@ export class CustomerProfileClient extends AuthorizeNetClient {
           this.logger.trace({ response }, "createCustomerProfile response");
           const parsedResponse = createCustomerProfileSchema.parse(response);
 
-          this.resolveResponseErrors(parsedResponse);
+          this.resolveAndThrowResponseErrors(parsedResponse);
 
           resolve(parsedResponse);
         } catch (error) {
@@ -88,7 +88,7 @@ export class CustomerProfileClient extends AuthorizeNetClient {
           const response = new ApiContracts.GetCustomerProfileResponse(apiResponse);
           const parsedResponse = getCustomerProfileSchema.parse(response);
 
-          this.resolveResponseErrors(parsedResponse);
+          this.resolveAndThrowResponseErrors(parsedResponse);
 
           resolve(parsedResponse);
         } catch (error) {
