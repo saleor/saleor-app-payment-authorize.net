@@ -64,6 +64,7 @@ export default transactionCancelationRequestedSyncWebhook.createHandler(
     } catch (error) {
       const normalizedError = errorUtils.normalize(error);
       errorUtils.capture(normalizedError);
+      logger.error(normalizedError);
 
       return responseBuilder.ok({
         result: "CANCEL_FAILURE",
