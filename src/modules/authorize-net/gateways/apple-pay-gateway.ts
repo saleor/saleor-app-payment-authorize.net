@@ -9,12 +9,20 @@ import {
   type PaymentGatewayInitializeSessionEventFragment,
   type TransactionInitializeSessionEventFragment,
 } from "generated/graphql";
+import * as ApplePay from "@/modules/applepay/applepay";
 
 const ApiContracts = AuthorizeNet.APIContracts;
 
-// feel free to migrate it to JSON schema
-export const applePayPaymentGatewayResponseDataSchema = z.object({});
+export const applePayPaymentGatewayInitializeDataSchema = gatewayUtils.createGatewayDataSchema(
+  "applePay",
+  z.object({
+    validationURL: z.string(),
+  }),
+);
 
+export const applePayPaymentGatewayResponseDataSchema = z.object({
+  applePayMerchantSession: z.unknown(),
+});
 type ApplePayPaymentGatewayData = z.infer<typeof applePayPaymentGatewayResponseDataSchema>;
 
 export const applePayTransactionInitializeDataSchema = gatewayUtils.createGatewayDataSchema(
@@ -27,10 +35,19 @@ export const applePayTransactionInitializeDataSchema = gatewayUtils.createGatewa
 
 export class ApplePayGateway implements PaymentGateway {
   async initializePaymentGateway(
-    _payload: PaymentGatewayInitializeSessionEventFragment,
+    payload: PaymentGatewayInitializeSessionEventFragment,
   ): Promise<ApplePayPaymentGatewayData> {
-    // todo: put everything that client needs to initialize apple pay here
-    return {};
+    const applePayData = applePayPaymentGatewayInitializeDataSchema.parse(payload.data);
+    const applePayMerchantSession = await ApplePay.validateMerchant({
+      validationURL: applePayData.data.validationURL,
+      merchantName: "@todo",
+      merchantIdentifier: "@todo",
+      domain: "@todo",
+      applePayCertificate: "@todo",
+    });
+    return {
+      applePayMerchantSession,
+    };
   }
 
   private buildTransactionRequest(

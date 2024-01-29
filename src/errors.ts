@@ -1,3 +1,4 @@
+import { type IncomingHttpHeaders } from "node:http2";
 import { type TRPC_ERROR_CODE_KEY } from "@trpc/server/rpc";
 import ModernError from "modern-errors";
 import ModernErrorsSerialize from "modern-errors-serialize";
@@ -40,4 +41,15 @@ export const ReqMissingTokenError = BaseTrpcError.subclass("ReqMissingTokenError
 });
 export const ReqMissingAppIdError = BaseTrpcError.subclass("ReqMissingAppIdError", {
   props: { trpcCode: "BAD_REQUEST" } as TrpcErrorOptions,
+});
+
+export const ApplePayInvalidMerchantDomainError = BaseError.subclass(
+  "ApplePayInvalidMerchantDomainError",
+);
+export const ApplePayMissingCertificateError = BaseError.subclass(
+  "ApplePayMissingCertificateError",
+);
+export const ApplePayHttpError = BaseError.subclass("ApplePayHttpError");
+export const HttpRequestError = BaseError.subclass("HttpRequestError", {
+  props: {} as { statusCode: number; body: string; headers: IncomingHttpHeaders },
 });

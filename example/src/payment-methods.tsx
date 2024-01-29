@@ -101,7 +101,7 @@ export const PaymentMethods = () => {
 			return;
 		}
 
-		const applePaySession = new ApplePaySession(6, {
+		const applePaySession = new ApplePaySession(14, {
 			countryCode,
 			currencyCode: checkoutResponse.checkout.totalPrice.gross.currency,
 			merchantCapabilities: ["supports3DS", "supportsCredit", "supportsDebit"],
