@@ -1,7 +1,10 @@
-import { gql, useMutation } from "@apollo/client";
+import { gql, useMutation, useQuery } from "@apollo/client";
 import React from "react";
 import { z } from "zod";
 import {
+	GetCheckoutByIdDocument,
+	GetCheckoutByIdQuery,
+	GetCheckoutByIdQueryVariables,
 	PaymentGatewayInitializeDocument,
 	PaymentGatewayInitializeMutation,
 	PaymentGatewayInitializeMutationVariables,
@@ -15,7 +18,7 @@ const acceptHostedPaymentGatewaySchema = z.object({});
 
 export type AcceptHostedData = z.infer<typeof acceptHostedPaymentGatewaySchema>;
 
-// currently, Payment Gateway Initialize doesnt return any config data
+// currently, Payment Gateway Initialize doesn't return any config data
 const dataSchema = z.object({
 	acceptHosted: z.unknown().optional(),
 	applePay: z.unknown().optional(),
@@ -31,6 +34,10 @@ export const PaymentMethods = () => {
 	const [paymentMethods, setPaymentMethods] = React.useState<PaymentMethods>();
 
 	const checkoutId = getCheckoutId();
+	const { data: checkoutResponse } = useQuery<GetCheckoutByIdQuery, GetCheckoutByIdQueryVariables>(
+		gql(GetCheckoutByIdDocument.toString()),
+		{ variables: { id: checkoutId } },
+	);
 
 	const [initializePaymentGateways] = useMutation<
 		PaymentGatewayInitializeMutation,
@@ -70,6 +77,43 @@ export const PaymentMethods = () => {
 		getPaymentGateways();
 	}, [getPaymentGateways]);
 
+	const [isApplePayAvailable, setIsApplePayAvailable] = React.useState(false);
+
+	React.useEffect(() => {
+		if (
+			typeof window === "undefined" ||
+			typeof ApplePaySession === "undefined" ||
+			!checkoutResponse?.checkout
+		) {
+			return;
+		}
+		setIsApplePayAvailable(ApplePaySession.canMakePayments());
+	}, [checkoutResponse]);
+
+	const initializeApplePay = () => {
+		if (!checkoutResponse?.checkout) {
+			return;
+		}
+		const countryCode =
+			checkoutResponse.checkout.billingAddress?.country.code ||
+			checkoutResponse.checkout.shippingAddress?.country.code;
+		if (!countryCode) {
+			return;
+		}
+
+		const applePaySession = new ApplePaySession(6, {
+			countryCode,
+			currencyCode: checkoutResponse.checkout.totalPrice.gross.currency,
+			merchantCapabilities: ["supports3DS", "supportsCredit", "supportsDebit"],
+			supportedNetworks: ["amex", "masterCard", "maestro", "visa"],
+			total: {
+				label: "Gross Total Amount",
+				amount: checkoutResponse.checkout.totalPrice.gross.amount.toFixed(2),
+			},
+		});
+		applePaySession.begin();
+	};
+
 	return (
 		<div>
 			<h2>Payment Methods</h2>
@@ -80,9 +124,15 @@ export const PaymentMethods = () => {
 						<AcceptHostedForm />
 					</li>
 				)}
-				{paymentMethods?.applePay !== undefined && (
+				{isApplePayAvailable && (
 					<li>
-						<button>Apple Pay</button>
+						<button
+							type="button"
+							onClick={initializeApplePay}
+							className="apple-pay-button apple-pay-button-black"
+						>
+							Pay with Apple Pay
+						</button>
 					</li>
 				)}
 				{paymentMethods?.paypal !== undefined && (
