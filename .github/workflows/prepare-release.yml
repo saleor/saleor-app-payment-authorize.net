@@ -20,9 +20,14 @@ jobs:
       - name: Git fetch tags
         run: git fetch --tags origin
 
-      - uses: pnpm/action-setup@v2
+      - name: Get PNPM version from package.json
+        id: pnpm-version
+        run: echo "pnpm_version=$(cat package.json | jq '.packageManager' | sed -E 's/[^0-9.]//g')" >> $GITHUB_OUTPUT
+
+      - name: Install PNPM
+        uses: pnpm/action-setup@v2
         with:
-          version: 8.14.1
+          version: ${{ steps.pnpm-version.outputs.pnpm_version }}
 
       - uses: actions/setup-node@v3
         with:
