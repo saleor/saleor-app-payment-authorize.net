@@ -1,6 +1,5 @@
-import { TRANSACTION_METADATA_KEY } from "../configuration/transaction-metadata-manager";
 import { type GetTransactionDetailsResponse } from "./client/transaction-details-client";
-import { createLogger } from "@/lib/logger";
+import { invariant } from "@/lib/invariant";
 import { type TransactionFragment } from "generated/graphql";
 
 /**
@@ -17,35 +16,15 @@ const saleorTransactionIdConverter = {
     return btoa(saleorTransaction.id); // we need to encode the string to base64, because Authorize.net can't parse the "=" character that is in the Saleor transaction ID
   },
   fromAuthorizeNetTransaction(authorizeTransaction: GetTransactionDetailsResponse) {
-    const orderDescription = authorizeTransaction.transaction.order.description; // we need to decode it back to use the Saleor transaction ID
+    const orderDescription = authorizeTransaction.transaction.order?.description; // we need to decode it back to use the Saleor transaction ID
+
+    invariant(orderDescription, "Missing order description in transaction");
     return atob(orderDescription);
   },
 };
 
 function resolveAuthorizeTransactionIdFromTransaction(transaction: TransactionFragment) {
-  const logger = createLogger({
-    name: "resolveAuthorizeTransactionIdFromTransaction",
-  });
-
-  const metadata = transaction.privateMetadata;
-
-  if (!metadata) {
-    logger.warn("Missing metadata in payload");
-    return undefined;
-  }
-
-  const authorizeTransactionId = metadata.find(
-    (metadataEntry) => metadataEntry?.key === TRANSACTION_METADATA_KEY,
-  )?.value;
-
-  if (!authorizeTransactionId) {
-    logger.warn("Missing authorizeTransactionId in metadata");
-    return undefined;
-  }
-
-  logger.debug("Returning authorizeTransactionId from transaction metadata");
-
-  return authorizeTransactionId;
+  return transaction.pspReference;
 }
 
 export const transactionId = {

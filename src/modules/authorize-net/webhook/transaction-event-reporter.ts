@@ -64,7 +64,7 @@ export class TransactionEventReporter {
 
   private getAuthorizeTransaction({ id }: { id: string }) {
     const transactionDetailsClient = new TransactionDetailsClient();
-    return transactionDetailsClient.getTransactionDetailsRequest({ transactionId: id });
+    return transactionDetailsClient.getTransactionDetails({ transactionId: id });
   }
 
   async reportEvent(eventPayload: EventPayload) {

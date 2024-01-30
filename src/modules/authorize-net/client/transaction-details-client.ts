@@ -14,9 +14,11 @@ const getTransactionDetailsSchema = baseAuthorizeObjectSchema.and(
       authAmount: z.number(),
       responseReasonDescription: z.string().min(1),
       submitTimeLocal: z.string().min(1),
-      order: z.object({
-        description: z.string().min(1),
-      }),
+      order: z
+        .object({
+          description: z.string().min(1),
+        })
+        .optional(),
     }),
   }),
 );
@@ -27,7 +29,7 @@ export type AuthorizeTransactionStatus =
   GetTransactionDetailsResponse["transaction"]["transactionStatus"];
 
 export class TransactionDetailsClient extends AuthorizeNetClient {
-  async getTransactionDetailsRequest({
+  async getTransactionDetails({
     transactionId,
   }: {
     transactionId: string;
@@ -49,7 +51,7 @@ export class TransactionDetailsClient extends AuthorizeNetClient {
           // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           const apiResponse = transactionController.getResponse();
           const response = new ApiContracts.GetTransactionDetailsResponse(apiResponse);
-          this.logger.trace({ response }, "getTransactionDetailsRequest response");
+          this.logger.trace({ response }, "getTransactionDetails response");
           const parsedResponse = getTransactionDetailsSchema.parse(response);
 
           this.resolveResponseErrors(parsedResponse);

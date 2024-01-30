@@ -1,7 +1,7 @@
 import AuthorizeNet from "authorizenet";
 import { CreateTransactionClient } from "../authorize-net/client/create-transaction";
 
-import { buildAuthorizeTransactionRequest } from "../authorize-net/authorize-transaction-builder";
+import { authorizeTransaction } from "../authorize-net/authorize-transaction-builder";
 
 import { transactionId } from "../authorize-net/transaction-id-utils";
 import { type TransactionCancelationRequestedEventFragment } from "generated/graphql";
@@ -34,7 +34,7 @@ export class TransactionCancelationRequestedService {
     authorizeTransactionId: string;
     saleorTransactionId: string;
   }): Promise<AuthorizeNet.APIContracts.TransactionRequestType> {
-    const transactionRequest = buildAuthorizeTransactionRequest({
+    const transactionRequest = authorizeTransaction.buildAuthorizeTransactionRequest({
       saleorTransactionId,
       authorizeTransactionId,
     });

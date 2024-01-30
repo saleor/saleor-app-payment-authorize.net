@@ -1,23 +1,26 @@
-import { type Client } from "urql";
 import { type AuthData } from "@saleor/app-sdk/APL";
+import { type Client } from "urql";
 import { type AuthorizeConfig } from "../authorize-net/authorize-net-config";
 
 import { TransactionCancelationRequestedService } from "./transaction-cancelation-requested";
-import { TransactionInitializeSessionService } from "./transaction-initialize-session";
 import { TransactionProcessSessionService } from "./transaction-process-session";
 import { TransactionRefundRequestedService } from "./transaction-refund-requested";
-import { type TransactionInitializeSessionResponse } from "@/schemas/TransactionInitializeSession/TransactionInitializeSessionResponse.mjs";
 
+import { PaymentGatewayInitializeSessionService } from "./payment-gateway-initialize-session";
+import { TransactionInitializeSessionService } from "./transaction-initialize-session";
+import { createServerClient } from "@/lib/create-graphq-client";
+import { type PaymentGatewayInitializeSessionResponse } from "@/pages/api/webhooks/payment-gateway-initialize-session";
 import { type TransactionCancelationRequestedResponse } from "@/schemas/TransactionCancelationRequested/TransactionCancelationRequestedResponse.mjs";
+import { type TransactionInitializeSessionResponse } from "@/schemas/TransactionInitializeSession/TransactionInitializeSessionResponse.mjs";
 import { type TransactionProcessSessionResponse } from "@/schemas/TransactionProcessSession/TransactionProcessSessionResponse.mjs";
 import { type TransactionRefundRequestedResponse } from "@/schemas/TransactionRefundRequested/TransactionRefundRequestedResponse.mjs";
 import {
+  type PaymentGatewayInitializeSessionEventFragment,
   type TransactionCancelationRequestedEventFragment,
   type TransactionInitializeSessionEventFragment,
   type TransactionProcessSessionEventFragment,
   type TransactionRefundRequestedEventFragment,
 } from "generated/graphql";
-import { createServerClient } from "@/lib/create-graphq-client";
 
 export interface PaymentsWebhooks {
   transactionInitializeSession: (
@@ -49,9 +52,7 @@ export class AppWebhookManager implements PaymentsWebhooks {
   async transactionProcessSession(
     payload: TransactionProcessSessionEventFragment,
   ): Promise<TransactionProcessSessionResponse> {
-    const service = new TransactionProcessSessionService({
-      apiClient: this.apiClient,
-    });
+    const service = new TransactionProcessSessionService();
 
     return service.execute(payload);
   }
@@ -72,6 +73,18 @@ export class AppWebhookManager implements PaymentsWebhooks {
     });
 
     return service.execute(payload);
+  }
+
+  async paymentGatewayInitializeSession(
+    payload: PaymentGatewayInitializeSessionEventFragment,
+  ): Promise<PaymentGatewayInitializeSessionResponse> {
+    const service = new PaymentGatewayInitializeSessionService();
+
+    const data = await service.execute(payload);
+
+    return {
+      data,
+    };
   }
 }
 

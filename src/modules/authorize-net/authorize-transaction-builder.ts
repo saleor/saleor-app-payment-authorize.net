@@ -1,19 +1,27 @@
 import AuthorizeNet from "authorizenet";
 import { transactionId } from "./transaction-id-utils";
+import { invariant } from "@/lib/invariant";
 import {
   type AddressFragment,
   type OrderOrCheckoutFragment,
-  type TransactionFragment,
+  type TransactionInitializeSessionEventFragment,
 } from "generated/graphql";
 
 const ApiContracts = AuthorizeNet.APIContracts;
+
+function concatAddressLines(address: AddressFragment) {
+  return [address.streetAddress1, address.streetAddress2]
+    .map((a) => a.trim())
+    .filter(Boolean)
+    .join(" ");
+}
 
 /**
  *
  * @description This function is used to build a "synchronized" Authorize.net transaction.
  * Synchronization means that it has a reference to the original transaction (if there was a prior transaction), as well as to the Saleor transaction.
  */
-export function buildAuthorizeTransactionRequest({
+function buildAuthorizeTransactionRequest({
   saleorTransactionId,
   authorizeTransactionId,
 }: {
@@ -35,7 +43,41 @@ export function buildAuthorizeTransactionRequest({
   return transactionRequest;
 }
 
-export class AuthorizeTransactionBuilder {
+function buildTransactionFromTransactionInitializePayload(
+  payload: TransactionInitializeSessionEventFragment,
+): AuthorizeNet.APIContracts.TransactionRequestType {
+  const authorizeTransactionId = transactionId.resolveAuthorizeTransactionId(payload.transaction);
+  const saleorTransactionId = transactionId.saleorTransactionIdConverter.fromSaleorTransaction(
+    payload.transaction,
+  );
+
+  const transactionRequest = buildAuthorizeTransactionRequest({
+    authorizeTransactionId,
+    saleorTransactionId,
+  });
+
+  transactionRequest.setTransactionType(ApiContracts.TransactionTypeEnum.AUTHONLYTRANSACTION);
+  transactionRequest.setAmount(payload.action.amount);
+  transactionRequest.setCurrencyCode(payload.action.currency);
+
+  const lineItems = authorizeTransaction.buildLineItemsFromOrderOrCheckout(payload.sourceObject);
+  transactionRequest.setLineItems(lineItems);
+
+  invariant(payload.sourceObject.billingAddress, "Billing address is missing from payload.");
+  const billTo = authorizeTransaction.buildBillTo(payload.sourceObject.billingAddress);
+  transactionRequest.setBillTo(billTo);
+
+  invariant(payload.sourceObject.shippingAddress, "Shipping address is missing from payload.");
+  const shipTo = authorizeTransaction.buildShipTo(payload.sourceObject.shippingAddress);
+  transactionRequest.setShipTo(shipTo);
+
+  const poNumber = authorizeTransaction.buildPoNumber(payload.sourceObject);
+  transactionRequest.setPoNumber(poNumber);
+
+  return transactionRequest;
+}
+
+export const authorizeTransaction = {
   buildLineItemsFromOrderOrCheckout(
     fragment: OrderOrCheckoutFragment,
   ): AuthorizeNet.APIContracts.ArrayOfLineItem {
@@ -61,18 +103,14 @@ export class AuthorizeTransactionBuilder {
     arrayOfLineItems.setLineItem(lineItems);
 
     return arrayOfLineItems;
-  }
-
-  private concatAddressLines(address: AddressFragment) {
-    return `${address.streetAddress1} ${address.streetAddress2}`;
-  }
+  },
 
   buildBillTo(fragment: AddressFragment) {
     const billTo = new ApiContracts.CustomerAddressType();
 
     billTo.setFirstName(fragment.firstName);
     billTo.setLastName(fragment.lastName);
-    billTo.setAddress(this.concatAddressLines(fragment));
+    billTo.setAddress(concatAddressLines(fragment));
     billTo.setCity(fragment.city);
     billTo.setState(fragment.countryArea);
     billTo.setZip(fragment.postalCode);
@@ -80,21 +118,21 @@ export class AuthorizeTransactionBuilder {
     billTo.setPhoneNumber(fragment.phone);
 
     return billTo;
-  }
+  },
 
   buildShipTo(fragment: AddressFragment) {
     const shipTo = new ApiContracts.CustomerAddressType();
 
     shipTo.setFirstName(fragment.firstName);
     shipTo.setLastName(fragment.lastName);
-    shipTo.setAddress(this.concatAddressLines(fragment));
+    shipTo.setAddress(concatAddressLines(fragment));
     shipTo.setCity(fragment.city);
     shipTo.setState(fragment.countryArea);
     shipTo.setZip(fragment.postalCode);
     shipTo.setCountry(fragment.country.code);
 
     return shipTo;
-  }
+  },
 
   buildPoNumber(fragment: OrderOrCheckoutFragment) {
     if (fragment.__typename === "Checkout") {
@@ -102,18 +140,8 @@ export class AuthorizeTransactionBuilder {
     }
 
     return fragment.number;
-  }
+  },
 
-  buildTransactionRequestFromTransactionFragment(
-    fragment: TransactionFragment,
-  ): AuthorizeNet.APIContracts.TransactionRequestType {
-    const authorizeTransactionId = transactionId.resolveAuthorizeTransactionId(fragment);
-    const saleorTransactionId =
-      transactionId.saleorTransactionIdConverter.fromSaleorTransaction(fragment);
-
-    return buildAuthorizeTransactionRequest({
-      authorizeTransactionId,
-      saleorTransactionId,
-    });
-  }
-}
+  buildAuthorizeTransactionRequest,
+  buildTransactionFromTransactionInitializePayload,
+};

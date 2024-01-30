@@ -46,13 +46,6 @@ export const env = createEnv({
       .min(1)
       .describe("Public client key. You can generate it in Account -> Manage Public Client Key"),
     AUTHORIZE_ENVIRONMENT: z.enum(["sandbox", "production"]),
-    AUTHORIZE_SALEOR_CHANNEL_SLUG: z
-      .string()
-      .min(1)
-      .default("default-channel")
-      .describe(
-        "Saleor channel slug. When configuring the app through env, you can only use one channel.",
-      ),
     AUTHORIZE_PAYMENT_FORM_URL: z
       .string()
       .min(1)
@@ -96,7 +89,6 @@ export const env = createEnv({
     AUTHORIZE_SIGNATURE_KEY: process.env.AUTHORIZE_SIGNATURE_KEY,
     AUTHORIZE_PUBLIC_CLIENT_KEY: process.env.AUTHORIZE_PUBLIC_CLIENT_KEY,
     AUTHORIZE_ENVIRONMENT: process.env.AUTHORIZE_ENVIRONMENT,
-    AUTHORIZE_SALEOR_CHANNEL_SLUG: process.env.AUTHORIZE_SALEOR_CHANNEL_SLUG,
     AUTHORIZE_PAYMENT_FORM_URL: process.env.AUTHORIZE_PAYMENT_FORM_URL,
   },
 });

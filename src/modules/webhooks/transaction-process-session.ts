@@ -1,10 +1,5 @@
-import { type Client } from "urql";
 import { z } from "zod";
-import {
-  TransactionDetailsClient,
-  type GetTransactionDetailsResponse,
-} from "../authorize-net/client/transaction-details-client";
-import { TransactionMetadataManager } from "../configuration/transaction-metadata-manager";
+import { TransactionDetailsClient } from "../authorize-net/client/transaction-details-client";
 import { BaseError } from "@/errors";
 import { createLogger } from "@/lib/logger";
 import { type TransactionProcessSessionResponse } from "@/schemas/TransactionProcessSession/TransactionProcessSessionResponse.mjs";
@@ -12,105 +7,40 @@ import { type TransactionProcessSessionEventFragment } from "generated/graphql";
 
 export const TransactionProcessError = BaseError.subclass("TransactionProcessError");
 
-export const TransactionProcessUnexpectedDataError = TransactionProcessError.subclass(
-  "TransactionProcessUnexpectedDataError",
-);
-
-const transactionProcessPayloadDataSchema = z.object({
-  transactionId: z.string().min(1),
+const acceptHostedTransactionProcessRequestDataSchema = z.object({
+  authorizeTransactionId: z.string().min(1),
 });
 
 export class TransactionProcessSessionService {
-  private apiClient: Client;
-
   private logger = createLogger({
     name: "TransactionProcessSessionService",
   });
 
-  constructor({ apiClient }: { apiClient: Client }) {
-    this.apiClient = apiClient;
-  }
+  private getTransactionDetails(payload: TransactionProcessSessionEventFragment) {
+    const client = new TransactionDetailsClient();
+    const { authorizeTransactionId } = acceptHostedTransactionProcessRequestDataSchema.parse(
+      payload.data,
+    );
 
-  /**
-   * @description Saves Authorize transaction ID in metadata for future usage in other operations (e.g. `transaction-cancelation-requested`). Also saves Saleor transaction ID in Authorize transaction as order.description.
-   */
-  private async synchronizeTransaction({
-    saleorTransactionId,
-    authorizeTransactionId,
-  }: {
-    saleorTransactionId: string;
-    authorizeTransactionId: string;
-  }) {
-    // todo: do I even need it? or can I read transactionid from pspreference?
-    const metadataManager = new TransactionMetadataManager({ apiClient: this.apiClient });
-
-    await metadataManager.saveTransactionId({
-      saleorTransactionId,
-      authorizeTransactionId,
+    const transactionDetails = client.getTransactionDetails({
+      transactionId: authorizeTransactionId,
     });
-  }
 
-  /**
-   * @description Calls the Authorize.net API to get the transaction status. Maps Authorize settlement state to Saleor transaction result.
-   * @returns Possible transaction result
-   */
-  private mapTransactionToWebhookResponse(
-    response: GetTransactionDetailsResponse,
-  ): TransactionProcessSessionResponse {
-    const baseResponse: Pick<
-      TransactionProcessSessionResponse,
-      "amount" | "message" | "pspReference"
-    > = {
-      amount: response.transaction.authAmount,
-      message: response.transaction.responseReasonDescription,
-      pspReference: response.transaction.transId,
-    };
-
-    const { transactionStatus } = response.transaction;
-
-    if (transactionStatus === "authorizedPendingCapture") {
-      return { ...baseResponse, result: "AUTHORIZATION_SUCCESS", actions: ["CANCEL", "REFUND"] };
-    }
-
-    if (transactionStatus === "FDSPendingReview") {
-      return { ...baseResponse, result: "AUTHORIZATION_REQUEST", actions: [] };
-    }
-
-    throw new TransactionProcessError(`Unexpected transaction status: ${transactionStatus}`);
+    return transactionDetails;
   }
 
   async execute(
     payload: TransactionProcessSessionEventFragment,
   ): Promise<TransactionProcessSessionResponse> {
-    this.logger.debug({ id: payload.transaction?.id }, "Mapping the state of transaction");
-    const dataParseResult = transactionProcessPayloadDataSchema.safeParse(payload.data);
-
-    if (!dataParseResult.success) {
-      throw new TransactionProcessUnexpectedDataError("`data` object has unexpected structure.", {
-        cause: dataParseResult.error,
-      });
-    }
-
-    const { transactionId: authorizeTransactionId } = dataParseResult.data;
-
-    await this.synchronizeTransaction({
-      saleorTransactionId: payload.transaction.id,
-      authorizeTransactionId,
-    });
-
-    const transactionDetailsClient = new TransactionDetailsClient();
-    const details = await transactionDetailsClient.getTransactionDetailsRequest({
-      transactionId: authorizeTransactionId,
-    });
-
-    const { result, actions } = this.mapTransactionToWebhookResponse(details);
+    const transactionDetails = await this.getTransactionDetails(payload);
 
     return {
-      amount: details.transaction.authAmount,
-      result,
-      actions,
-      message: details.transaction.responseReasonDescription,
-      pspReference: authorizeTransactionId,
+      amount: transactionDetails.transaction.authAmount,
+      result: "AUTHORIZATION_SUCCESS",
+      pspReference: transactionDetails.transaction.transId,
+      actions: ["CANCEL", "REFUND"],
+      time: transactionDetails.transaction.submitTimeLocal,
+      data: {},
     };
   }
 }

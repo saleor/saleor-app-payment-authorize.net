@@ -6,10 +6,20 @@ import { AuthorizeNetClient, baseAuthorizeObjectSchema } from "./authorize-net-c
 const ApiContracts = AuthorizeNet.APIContracts;
 const ApiControllers = AuthorizeNet.APIControllers;
 
-const createTransactionSchema = baseAuthorizeObjectSchema.and(z.unknown());
+const createTransactionSchema = baseAuthorizeObjectSchema.and(
+  z.object({
+    transactionResponse: z.object({
+      transId: z.string().min(1),
+    }),
+  }),
+);
+
+export type CreateTransactionResponse = z.infer<typeof createTransactionSchema>;
 
 export class CreateTransactionClient extends AuthorizeNetClient {
-  async createTransaction(transactionInput: AuthorizeNet.APIContracts.TransactionRequestType) {
+  async createTransaction(
+    transactionInput: AuthorizeNet.APIContracts.TransactionRequestType,
+  ): Promise<CreateTransactionResponse> {
     const createRequest = new ApiContracts.CreateTransactionRequest();
     createRequest.setMerchantAuthentication(this.merchantAuthenticationType);
     createRequest.setTransactionRequest(transactionInput);
@@ -27,6 +37,8 @@ export class CreateTransactionClient extends AuthorizeNetClient {
           // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           const apiResponse = transactionController.getResponse();
           const response = new ApiContracts.CreateTransactionResponse(apiResponse);
+
+          this.logger.trace({ response }, "CreateTransactionResponse");
           const parsedResponse = createTransactionSchema.parse(response);
 
           this.resolveResponseErrors(parsedResponse);

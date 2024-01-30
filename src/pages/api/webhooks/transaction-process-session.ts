@@ -1,17 +1,17 @@
 import { SaleorSyncWebhook } from "@saleor/app-sdk/handlers/next";
-import * as Sentry from "@sentry/nextjs";
-import { AuthorizeWebhookManager } from "@/modules/authorize-net/webhook/authorize-net-webhook-manager";
+
 import { createLogger } from "@/lib/logger";
 import { SynchronousWebhookResponseBuilder } from "@/lib/webhook-response-builder";
-import { TransactionProcessError } from "@/modules/webhooks/transaction-process-session";
+import { getAuthorizeConfig } from "@/modules/authorize-net/authorize-net-config";
+import { AuthorizeWebhookManager } from "@/modules/authorize-net/webhook/authorize-net-webhook-manager";
 import { createAppWebhookManager } from "@/modules/webhooks/webhook-manager-service";
+import { errorUtils } from "@/error-utils";
 import { saleorApp } from "@/saleor-app";
 import { type TransactionProcessSessionResponse } from "@/schemas/TransactionProcessSession/TransactionProcessSessionResponse.mjs";
 import {
   UntypedTransactionProcessSessionDocument,
   type TransactionProcessSessionEventFragment,
 } from "generated/graphql";
-import { getAuthorizeConfig } from "@/modules/authorize-net/authorize-net-config";
 
 export const config = {
   api: {
@@ -35,11 +35,7 @@ const logger = createLogger({
 class WebhookResponseBuilder extends SynchronousWebhookResponseBuilder<TransactionProcessSessionResponse> {}
 
 /**
- * In the Authorize.net Accept Hosted flow, this webhook is called after the Accept Hosted payment form was submitted.
- * This webhook handler does the following:
- * 1. Checks the `data` for the `transactionId` to call the Authorize.net API to get the transaction status.
- * 2. Checks the `data` for the `customerProfileId`. If the customerProfileId was passed from Accept Hosted form, updates the stored customerProfileId x userEmail mapping.
- * 3. Returns to Saleor the transaction result: `AUTHORIZATION_SUCCESS`, `AUTHORIZATION_FAILURE` or `AUTHORIZATION_REQUESTED`.
+ * This webhook can be used to synchronize the transaction status with Saleor. It calls Authorize transaction API, and then maps the response to Saleor's transaction.
  */
 export default transactionProcessSessionSyncWebhook.createHandler(
   async (req, res, { authData, ...ctx }) => {
@@ -75,18 +71,14 @@ export default transactionProcessSessionSyncWebhook.createHandler(
       logger.info({ response }, "Responding with:");
       return responseBuilder.ok(response);
     } catch (error) {
-      Sentry.captureException(error);
+      const normalizedError = errorUtils.normalize(error);
+      errorUtils.capture(normalizedError);
 
-      const normalizedError = TransactionProcessError.normalize(error);
       return responseBuilder.ok({
         amount: ctx.payload.action.amount,
         result: "AUTHORIZATION_FAILURE",
         message: "Failure",
-        data: {
-          error: {
-            message: normalizedError.message,
-          },
-        },
+        data: errorUtils.buildResponse(normalizedError),
       });
     }
   },

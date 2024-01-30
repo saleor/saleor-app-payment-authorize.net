@@ -1,18 +1,17 @@
 import { SaleorSyncWebhook } from "@saleor/app-sdk/handlers/next";
-import * as Sentry from "@sentry/nextjs";
 import { createLogger } from "@/lib/logger";
 import { SynchronousWebhookResponseBuilder } from "@/lib/webhook-response-builder";
-import { TransactionRefundRequestedError } from "@/modules/webhooks/transaction-refund-requested";
 
+import { getAuthorizeConfig } from "@/modules/authorize-net/authorize-net-config";
 import { AuthorizeWebhookManager } from "@/modules/authorize-net/webhook/authorize-net-webhook-manager";
 import { createAppWebhookManager } from "@/modules/webhooks/webhook-manager-service";
+import { errorUtils } from "@/error-utils";
 import { saleorApp } from "@/saleor-app";
 import { type TransactionRefundRequestedResponse } from "@/schemas/TransactionRefundRequested/TransactionRefundRequestedResponse.mjs";
 import {
   UntypedTransactionRefundRequestedDocument,
   type TransactionRefundRequestedEventFragment,
 } from "generated/graphql";
-import { getAuthorizeConfig } from "@/modules/authorize-net/authorize-net-config";
 
 export const config = {
   api: {
@@ -61,9 +60,9 @@ export default transactionRefundRequestedSyncWebhook.createHandler(
       logger.info({ response }, "Responding with:");
       return responseBuilder.ok(response);
     } catch (error) {
-      Sentry.captureException(error);
+      const normalizedError = errorUtils.normalize(error);
+      errorUtils.capture(normalizedError);
 
-      const normalizedError = TransactionRefundRequestedError.normalize(error);
       return responseBuilder.ok({
         result: "REFUND_FAILURE",
         pspReference: "", // todo: add

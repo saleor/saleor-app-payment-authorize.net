@@ -1,7 +1,6 @@
 import { type TRPC_ERROR_CODE_KEY } from "@trpc/server/rpc";
 import ModernError from "modern-errors";
 import ModernErrorsSerialize from "modern-errors-serialize";
-import { ZodError } from "zod";
 
 // Http errors
 type CommonProps = {
@@ -42,11 +41,3 @@ export const ReqMissingTokenError = BaseTrpcError.subclass("ReqMissingTokenError
 export const ReqMissingAppIdError = BaseTrpcError.subclass("ReqMissingAppIdError", {
   props: { trpcCode: "BAD_REQUEST" } as TrpcErrorOptions,
 });
-
-export function normalizeError(error: unknown) {
-  if (error instanceof ZodError) {
-    return BaseError.normalize(error.format());
-  }
-
-  return BaseError.normalize(error);
-}

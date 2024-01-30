@@ -7,7 +7,7 @@ import { getAuthorizeConfig, type AuthorizeConfig } from "../authorize-net-confi
 import { AuthorizeNetInvalidWebhookSignatureError } from "../authorize-net-error";
 import { authorizeNetEventSchema } from "./authorize-net-webhook-client";
 import { MissingAuthDataError } from "./authorize-net-webhook-errors";
-import { TransactionEventReporter } from "./transaction-reporter";
+import { TransactionEventReporter } from "./transaction-event-reporter";
 import { saleorApp } from "@/saleor-app";
 import { createLogger } from "@/lib/logger";
 import { createServerClient } from "@/lib/create-graphq-client";
