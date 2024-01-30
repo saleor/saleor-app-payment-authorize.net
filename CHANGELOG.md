@@ -1,5 +1,19 @@
 # saleor-app-payment-template
 
+## 0.3.0
+
+### Minor Changes
+
+- 08dd303: Synchronized the following new fields from Saleor to Authorize transaction: billing address, shipping address, order number, line details.
+- c6e645a: Added registering and handling Authorize.net webhooks. Enclosing the two-way synchronization between Saleor and Authorize.net transactions. Known issues: hard-coded channels, skipped webhook body verification. Both will be addressed in the next release.
+- f3f6562: Added support for priorAuthCapture.created and void.created Authorize events.
+- 2c4af92: Remove billing address from Accept Hosted form. The address is expected to be placed outside of Accept Hosted.
+- b76b9a5: Removed unused channel x configuration connection mapping. The app now gets its configuration from environment variables.
+
+### Patch Changes
+
+- 391632c: Fixed the missing argument TypeScript issue in `webhook-manager-service.ts`.
+
 ## 0.2.0
 
 ### Minor Changes
