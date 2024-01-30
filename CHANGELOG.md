@@ -1,5 +1,16 @@
 # saleor-app-payment-template
 
+## 0.4.0
+
+### Minor Changes
+
+- 36882c9: Added the implementation of `PAYMENT_GATEWAY_INITIALIZE_SESSION` webhook which returns all the implemented payment methods with data needed to render them. Then, the transaction must be created with `TRANSACTION_INITIALIZE_SESSION`. The process requires an extra step for Accept Hosted payment method. To render the payment form, you must first call the `TRANSACTION_INITIALIZE_SESSION`, which returns result `AUTHORIZATION_ACTION_REQUIRED` with `data` needed to render the Accept Hosted form. Then, `TRANSACTION_PROCESS_SESSION` must be called.
+
+### Patch Changes
+
+- 4312802: Fixed the pnpm version in the failing GitHub action.
+- ee61aed: Fixed the evaluation of webhook signature. It now uses `timingSafeEqual`.
+
 ## 0.3.0
 
 ### Minor Changes
