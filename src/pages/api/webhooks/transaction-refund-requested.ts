@@ -62,6 +62,7 @@ export default transactionRefundRequestedSyncWebhook.createHandler(
     } catch (error) {
       const normalizedError = errorUtils.normalize(error);
       errorUtils.capture(normalizedError);
+      logger.error(normalizedError);
 
       return responseBuilder.ok({
         result: "REFUND_FAILURE",
