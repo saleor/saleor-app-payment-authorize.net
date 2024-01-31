@@ -11,8 +11,9 @@ import {
 	TransactionProcessMutationVariables,
 } from "../generated/graphql";
 import { authorizeNetAppId } from "./lib/common";
-import { getCheckoutId } from "./pages/cart";
+
 import { useRouter } from "next/router";
+import { checkoutIdUtils } from "./lib/checkoutIdUtils";
 
 const acceptHostedTransactionResponseSchema = z.object({
 	transId: z.string(),
@@ -21,14 +22,16 @@ const acceptHostedTransactionResponseSchema = z.object({
 const authorizeEnvironmentSchema = z.enum(["sandbox", "production"]);
 
 const acceptHostedTransactionInitializeResponseDataSchema = z.object({
-	formToken: z.string().min(1),
-	environment: authorizeEnvironmentSchema,
+	type: z.literal("acceptHosted"),
+	data: z.object({
+		formToken: z.string().min(1),
+		environment: authorizeEnvironmentSchema,
+	}),
 });
 
-type AcceptHostedData = z.infer<typeof acceptHostedTransactionInitializeResponseDataSchema>;
+type AcceptHostedData = z.infer<typeof acceptHostedTransactionInitializeResponseDataSchema>["data"];
 
 export function AcceptHostedForm() {
-	const checkoutId = getCheckoutId();
 	const router = useRouter();
 	const [acceptData, setAcceptData] = React.useState<AcceptHostedData>();
 	const [transactionId, setTransactionId] = React.useState<string>();
@@ -43,6 +46,12 @@ export function AcceptHostedForm() {
 	);
 
 	const getAcceptData = React.useCallback(async () => {
+		const checkoutId = checkoutIdUtils.get();
+
+		if (!checkoutId) {
+			throw new Error("Checkout id not found");
+		}
+
 		const initializeTransactionResponse = await initializeTransaction({
 			variables: {
 				checkoutId,
@@ -76,9 +85,9 @@ export function AcceptHostedForm() {
 
 		console.log(data);
 
-		const nextAcceptData = acceptHostedTransactionInitializeResponseDataSchema.parse(data);
+		const { data: nextAcceptData } = acceptHostedTransactionInitializeResponseDataSchema.parse(data);
 		setAcceptData(nextAcceptData);
-	}, [initializeTransaction, checkoutId]);
+	}, [initializeTransaction]);
 
 	React.useEffect(() => {
 		getAcceptData();

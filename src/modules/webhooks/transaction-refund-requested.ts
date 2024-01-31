@@ -1,9 +1,8 @@
 import AuthorizeNet from "authorizenet";
-import { type Client } from "urql";
 import { CreateTransactionClient } from "../authorize-net/client/create-transaction";
 
-import { transactionId } from "../authorize-net/transaction-id-utils";
 import { authorizeTransaction } from "../authorize-net/authorize-transaction-builder";
+import { transactionId } from "../authorize-net/transaction-id-utils";
 import { type TransactionRefundRequestedEventFragment } from "generated/graphql";
 
 import { BaseError } from "@/errors";
@@ -20,15 +19,9 @@ const TransactionRefundAuthorizeTransactionIdError = TransactionRefundRequestedE
 );
 
 export class TransactionRefundRequestedService {
-  private apiClient: Client;
-
   private logger = createLogger({
     name: "TransactionRefundRequestedService",
   });
-
-  constructor({ apiClient }: { apiClient: Client }) {
-    this.apiClient = apiClient;
-  }
 
   private async buildTransactionFromPayload({
     authorizeTransactionId,

@@ -1,7 +1,11 @@
 import AuthorizeNet from "authorizenet";
 
 import { z } from "zod";
-import { AuthorizeNetClient, baseAuthorizeObjectSchema } from "./authorize-net-client";
+import {
+  AuthorizeNetClient,
+  additionalErrorSchema,
+  baseAuthorizeObjectSchema,
+} from "./authorize-net-client";
 
 const ApiContracts = AuthorizeNet.APIContracts;
 const ApiControllers = AuthorizeNet.APIControllers;
@@ -10,6 +14,16 @@ const createTransactionSchema = baseAuthorizeObjectSchema.and(
   z.object({
     transactionResponse: z.object({
       transId: z.string().min(1),
+      secureAcceptance: z
+        .object({
+          SecureAcceptanceUrl: z.string().min(1),
+        })
+        .optional(),
+      errors: z
+        .object({
+          error: z.array(additionalErrorSchema),
+        })
+        .optional(),
     }),
   }),
 );
@@ -41,7 +55,10 @@ export class CreateTransactionClient extends AuthorizeNetClient {
           this.logger.trace({ response }, "CreateTransactionResponse");
           const parsedResponse = createTransactionSchema.parse(response);
 
-          this.resolveResponseErrors(parsedResponse);
+          this.resolveAndThrowResponseErrors(
+            parsedResponse,
+            parsedResponse.transactionResponse.errors?.error,
+          );
 
           resolve(parsedResponse);
         } catch (error) {

@@ -3,7 +3,7 @@ import { z } from "zod";
 import { createLogger } from "@/lib/logger";
 import { SynchronousWebhookResponseBuilder } from "@/lib/webhook-response-builder";
 import { getAuthorizeConfig } from "@/modules/authorize-net/authorize-net-config";
-import { acceptHostedPaymentGatewayDataSchema } from "@/modules/authorize-net/gateways/accept-hosted-gateway";
+import { acceptHostedPaymentGatewayInitializeSchema } from "@/modules/authorize-net/gateways/accept-hosted-schema";
 import { applePayPaymentGatewayResponseDataSchema } from "@/modules/authorize-net/gateways/apple-pay-gateway";
 import { AuthorizeWebhookManager } from "@/modules/authorize-net/webhook/authorize-net-webhook-manager";
 import { createAppWebhookManager } from "@/modules/webhooks/webhook-manager-service";
@@ -12,23 +12,27 @@ import {
   UntypedPaymentGatewayInitializeSessionDocument,
   type PaymentGatewayInitializeSessionEventFragment,
 } from "generated/graphql";
-import { paypalPaymentGatewayResponseDataSchema } from "@/modules/authorize-net/gateways/paypal-gateway";
+import { paypalPaymentGatewayInitializeSchema } from "@/modules/authorize-net/gateways/paypal-schema";
 import { errorUtils } from "@/error-utils";
 
-const paymentGatewaySchema = z.union([
-  acceptHostedPaymentGatewayDataSchema,
-  applePayPaymentGatewayResponseDataSchema,
-]);
-
-export type AuthorizePaymentGateway = z.infer<typeof paymentGatewaySchema>;
-
-const dataSchema = z.object({
-  acceptHosted: acceptHostedPaymentGatewayDataSchema.optional(),
+const responseDataSchema = z.object({
+  acceptHosted: acceptHostedPaymentGatewayInitializeSchema.response.optional(),
   applePay: applePayPaymentGatewayResponseDataSchema.optional(),
-  paypal: paypalPaymentGatewayResponseDataSchema.optional(),
+  paypal: paypalPaymentGatewayInitializeSchema.response.optional(),
 });
 
-export type PaymentGatewayInitializeSessionData = z.infer<typeof dataSchema>;
+export type PaymentGatewayInitializeSessionResponseData = z.infer<typeof responseDataSchema>;
+
+const errorSchema = z.unknown({});
+
+const paymentGatewayInitializeSessionSchema = z.object({
+  data: responseDataSchema.optional(),
+  error: errorSchema.optional(),
+});
+
+export type PaymentGatewayInitializeSessionResponse = z.infer<
+  typeof paymentGatewayInitializeSessionSchema
+>;
 
 export const config = {
   api: {
@@ -44,17 +48,6 @@ export const paymentGatewayInitializeSessionSyncWebhook =
     query: UntypedPaymentGatewayInitializeSessionDocument,
     webhookPath: "/api/webhooks/payment-gateway-initialize-session",
   });
-
-const errorSchema = z.unknown({});
-
-const paymentGatewayInitializeSessionSchema = z.object({
-  data: dataSchema.optional(),
-  error: errorSchema.optional(),
-});
-
-export type PaymentGatewayInitializeSessionResponse = z.infer<
-  typeof paymentGatewayInitializeSessionSchema
->;
 
 class WebhookResponseBuilder extends SynchronousWebhookResponseBuilder<PaymentGatewayInitializeSessionResponse> {}
 
@@ -84,6 +77,8 @@ export default paymentGatewayInitializeSessionSyncWebhook.createHandler(
     } catch (error) {
       const normalizedError = errorUtils.normalize(error);
       errorUtils.capture(normalizedError);
+      logger.error(normalizedError);
+
       return responseBuilder.ok({
         error: {
           message: normalizedError.message,

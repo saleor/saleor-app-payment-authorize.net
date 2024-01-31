@@ -25,6 +25,13 @@ export const baseAuthorizeObjectSchema = z.object({
 
 type BaseAuthorizeObjectResponse = z.infer<typeof baseAuthorizeObjectSchema>;
 
+export const additionalErrorSchema = z.object({
+  errorCode: z.string().min(1),
+  errorText: z.string().min(1),
+});
+
+type AdditionalError = z.infer<typeof additionalErrorSchema>;
+
 export class AuthorizeNetClient {
   merchantAuthenticationType: AuthorizeNet.APIContracts.MerchantAuthenticationType;
   logger = createLogger({
@@ -48,7 +55,7 @@ export class AuthorizeNetClient {
     return SDKConstants.endpoint[this.config.environment];
   }
 
-  private formatAuthorizeErrors(messages: ResponseMessages) {
+  private joinAuthorizeMessages(messages: ResponseMessages) {
     return messages.message
       .map(({ code, text }) => {
         return `${code}: ${text}`;
@@ -56,11 +63,20 @@ export class AuthorizeNetClient {
       .join(", ");
   }
 
-  resolveResponseErrors(response: BaseAuthorizeObjectResponse) {
+  resolveAndThrowResponseErrors(
+    response: BaseAuthorizeObjectResponse,
+    additionalErrors?: Array<AdditionalError>,
+  ) {
     if (response.messages.resultCode === "Error") {
-      const message = this.formatAuthorizeErrors(response.messages);
+      const generalErrorMessage = this.joinAuthorizeMessages(response.messages);
 
-      throw new AuthorizeNetError(message);
+      if (!additionalErrors) {
+        throw new AuthorizeNetError(generalErrorMessage);
+      }
+
+      const joinedAdditionalError = additionalErrors?.map((error) => error.errorText).join(", ");
+
+      throw new AuthorizeNetError(`${generalErrorMessage} ${joinedAdditionalError}`);
     }
   }
 }

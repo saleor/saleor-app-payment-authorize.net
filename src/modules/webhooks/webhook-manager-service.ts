@@ -68,9 +68,7 @@ export class AppWebhookManager implements PaymentsWebhooks {
   async transactionRefundRequested(
     payload: TransactionRefundRequestedEventFragment,
   ): Promise<TransactionRefundRequestedResponse> {
-    const service = new TransactionRefundRequestedService({
-      apiClient: this.apiClient,
-    });
+    const service = new TransactionRefundRequestedService();
 
     return service.execute(payload);
   }

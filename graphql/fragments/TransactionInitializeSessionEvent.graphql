@@ -5,21 +5,19 @@ fragment TransactionInitializeSessionEvent on TransactionInitializeSession {
   }
   data
   merchantReference
-  action {
-    amount
-    currency
-    actionType
-  }
+
   issuingPrincipal {
     ... on Node {
       id
     }
   }
+  action {
+    ...TransactionProcessAction
+  }
   transaction {
     ...Transaction
   }
   sourceObject {
-    __typename
     ...OrderOrCheckoutSourceObject
   }
 }

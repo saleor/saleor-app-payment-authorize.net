@@ -2,20 +2,24 @@ import { useMutation } from "@apollo/client";
 import gql from "graphql-tag";
 import React from "react";
 import {
+	CheckoutCompleteDocument,
 	CheckoutCompleteMutation,
 	CheckoutCompleteMutationVariables,
-	CheckoutCompleteDocument,
 } from "../../../generated/graphql";
-import { getCheckoutId } from "../cart";
+import { useGetCheckoutId } from "../../lib/checkoutIdUtils";
 
 const SuccessPage = () => {
-	const checkoutId = getCheckoutId();
+	const checkoutId = useGetCheckoutId();
 	const [isCompleted, setIsCompleted] = React.useState(false);
 	const [completeCheckout] = useMutation<CheckoutCompleteMutation, CheckoutCompleteMutationVariables>(
 		gql(CheckoutCompleteDocument.toString()),
 	);
 
 	const checkoutCompleteHandler = async () => {
+		if (!checkoutId) {
+			throw new Error("Checkout id not found");
+		}
+
 		const response = await completeCheckout({
 			variables: {
 				checkoutId,

@@ -9,7 +9,8 @@ import {
 import { authorizeNetAppId } from "./lib/common";
 
 import { AcceptHostedForm } from "./accept-hosted-form";
-import { getCheckoutId } from "./pages/cart";
+import { checkoutIdUtils } from "./lib/checkoutIdUtils";
+import { PayPalForm } from "./paypal-form";
 
 const acceptHostedPaymentGatewaySchema = z.object({});
 
@@ -30,8 +31,6 @@ export const PaymentMethods = () => {
 	const [isLoading, setIsLoading] = React.useState(false);
 	const [paymentMethods, setPaymentMethods] = React.useState<PaymentMethods>();
 
-	const checkoutId = getCheckoutId();
-
 	const [initializePaymentGateways] = useMutation<
 		PaymentGatewayInitializeMutation,
 		PaymentGatewayInitializeMutationVariables
@@ -39,6 +38,12 @@ export const PaymentMethods = () => {
 
 	const getPaymentGateways = React.useCallback(async () => {
 		setIsLoading(true);
+		const checkoutId = checkoutIdUtils.get();
+
+		if (!checkoutId) {
+			throw new Error("Checkout id not found");
+		}
+
 		const response = await initializePaymentGateways({
 			variables: {
 				appId: authorizeNetAppId,
@@ -64,7 +69,7 @@ export const PaymentMethods = () => {
 		}
 
 		setPaymentMethods(data);
-	}, [initializePaymentGateways, checkoutId]);
+	}, [initializePaymentGateways]);
 
 	React.useEffect(() => {
 		getPaymentGateways();
@@ -87,7 +92,7 @@ export const PaymentMethods = () => {
 				)}
 				{paymentMethods?.paypal !== undefined && (
 					<li>
-						<button>PayPal</button>
+						<PayPalForm />
 					</li>
 				)}
 			</ul>
