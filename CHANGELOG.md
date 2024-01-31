@@ -1,5 +1,11 @@
 # saleor-app-payment-template
 
+## 0.4.1
+
+### Patch Changes
+
+- a769ed1: Fixed the issue with unclear error trace. Now, the capture helper doesn't include logging.
+
 ## 0.4.0
 
 ### Minor Changes
