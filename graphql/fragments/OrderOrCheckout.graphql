@@ -52,6 +52,9 @@ fragment OrderOrCheckout on OrderOrCheckout {
         }
       }
     }
+    user {
+      ...UserWithEmail
+    }
   }
   ... on Order {
     number
@@ -106,6 +109,9 @@ fragment OrderOrCheckout on OrderOrCheckout {
           }
         }
       }
+    }
+    user {
+      ...UserWithEmail
     }
   }
 }

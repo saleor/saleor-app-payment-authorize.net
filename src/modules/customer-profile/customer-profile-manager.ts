@@ -1,4 +1,5 @@
 import { CustomerProfileClient } from "../authorize-net/client/customer-profile-client";
+import { type UserWithEmailFragment } from "generated/graphql";
 import { createLogger } from "@/lib/logger";
 
 export class CustomerProfileManager {
@@ -13,13 +14,13 @@ export class CustomerProfileManager {
 
   // todo: make sure the email logic is correct
   private async getCustomerProfileIdByEmail({
-    userEmail,
+    user,
   }: {
-    userEmail: string;
+    user: UserWithEmailFragment;
   }): Promise<string | undefined> {
     try {
       const response = await this.customerProfileClient.getCustomerProfileByEmail({
-        email: userEmail,
+        email: user.email,
       });
 
       this.logger.debug("Customer profile found in Authorize.net");
@@ -33,8 +34,8 @@ export class CustomerProfileManager {
   /**
    * @description Creates a new customer profile in Authorize.net.
    */
-  private async createCustomerProfile({ userEmail }: { userEmail: string }) {
-    const response = await this.customerProfileClient.createCustomerProfile({ userEmail });
+  private async createCustomerProfile({ user }: { user: UserWithEmailFragment }) {
+    const response = await this.customerProfileClient.createCustomerProfile({ user });
 
     return response.customerProfileId;
   }
@@ -42,13 +43,13 @@ export class CustomerProfileManager {
   /**
    * @description Returns the Authorize.net customerProfileId for the given userEmail. If the customerProfileId is not found, creates a new customer profile in Authorize.net.
    */
-  async getUserCustomerProfileId({ userEmail }: { userEmail: string }) {
-    const customerProfileId = await this.getCustomerProfileIdByEmail({ userEmail });
+  async getUserCustomerProfileId({ user }: { user: UserWithEmailFragment }) {
+    const customerProfileId = await this.getCustomerProfileIdByEmail({ user });
 
     if (customerProfileId) {
       return customerProfileId;
     }
 
-    return this.createCustomerProfile({ userEmail });
+    return this.createCustomerProfile({ user });
   }
 }
