@@ -1,6 +1,6 @@
 import { type GetTransactionDetailsResponse } from "./client/transaction-details-client";
 import { invariant } from "@/lib/invariant";
-import { type UserWithEmailFragment, type TransactionFragment } from "generated/graphql";
+import { type TransactionFragment } from "generated/graphql";
 
 /**
  * We need to pass the saleorTransactionId to Authorize.net transaction so that we can
@@ -35,18 +35,9 @@ export const base64WithoutPaddingConverter = {
 /**
  * @description authorize.net doesn't allow storing `=` but thankfully it's just a padding so we can strip it and readd when decoding
  */
-export const saleorIdConverter = {
+const saleorTransactionIdConverter = {
   fromSaleorTransaction(saleorTransaction: TransactionFragment) {
     return base64WithoutPaddingConverter.btoa(saleorTransaction.id);
-  },
-  fromAuthorizeNetTransaction(authorizeTransaction: GetTransactionDetailsResponse) {
-    const orderDescription = authorizeTransaction.transaction.order?.description;
-    invariant(orderDescription, "Missing order description in transaction");
-
-    return base64WithoutPaddingConverter.atob(orderDescription);
-  },
-  fromSaleorUser(user: UserWithEmailFragment) {
-    return base64WithoutPaddingConverter.btoa(user.id);
   },
   fromAuthorizeNetTransaction(authorizeTransaction: GetTransactionDetailsResponse) {
     const orderDescription = authorizeTransaction.transaction.order?.description;
@@ -61,6 +52,6 @@ function resolveAuthorizeTransactionIdFromTransaction(transaction: TransactionFr
 }
 
 export const transactionId = {
-  saleorTransactionIdConverter: saleorIdConverter,
-  resolveAuthorizeTransactionId: resolveAuthorizeTransactionIdFromTransaction,
+  saleorTransactionIdConverter,
+  resolveAuthorizeTransactionIdFromTransaction,
 };

@@ -51,8 +51,10 @@ export class TransactionCancelationRequestedService {
 
     invariant(payload.transaction, "Transaction is missing");
 
-    const authorizeTransactionId = transactionId.resolveAuthorizeTransactionId(payload.transaction);
-    const saleorTransactionId = transactionId.saleorTransactionIdConverter.fromSaleorId(
+    const authorizeTransactionId = transactionId.resolveAuthorizeTransactionIdFromTransaction(
+      payload.transaction,
+    );
+    const saleorTransactionId = transactionId.saleorTransactionIdConverter.fromSaleorTransaction(
       payload.transaction,
     );
 
