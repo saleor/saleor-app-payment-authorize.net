@@ -11,15 +11,39 @@ import { type TransactionFragment } from "generated/graphql";
  *
  * `transactionIdConverter` makes sure the format of the string is the same on both sides.
  */
-const saleorTransactionIdConverter = {
+
+export const base64WithoutPaddingConverter = {
+  btoa(str: string): string {
+    const base64 = btoa(str);
+    // authorize.net doesn't allow storing `=` but thankfully it's just a padding so we can strip it and readd when decoding
+    const base64WithoutPadding = base64.includes("=")
+      ? base64.slice(0, base64.indexOf("="))
+      : base64;
+    return base64WithoutPadding;
+  },
+  atob(str: string): string {
+    const modulo4 = str.length % 4;
+    const howManyPaddingChars = modulo4 ? 4 - modulo4 : 0;
+    invariant(
+      howManyPaddingChars !== 3,
+      `Padding is never 3 characters; something's wrong: ${str}`,
+    );
+    return atob(str + "=".repeat(howManyPaddingChars));
+  },
+};
+
+/**
+ * @description authorize.net doesn't allow storing `=` but thankfully it's just a padding so we can strip it and readd when decoding
+ */
+export const saleorIdConverter = {
   fromSaleorTransaction(saleorTransaction: TransactionFragment) {
-    return btoa(saleorTransaction.id); // we need to encode the string to base64, because Authorize.net can't parse the "=" character that is in the Saleor transaction ID
+    return base64WithoutPaddingConverter.btoa(saleorTransaction.id);
   },
   fromAuthorizeNetTransaction(authorizeTransaction: GetTransactionDetailsResponse) {
-    const orderDescription = authorizeTransaction.transaction.order?.description; // we need to decode it back to use the Saleor transaction ID
-
+    const orderDescription = authorizeTransaction.transaction.order?.description;
     invariant(orderDescription, "Missing order description in transaction");
-    return atob(orderDescription);
+
+    return base64WithoutPaddingConverter.atob(orderDescription);
   },
 };
 
@@ -28,6 +52,6 @@ function resolveAuthorizeTransactionIdFromTransaction(transaction: TransactionFr
 }
 
 export const transactionId = {
-  saleorTransactionIdConverter,
+  saleorTransactionIdConverter: saleorIdConverter,
   resolveAuthorizeTransactionId: resolveAuthorizeTransactionIdFromTransaction,
 };
