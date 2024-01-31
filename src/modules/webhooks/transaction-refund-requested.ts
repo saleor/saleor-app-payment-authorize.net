@@ -55,7 +55,7 @@ export class TransactionRefundRequestedService {
     invariant(payload.transaction, "Transaction is missing");
 
     const authorizeTransactionId = transactionId.resolveAuthorizeTransactionId(payload.transaction);
-    const saleorTransactionId = transactionId.saleorTransactionIdConverter.fromSaleorTransaction(
+    const saleorTransactionId = transactionId.saleorTransactionIdConverter.fromSaleorId(
       payload.transaction,
     );
 

@@ -36,7 +36,8 @@ export class CustomerProfileClient extends AuthorizeNetClient {
 
     const customerProfileType = new ApiContracts.CustomerProfileType();
     customerProfileType.setEmail(user.email);
-    customerProfileType.setDescription(user.id);
+    // @todo we should set `MerchantCustomerId` on customerProfile but unfortunately Saleor user IDs are longer than 20 characters
+    // and Authorize.net won't allow it
 
     createRequest.setProfile(customerProfileType);
 
@@ -67,10 +68,16 @@ export class CustomerProfileClient extends AuthorizeNetClient {
     });
   }
 
-  getCustomerProfileByEmail({ email }: { email: string }): Promise<GetCustomerProfileResponse> {
+  getCustomerProfileByUser({
+    user,
+  }: {
+    user: UserWithEmailFragment;
+  }): Promise<GetCustomerProfileResponse> {
     const createRequest = new ApiContracts.GetCustomerProfileRequest();
     createRequest.setMerchantAuthentication(this.merchantAuthenticationType);
-    createRequest.setEmail(email);
+    createRequest.setEmail(user.email);
+    // @todo we should get customer profile by `MerchantCustomerId` but unfortunately Saleor user IDs are longer than 20 characters
+    // and Authorize.net won't allow it
 
     const customerProfileController = new ApiControllers.GetCustomerProfileController(
       createRequest.getJSON(),
@@ -90,9 +97,9 @@ export class CustomerProfileClient extends AuthorizeNetClient {
           resolve(parsedResponse);
         } catch (error) {
           if (error instanceof z.ZodError) {
-            reject(error.format());
+            return reject(error.format());
           }
-          reject(error);
+          return reject(error);
         }
       });
     });

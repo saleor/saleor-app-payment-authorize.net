@@ -12,16 +12,13 @@ export class CustomerProfileManager {
     this.customerProfileClient = new CustomerProfileClient();
   }
 
-  // todo: make sure the email logic is correct
-  private async getCustomerProfileIdByEmail({
+  private async getCustomerProfileIdByUser({
     user,
   }: {
     user: UserWithEmailFragment;
   }): Promise<string | undefined> {
     try {
-      const response = await this.customerProfileClient.getCustomerProfileByEmail({
-        email: user.email,
-      });
+      const response = await this.customerProfileClient.getCustomerProfileByUser({ user });
 
       this.logger.debug("Customer profile found in Authorize.net");
       return response.profile.customerProfileId;
@@ -44,7 +41,7 @@ export class CustomerProfileManager {
    * @description Returns the Authorize.net customerProfileId for the given userEmail. If the customerProfileId is not found, creates a new customer profile in Authorize.net.
    */
   async getUserCustomerProfileId({ user }: { user: UserWithEmailFragment }) {
-    const customerProfileId = await this.getCustomerProfileIdByEmail({ user });
+    const customerProfileId = await this.getCustomerProfileIdByUser({ user });
 
     if (customerProfileId) {
       return customerProfileId;
