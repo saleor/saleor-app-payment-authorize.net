@@ -85,14 +85,16 @@ export const authorizeTransaction = {
   ): AuthorizeNet.APIContracts.ArrayOfLineItem {
     const lineItems = fragment.lines.map((line) => {
       const lineItem = new ApiContracts.LineItemType();
+      // todo: refactoring idea: create our own type-safe factories of AuthorizeNet types that respect the db field requirements, e.g. max length
       lineItem.setItemId(line.id.slice(0, 31)); // Authorize.net only allows 31 characters for this field.
 
       if (line.__typename === "CheckoutLine") {
-        lineItem.setName(line.checkoutVariant.product.name);
+        lineItem.setName(line.checkoutVariant.product.name.slice(0, 31)); // Authorize.net only allows 31 characters for this field.
       }
 
       if (line.__typename === "OrderLine") {
-        lineItem.setName(line.orderVariant?.product.name);
+        invariant(line.orderVariant, "Order variant is missing from order line.");
+        lineItem.setName(line.orderVariant.product.name.slice(0, 31)); // Authorize.net only allows 31 characters for this field.
       }
 
       lineItem.setQuantity(line.quantity);
