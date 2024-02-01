@@ -53,6 +53,9 @@ export class TransactionEventReporter {
       .toPromise();
 
     if (mutationError) {
+      this.logger.warn(
+        "The app was unable to map the Authorize.net webhook to a Saleor transaction. If the transaction wasn't created by the app and is meant to be synchronized, please make sure it follows the requirements described in the README.",
+      );
       throw new TransactionEventReportMutationError(
         "Error while mapping the transaction in the authorize webhook handler.",
         { cause: mutationError.message },
