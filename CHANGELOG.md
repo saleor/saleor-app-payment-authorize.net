@@ -1,5 +1,15 @@
 # saleor-app-payment-template
 
+## 0.4.2
+
+### Patch Changes
+
+- 8e65ded: Make sure user is logged in when fetching their customer profile from Authorize.net
+- 4b26f36: Fixed the bug with Authorize.net returning errors when the line item name is longer than the db field restrictions. The app will now slice the name.
+- 02b7b58: Fixed the bug with the app not throwing an error when neither `VERCEL_URL` nor `APP_API_BASE_URL` was provided.
+- 02b7b58: The app will now show a warn log that provides more context about possible reasons for the `TransactionEventReportMutationError`. It should help debug the root cause of the error.
+- 0f36810: Remove = char from serialization of IDs
+
 ## 0.4.1
 
 ### Patch Changes
