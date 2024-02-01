@@ -3,15 +3,15 @@ import { type AuthData } from "@saleor/app-sdk/APL";
 import { buffer } from "micro";
 import { type NextApiRequest } from "next";
 import { z } from "zod";
-import { getAuthorizeConfig, type AuthorizeConfig } from "../authorize-net-config";
+import { getAuthorizeConfig } from "../authorize-net-config";
 import { AuthorizeNetInvalidWebhookSignatureError } from "../authorize-net-error";
 import { authorizeNetEventSchema } from "./authorize-net-webhook-client";
 import { MissingAuthDataError } from "./authorize-net-webhook-errors";
 import { TransactionEventReporter } from "./transaction-event-reporter";
 import { saleorApp } from "@/saleor-app";
+import { unpackThrowable } from "@/lib/utils";
 import { createLogger } from "@/lib/logger";
 import { createServerClient } from "@/lib/create-graphq-client";
-import { unpackThrowable } from "@/lib/utils";
 
 const eventPayloadSchema = z.object({
   notificationId: z.string(),
@@ -32,7 +32,6 @@ export type EventPayload = z.infer<typeof eventPayloadSchema>;
 export class AuthorizeNetWebhookHandler {
   private readonly authorizeSignature = "x-anet-signature";
   private authData: AuthData | null = null;
-  private authorizeConfig: AuthorizeConfig | null = null;
 
   private logger = createLogger({
     name: "AuthorizeWebhookHandler",
