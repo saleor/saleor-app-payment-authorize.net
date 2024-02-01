@@ -35,7 +35,7 @@ export const base64WithoutPaddingConverter = {
 /**
  * @description authorize.net doesn't allow storing `=` but thankfully it's just a padding so we can strip it and readd when decoding
  */
-export const saleorIdConverter = {
+const saleorTransactionIdConverter = {
   fromSaleorTransaction(saleorTransaction: TransactionFragment) {
     return base64WithoutPaddingConverter.btoa(saleorTransaction.id);
   },
@@ -52,6 +52,6 @@ function resolveAuthorizeTransactionIdFromTransaction(transaction: TransactionFr
 }
 
 export const transactionId = {
-  saleorTransactionIdConverter: saleorIdConverter,
-  resolveAuthorizeTransactionId: resolveAuthorizeTransactionIdFromTransaction,
+  saleorTransactionIdConverter,
+  resolveAuthorizeTransactionIdFromTransaction,
 };

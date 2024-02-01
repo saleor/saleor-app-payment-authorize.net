@@ -68,10 +68,10 @@ export class AcceptHostedGateway implements PaymentGateway {
     const transactionRequest =
       authorizeTransaction.buildTransactionFromTransactionInitializePayload(payload);
 
-    const userEmail = payload.sourceObject.userEmail;
+    const user = payload.sourceObject.user;
 
-    if (!userEmail) {
-      this.logger.trace("No user email found in payload, skipping customerProfileId lookup.");
+    if (!user) {
+      this.logger.trace("No user found in payload, skipping customerProfileId lookup.");
 
       return transactionRequest;
     }
@@ -99,9 +99,7 @@ export class AcceptHostedGateway implements PaymentGateway {
 
     this.logger.trace("Looking up customerProfileId.");
 
-    const customerProfileId = await this.customerProfileManager.getUserCustomerProfileId({
-      userEmail,
-    });
+    const customerProfileId = await this.customerProfileManager.getUserCustomerProfileId({ user });
 
     if (customerProfileId) {
       this.logger.trace("Found customerProfileId, adding to transaction request.");
