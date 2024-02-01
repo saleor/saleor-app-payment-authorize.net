@@ -26,10 +26,14 @@ export class AuthorizeWebhookManager {
   }
 
   private getWebhookParams() {
-    const appUrl = isDevelopment() ? env.APP_API_BASE_URL : `https://${env.VERCEL_URL}`; // todo: get rid of it
+    const vercelUrl = env.VERCEL_URL ? `https://${env.VERCEL_URL}` : undefined;
+
+    const appUrl = isDevelopment() ? env.APP_API_BASE_URL : vercelUrl;
 
     if (!appUrl) {
-      throw new MissingAppUrlError("Missing appUrl needed for registering the webhook");
+      throw new MissingAppUrlError(
+        "Missing appUrl needed for registering the webhook. Either APP_API_BASE_URL or VERCEL_URL environment variable is required.",
+      );
     }
 
     const url = new URL("/api/webhooks/authorize", appUrl);
