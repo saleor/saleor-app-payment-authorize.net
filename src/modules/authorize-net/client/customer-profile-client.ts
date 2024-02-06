@@ -28,6 +28,10 @@ const AuthorizeCreateCustomerProfileResponseError = AuthorizeNetError.subclass(
   "AuthorizeCreateCustomerProfileResponseError",
 );
 
+const AuthorizeGetCustomerProfileResponseError = AuthorizeNetError.subclass(
+  "AuthorizeGetCustomerProfileResponseError",
+);
+
 type GetCustomerProfileResponse = z.infer<typeof getCustomerProfileSchema>;
 
 export class CustomerProfileClient extends AuthorizeNetClient {
@@ -106,8 +110,18 @@ export class CustomerProfileClient extends AuthorizeNetClient {
         try {
           const apiResponse: unknown = customerProfileController.getResponse();
           const response = new ApiContracts.GetCustomerProfileResponse(apiResponse);
-          const parsedResponse = getCustomerProfileSchema.parse(response);
+          const parseResult = getCustomerProfileSchema.safeParse(response);
 
+          if (!parseResult.success) {
+            const cause = errorUtils.formatZodErrorToCause(parseResult.error);
+
+            throw new AuthorizeGetCustomerProfileResponseError(
+              "The response from Authorize.net GetCustomerProfileResponse did not match the expected schema",
+              { cause },
+            );
+          }
+
+          const parsedResponse = parseResult.data;
           this.resolveResponseErrors(parsedResponse);
 
           resolve(parsedResponse);
