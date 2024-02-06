@@ -1,7 +1,9 @@
 import AuthorizeNet from "authorizenet";
 import { z } from "zod";
+import { AuthorizeNetError } from "../authorize-net-error";
 import { AuthorizeNetClient, baseAuthorizeObjectSchema } from "./authorize-net-client";
 import { type UserWithEmailFragment } from "generated/graphql";
+import { errorUtils } from "@/error-utils";
 
 const ApiContracts = AuthorizeNet.APIContracts;
 const ApiControllers = AuthorizeNet.APIControllers;
@@ -20,6 +22,10 @@ const getCustomerProfileSchema = baseAuthorizeObjectSchema.and(
       customerProfileId: z.string().min(1),
     }),
   }),
+);
+
+const AuthorizeCreateCustomerProfileResponseError = AuthorizeNetError.subclass(
+  "AuthorizeCreateCustomerProfileResponseError",
 );
 
 type GetCustomerProfileResponse = z.infer<typeof getCustomerProfileSchema>;
@@ -53,8 +59,18 @@ export class CustomerProfileClient extends AuthorizeNetClient {
           const apiResponse: unknown = customerProfileController.getResponse();
           const response = new ApiContracts.CreateCustomerProfileResponse(apiResponse);
           this.logger.trace({ response }, "createCustomerProfile response");
-          const parsedResponse = createCustomerProfileSchema.parse(response);
+          const parseResult = createCustomerProfileSchema.safeParse(response);
 
+          if (!parseResult.success) {
+            const cause = errorUtils.formatZodErrorToCause(parseResult.error);
+
+            throw new AuthorizeCreateCustomerProfileResponseError(
+              "The response from Authorize.net CreateCustomerProfileResponse did not match the expected schema",
+              { cause },
+            );
+          }
+
+          const parsedResponse = parseResult.data;
           this.resolveResponseErrors(parsedResponse);
 
           resolve(parsedResponse);
