@@ -1,6 +1,6 @@
 import AuthorizeNet from "authorizenet";
 import { z } from "zod";
-import { AuthorizeNetError } from "../authorize-net-error";
+import { AuthorizeNetResponseValidationError } from "../authorize-net-error";
 import { AuthorizeNetClient, baseAuthorizeObjectSchema } from "./authorize-net-client";
 import { type UserWithEmailFragment } from "generated/graphql";
 import { errorUtils } from "@/error-utils";
@@ -24,11 +24,11 @@ const getCustomerProfileSchema = baseAuthorizeObjectSchema.and(
   }),
 );
 
-const AuthorizeCreateCustomerProfileResponseError = AuthorizeNetError.subclass(
+const AuthorizeCreateCustomerProfileResponseError = AuthorizeNetResponseValidationError.subclass(
   "AuthorizeCreateCustomerProfileResponseError",
 );
 
-const AuthorizeGetCustomerProfileResponseError = AuthorizeNetError.subclass(
+const AuthorizeGetCustomerProfileResponseError = AuthorizeNetResponseValidationError.subclass(
   "AuthorizeGetCustomerProfileResponseError",
 );
 

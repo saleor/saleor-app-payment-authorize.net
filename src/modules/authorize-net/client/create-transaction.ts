@@ -1,7 +1,7 @@
 import AuthorizeNet from "authorizenet";
 
 import { z } from "zod";
-import { AuthorizeNetError } from "../authorize-net-error";
+import { AuthorizeNetResponseValidationError } from "../authorize-net-error";
 import { AuthorizeNetClient, baseAuthorizeObjectSchema } from "./authorize-net-client";
 import { errorUtils } from "@/error-utils";
 
@@ -16,7 +16,7 @@ const createTransactionSchema = baseAuthorizeObjectSchema.and(
   }),
 );
 
-const AuthorizeCreateTransactionResponseError = AuthorizeNetError.subclass(
+const AuthorizeCreateTransactionResponseError = AuthorizeNetResponseValidationError.subclass(
   "AuthorizeCreateTransactionResponseError",
 );
 
