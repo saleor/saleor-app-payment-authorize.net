@@ -18,15 +18,14 @@ import {
   type TransactionInitializeSessionEventFragment,
 } from "generated/graphql";
 
-import { BaseError } from "@/errors";
+import { errorUtils } from "@/error-utils";
+import { IncorrectWebhookResponseDataError } from "@/errors";
 import { env } from "@/lib/env.mjs";
 import { createLogger } from "@/lib/logger";
 import { type PaymentGateway } from "@/modules/webhooks/payment-gateway-initialize-session";
 import { type TransactionInitializeSessionResponse } from "@/schemas/TransactionInitializeSession/TransactionInitializeSessionResponse.mjs";
 
 const ApiContracts = AuthorizeNet.APIContracts;
-
-const AcceptHostedPaymentGatewayError = BaseError.subclass("AcceptHostedPaymentGatewayError");
 
 export const acceptHostedPaymentGatewayDataSchema = z.object({});
 
@@ -48,6 +47,13 @@ const acceptHostedTransactionInitializeResponseDataSchema = z.object({
 type AcceptHostedTransactionInitializeResponseData = z.infer<
   typeof acceptHostedTransactionInitializeResponseDataSchema
 >;
+
+const AcceptHostedPaymentGatewayResponseDataError = IncorrectWebhookResponseDataError.subclass(
+  "AcceptHostedPaymentGatewayResponseDataError",
+);
+
+const AcceptHostedTransactionInitializePayloadDataError =
+  IncorrectWebhookResponseDataError.subclass("AcceptHostedTransactionInitializePayloadDataError");
 
 export class AcceptHostedGateway implements PaymentGateway {
   private authorizeConfig: AuthorizeConfig;
@@ -81,10 +87,13 @@ export class AcceptHostedGateway implements PaymentGateway {
     );
 
     if (!dataParseResult.success) {
-      this.logger.error({ error: dataParseResult.error.format() });
-      throw new AcceptHostedPaymentGatewayError("`data` object has unexpected structure.", {
-        cause: dataParseResult.error,
-      });
+      const cause = errorUtils.formatZodErrorToCause(dataParseResult.error);
+      throw new AcceptHostedTransactionInitializePayloadDataError(
+        "`data` object in the TransactionInitializeSession payload has an unexpected structure.",
+        {
+          cause,
+        },
+      );
     }
 
     const {
@@ -124,9 +133,12 @@ export class AcceptHostedGateway implements PaymentGateway {
 
     if (!dataParseResult.success) {
       this.logger.error({ error: dataParseResult.error.format() });
-      throw new AcceptHostedPaymentGatewayError("`data` object has unexpected structure.", {
-        cause: dataParseResult.error,
-      });
+      throw new AcceptHostedPaymentGatewayResponseDataError(
+        "`data` object has unexpected structure.",
+        {
+          cause: dataParseResult.error,
+        },
+      );
     }
 
     return dataParseResult.data;

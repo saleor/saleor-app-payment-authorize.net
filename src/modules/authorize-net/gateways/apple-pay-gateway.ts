@@ -1,8 +1,11 @@
 import AuthorizeNet from "authorizenet";
 import { z } from "zod";
-import { CreateTransactionClient } from "../client/create-transaction";
 import { authorizeTransaction } from "../authorize-transaction-builder";
+import { CreateTransactionClient } from "../client/create-transaction";
 import { gatewayUtils } from "./gateway-utils";
+import { errorUtils } from "@/error-utils";
+import { IncorrectWebhookPayloadDataError } from "@/errors";
+import { createLogger } from "@/lib/logger";
 import { type PaymentGateway } from "@/modules/webhooks/payment-gateway-initialize-session";
 import { type TransactionInitializeSessionResponse } from "@/schemas/TransactionInitializeSession/TransactionInitializeSessionResponse.mjs";
 import {
@@ -25,7 +28,16 @@ export const applePayTransactionInitializeDataSchema = gatewayUtils.createGatewa
   }),
 );
 
+const AuthorizeApplePayTransactionInitializePayloadDataError =
+  IncorrectWebhookPayloadDataError.subclass(
+    "AuthorizeApplePayTransactionInitializePayloadDataError",
+  );
+
 export class ApplePayGateway implements PaymentGateway {
+  logger = createLogger({
+    name: "ApplePayGateway",
+  });
+
   async initializePaymentGateway(
     _payload: PaymentGatewayInitializeSessionEventFragment,
   ): Promise<ApplePayPaymentGatewayData> {
@@ -43,9 +55,21 @@ export class ApplePayGateway implements PaymentGateway {
     //https://developer.authorize.net/api/reference/index.html#mobile-in-app-transactions-create-an-apple-pay-transaction
     const opaqueData = new ApiContracts.OpaqueDataType();
 
+    const parseResult = applePayTransactionInitializeDataSchema.safeParse(payload.data);
+
+    if (!parseResult.success) {
+      const cause = errorUtils.formatZodErrorToCause(parseResult.error);
+      throw new AuthorizeApplePayTransactionInitializePayloadDataError(
+        "The ApplePay gateway requires different shape of the `data` field in the TransactionInitializeSession webhook payload",
+        {
+          cause,
+        },
+      );
+    }
+
     const {
       data: { dataDescriptor, dataValue },
-    } = applePayTransactionInitializeDataSchema.parse(payload.data);
+    } = parseResult.data;
 
     opaqueData.setDataDescriptor(dataDescriptor);
     opaqueData.setDataValue(dataValue);

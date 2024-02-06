@@ -14,7 +14,8 @@ import {
 import { type TransactionInitializeSessionEventFragment } from "generated/graphql";
 
 import { type TransactionInitializeSessionResponse } from "@/schemas/TransactionInitializeSession/TransactionInitializeSessionResponse.mjs";
-import { BaseError } from "@/errors";
+import { BaseError, IncorrectWebhookPayloadDataError } from "@/errors";
+import { errorUtils } from "@/error-utils";
 
 const TransactionProcessUnsupportedPaymentMethodError = BaseError.subclass(
   "TransactionProcessUnsupportedPaymentMethodError",
@@ -38,11 +39,27 @@ const transactionInitializeDataSchema = z.union([
   paypalTransactionInitializeRequestDataSchema,
 ]);
 
+const TransactionInitializePayloadDataError = IncorrectWebhookPayloadDataError.subclass(
+  "TransactionInitializePayloadDataError",
+);
+
 export class TransactionInitializeSessionService {
   execute(
     payload: TransactionInitializeSessionEventFragment,
   ): Promise<TransactionInitializeSessionResponse> {
-    const paymentMethod = transactionInitializeDataSchema.parse(payload.data);
+    const parseResult = transactionInitializeDataSchema.safeParse(payload.data);
+
+    if (!parseResult.success) {
+      const cause = errorUtils.formatZodErrorToCause(parseResult.error);
+      throw new TransactionInitializePayloadDataError(
+        "The `data` field in the TransactionInitializeSession webhook payload is invalid",
+        {
+          cause,
+        },
+      );
+    }
+
+    const paymentMethod = parseResult.data;
 
     switch (paymentMethod.type) {
       case "acceptHosted": {

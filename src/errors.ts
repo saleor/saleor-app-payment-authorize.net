@@ -15,6 +15,10 @@ export const BaseError = ModernError.subclass("BaseError", {
 });
 export const UnknownError = BaseError.subclass("UnknownError");
 
+export const IncorrectWebhookPayloadDataError = BaseError.subclass("IncorrectPayloadError");
+
+export const IncorrectWebhookResponseDataError = BaseError.subclass("IncorrectResponseError");
+
 // TRPC Errors
 interface TrpcErrorOptions {
   /** HTTP response code returned by TRPC */
