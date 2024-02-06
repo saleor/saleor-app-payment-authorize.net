@@ -1,5 +1,4 @@
 import { type Client } from "urql";
-import { AuthorizeNetError } from "../authorize-net-error";
 import { TransactionDetailsClient } from "../client/transaction-details-client";
 import { transactionId } from "../transaction-id-utils";
 import { type AuthorizeNetEvent } from "./authorize-net-webhook-client";
@@ -11,12 +10,13 @@ import {
   type TransactionEventReportMutationVariables,
 } from "generated/graphql";
 import { createLogger } from "@/lib/logger";
+import { BaseError } from "@/errors";
 
-const TransactionEventReportMutationError = AuthorizeNetError.subclass(
+const TransactionEventReportMutationError = BaseError.subclass(
   "TransactionEventReportMutationError",
 );
 
-const TransactionEventReportUnsupportedTypeError = AuthorizeNetError.subclass(
+const TransactionEventReportUnsupportedTypeError = BaseError.subclass(
   "TransactionEventReportUnsupportedTypeError",
 );
 
