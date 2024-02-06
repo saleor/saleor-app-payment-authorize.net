@@ -3,7 +3,6 @@ import { z } from "zod";
 import { AuthorizeNetResponseValidationError } from "../authorize-net-error";
 import { AuthorizeNetClient, baseAuthorizeObjectSchema } from "./authorize-net-client";
 import { type UserWithEmailFragment } from "generated/graphql";
-import { errorUtils } from "@/error-utils";
 
 const ApiContracts = AuthorizeNet.APIContracts;
 const ApiControllers = AuthorizeNet.APIControllers;
@@ -66,11 +65,11 @@ export class CustomerProfileClient extends AuthorizeNetClient {
           const parseResult = createCustomerProfileSchema.safeParse(response);
 
           if (!parseResult.success) {
-            const cause = errorUtils.formatZodErrorToCause(parseResult.error);
-
             throw new AuthorizeCreateCustomerProfileResponseError(
               "The response from Authorize.net CreateCustomerProfileResponse did not match the expected schema",
-              { cause },
+              {
+                errors: parseResult.error.errors,
+              },
             );
           }
 
@@ -113,11 +112,11 @@ export class CustomerProfileClient extends AuthorizeNetClient {
           const parseResult = getCustomerProfileSchema.safeParse(response);
 
           if (!parseResult.success) {
-            const cause = errorUtils.formatZodErrorToCause(parseResult.error);
-
             throw new AuthorizeGetCustomerProfileResponseError(
               "The response from Authorize.net GetCustomerProfileResponse did not match the expected schema",
-              { cause },
+              {
+                errors: parseResult.error.errors,
+              },
             );
           }
 

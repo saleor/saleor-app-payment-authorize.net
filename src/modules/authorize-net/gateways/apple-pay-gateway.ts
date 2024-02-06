@@ -3,7 +3,6 @@ import { z } from "zod";
 import { authorizeTransaction } from "../authorize-transaction-builder";
 import { CreateTransactionClient } from "../client/create-transaction";
 import { gatewayUtils } from "./gateway-utils";
-import { errorUtils } from "@/error-utils";
 import { IncorrectWebhookPayloadDataError } from "@/errors";
 import { createLogger } from "@/lib/logger";
 import { type PaymentGateway } from "@/modules/webhooks/payment-gateway-initialize-session";
@@ -58,11 +57,10 @@ export class ApplePayGateway implements PaymentGateway {
     const parseResult = applePayTransactionInitializeDataSchema.safeParse(payload.data);
 
     if (!parseResult.success) {
-      const cause = errorUtils.formatZodErrorToCause(parseResult.error);
       throw new AuthorizeApplePayTransactionInitializePayloadDataError(
         "The ApplePay gateway requires different shape of the `data` field in the TransactionInitializeSession webhook payload",
         {
-          cause,
+          errors: parseResult.error.errors,
         },
       );
     }

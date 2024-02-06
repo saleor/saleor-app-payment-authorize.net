@@ -3,7 +3,6 @@ import AuthorizeNet from "authorizenet";
 import { z } from "zod";
 import { AuthorizeNetResponseValidationError } from "../authorize-net-error";
 import { AuthorizeNetClient, baseAuthorizeObjectSchema } from "./authorize-net-client";
-import { errorUtils } from "@/error-utils";
 
 const ApiContracts = AuthorizeNet.APIContracts;
 const ApiControllers = AuthorizeNet.APIControllers;
@@ -48,11 +47,11 @@ export class CreateTransactionClient extends AuthorizeNetClient {
           const parseResult = createTransactionSchema.safeParse(response);
 
           if (!parseResult.success) {
-            const cause = errorUtils.formatZodErrorToCause(parseResult.error);
-
             throw new AuthorizeCreateTransactionResponseError(
               "The response from Authorize.net CreateTransaction did not match the expected schema",
-              { cause },
+              {
+                errors: parseResult.error.errors,
+              },
             );
           }
 

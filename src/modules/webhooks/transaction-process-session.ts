@@ -4,7 +4,6 @@ import { BaseError, IncorrectWebhookPayloadDataError } from "@/errors";
 import { createLogger } from "@/lib/logger";
 import { type TransactionProcessSessionResponse } from "@/schemas/TransactionProcessSession/TransactionProcessSessionResponse.mjs";
 import { type TransactionProcessSessionEventFragment } from "generated/graphql";
-import { errorUtils } from "@/error-utils";
 
 export const TransactionProcessError = BaseError.subclass("TransactionProcessError");
 
@@ -26,11 +25,10 @@ export class TransactionProcessSessionService {
     const parseResult = acceptHostedTransactionProcessRequestDataSchema.safeParse(payload.data);
 
     if (!parseResult.success) {
-      const cause = errorUtils.formatZodErrorToCause(parseResult.error);
       throw new TransactionProcessPayloadDataError(
         "The `data` field in the TransactionProcessSession webhook payload is invalid",
         {
-          cause,
+          errors: parseResult.error.errors,
         },
       );
     }

@@ -18,7 +18,6 @@ import {
   type TransactionInitializeSessionEventFragment,
 } from "generated/graphql";
 
-import { errorUtils } from "@/error-utils";
 import { IncorrectWebhookResponseDataError } from "@/errors";
 import { env } from "@/lib/env.mjs";
 import { createLogger } from "@/lib/logger";
@@ -82,23 +81,20 @@ export class AcceptHostedGateway implements PaymentGateway {
       return transactionRequest;
     }
 
-    const dataParseResult = acceptHostedTransactionInitializeRequestDataSchema.safeParse(
-      payload.data,
-    );
+    const parseResult = acceptHostedTransactionInitializeRequestDataSchema.safeParse(payload.data);
 
-    if (!dataParseResult.success) {
-      const cause = errorUtils.formatZodErrorToCause(dataParseResult.error);
+    if (!parseResult.success) {
       throw new AcceptHostedTransactionInitializePayloadDataError(
         "`data` object in the TransactionInitializeSession payload has an unexpected structure.",
         {
-          cause,
+          errors: parseResult.error.errors,
         },
       );
     }
 
     const {
       data: { shouldCreateCustomerProfile },
-    } = dataParseResult.data;
+    } = parseResult.data;
 
     if (!shouldCreateCustomerProfile) {
       this.logger.trace("Skipping customerProfileId lookup.");

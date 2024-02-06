@@ -1,5 +1,4 @@
 import * as Sentry from "@sentry/nextjs";
-import { type z } from "zod";
 import { BaseError } from "./errors";
 
 function normalizeError(error: unknown) {
@@ -18,13 +17,8 @@ function buildErrorResponse(error: Error) {
   };
 }
 
-function formatZodErrorToCause(error: z.ZodError): string {
-  return error.errors.map((e) => e.message).join(", ");
-}
-
 export const errorUtils = {
   capture: captureError,
   buildResponse: buildErrorResponse,
   normalize: normalizeError,
-  formatZodErrorToCause,
 };

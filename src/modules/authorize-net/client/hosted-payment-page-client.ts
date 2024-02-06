@@ -3,7 +3,6 @@ import AuthorizeNet from "authorizenet";
 import { z } from "zod";
 import { AuthorizeNetResponseValidationError } from "../authorize-net-error";
 import { AuthorizeNetClient, baseAuthorizeObjectSchema } from "./authorize-net-client";
-import { errorUtils } from "@/error-utils";
 
 const ApiContracts = AuthorizeNet.APIContracts;
 const ApiControllers = AuthorizeNet.APIControllers;
@@ -56,11 +55,11 @@ export class HostedPaymentPageClient extends AuthorizeNetClient {
           const parseResult = getHostedPaymentPageResponseSchema.safeParse(response);
 
           if (!parseResult.success) {
-            const cause = errorUtils.formatZodErrorToCause(parseResult.error);
-
             throw new AuthorizeGetHostedPaymentPageResponseError(
               "The response from Authorize.net getHostedPaymentPageRequest did not match the expected schema",
-              { cause },
+              {
+                errors: parseResult.error.errors,
+              },
             );
           }
 

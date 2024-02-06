@@ -13,9 +13,8 @@ import {
 } from "../authorize-net/gateways/paypal-gateway";
 import { type TransactionInitializeSessionEventFragment } from "generated/graphql";
 
-import { type TransactionInitializeSessionResponse } from "@/schemas/TransactionInitializeSession/TransactionInitializeSessionResponse.mjs";
 import { BaseError, IncorrectWebhookPayloadDataError } from "@/errors";
-import { errorUtils } from "@/error-utils";
+import { type TransactionInitializeSessionResponse } from "@/schemas/TransactionInitializeSession/TransactionInitializeSessionResponse.mjs";
 
 const TransactionProcessUnsupportedPaymentMethodError = BaseError.subclass(
   "TransactionProcessUnsupportedPaymentMethodError",
@@ -50,11 +49,10 @@ export class TransactionInitializeSessionService {
     const parseResult = transactionInitializeDataSchema.safeParse(payload.data);
 
     if (!parseResult.success) {
-      const cause = errorUtils.formatZodErrorToCause(parseResult.error);
       throw new TransactionInitializePayloadDataError(
         "The `data` field in the TransactionInitializeSession webhook payload is invalid",
         {
-          cause,
+          errors: parseResult.error.errors,
         },
       );
     }
