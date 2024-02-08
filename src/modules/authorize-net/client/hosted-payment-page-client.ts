@@ -1,6 +1,7 @@
 import AuthorizeNet from "authorizenet";
 
 import { z } from "zod";
+import { AuthorizeNetResponseValidationError } from "../authorize-net-error";
 import { AuthorizeNetClient, baseAuthorizeObjectSchema } from "./authorize-net-client";
 
 const ApiContracts = AuthorizeNet.APIContracts;
@@ -13,6 +14,10 @@ const getHostedPaymentPageResponseSchema = baseAuthorizeObjectSchema.and(
 );
 
 export type GetHostedPaymentPageResponse = z.infer<typeof getHostedPaymentPageResponseSchema>;
+
+const AuthorizeGetHostedPaymentPageResponseError = AuthorizeNetResponseValidationError.subclass(
+  "AuthorizeGetHostedPaymentPageResponseError",
+);
 
 export class HostedPaymentPageClient extends AuthorizeNetClient {
   async getHostedPaymentPageRequest({
@@ -47,8 +52,18 @@ export class HostedPaymentPageClient extends AuthorizeNetClient {
           const response = new ApiContracts.GetHostedPaymentPageResponse(apiResponse);
 
           this.logger.trace({ response }, "getHostedPaymentPageRequest response");
-          const parsedResponse = getHostedPaymentPageResponseSchema.parse(response);
+          const parseResult = getHostedPaymentPageResponseSchema.safeParse(response);
 
+          if (!parseResult.success) {
+            throw new AuthorizeGetHostedPaymentPageResponseError(
+              "The response from Authorize.net getHostedPaymentPageRequest did not match the expected schema",
+              {
+                errors: parseResult.error.errors,
+              },
+            );
+          }
+
+          const parsedResponse = parseResult.data;
           this.resolveResponseErrors(parsedResponse);
 
           this.logger.debug("Returning response from getHostedPaymentPageRequest");

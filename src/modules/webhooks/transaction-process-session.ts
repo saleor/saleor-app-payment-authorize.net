@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { TransactionDetailsClient } from "../authorize-net/client/transaction-details-client";
-import { BaseError } from "@/errors";
+import { BaseError, IncorrectWebhookPayloadDataError } from "@/errors";
 import { createLogger } from "@/lib/logger";
 import { type TransactionProcessSessionResponse } from "@/schemas/TransactionProcessSession/TransactionProcessSessionResponse.mjs";
 import { type TransactionProcessSessionEventFragment } from "generated/graphql";
@@ -11,6 +11,10 @@ const acceptHostedTransactionProcessRequestDataSchema = z.object({
   authorizeTransactionId: z.string().min(1),
 });
 
+const TransactionProcessPayloadDataError = IncorrectWebhookPayloadDataError.subclass(
+  "TransactionProcessPayloadDataError",
+);
+
 export class TransactionProcessSessionService {
   private logger = createLogger({
     name: "TransactionProcessSessionService",
@@ -18,9 +22,18 @@ export class TransactionProcessSessionService {
 
   private getTransactionDetails(payload: TransactionProcessSessionEventFragment) {
     const client = new TransactionDetailsClient();
-    const { authorizeTransactionId } = acceptHostedTransactionProcessRequestDataSchema.parse(
-      payload.data,
-    );
+    const parseResult = acceptHostedTransactionProcessRequestDataSchema.safeParse(payload.data);
+
+    if (!parseResult.success) {
+      throw new TransactionProcessPayloadDataError(
+        "The `data` field in the TransactionProcessSession webhook payload is invalid",
+        {
+          errors: parseResult.error.errors,
+        },
+      );
+    }
+
+    const { authorizeTransactionId } = parseResult.data;
 
     const transactionDetails = client.getTransactionDetails({
       transactionId: authorizeTransactionId,

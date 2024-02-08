@@ -25,6 +25,8 @@ export const baseAuthorizeObjectSchema = z.object({
 
 type BaseAuthorizeObjectResponse = z.infer<typeof baseAuthorizeObjectSchema>;
 
+const AuthorizeResultCodeError = AuthorizeNetError.subclass("AuthorizeResultCodeError");
+
 export class AuthorizeNetClient {
   merchantAuthenticationType: AuthorizeNet.APIContracts.MerchantAuthenticationType;
   logger = createLogger({
@@ -60,7 +62,7 @@ export class AuthorizeNetClient {
     if (response.messages.resultCode === "Error") {
       const message = this.formatAuthorizeErrors(response.messages);
 
-      throw new AuthorizeNetError(message);
+      throw new AuthorizeResultCodeError(message);
     }
   }
 }

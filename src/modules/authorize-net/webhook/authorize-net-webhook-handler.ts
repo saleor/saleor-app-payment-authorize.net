@@ -4,14 +4,15 @@ import { buffer } from "micro";
 import { type NextApiRequest } from "next";
 import { z } from "zod";
 import { getAuthorizeConfig } from "../authorize-net-config";
-import { AuthorizeNetInvalidWebhookSignatureError } from "../authorize-net-error";
+
+import { AuthorizeNetError } from "../authorize-net-error";
 import { authorizeNetEventSchema } from "./authorize-net-webhook-client";
 import { MissingAuthDataError } from "./authorize-net-webhook-errors";
 import { TransactionEventReporter } from "./transaction-event-reporter";
-import { saleorApp } from "@/saleor-app";
-import { unpackThrowable } from "@/lib/utils";
-import { createLogger } from "@/lib/logger";
 import { createServerClient } from "@/lib/create-graphq-client";
+import { createLogger } from "@/lib/logger";
+import { unpackThrowable } from "@/lib/utils";
+import { saleorApp } from "@/saleor-app";
 
 const eventPayloadSchema = z.object({
   notificationId: z.string(),
@@ -25,6 +26,14 @@ const eventPayloadSchema = z.object({
 });
 
 export type EventPayload = z.infer<typeof eventPayloadSchema>;
+
+const AuthorizeNetWebhookHandlerError = AuthorizeNetError.subclass(
+  "AuthorizeNetWebhookHandlerError",
+);
+
+const AuthorizeNetInvalidWebhookSignatureError = AuthorizeNetWebhookHandlerError.subclass(
+  "AuthorizeNetInvalidWebhookSignatureError",
+);
 
 /**
  * @description This class is used to handle webhook calls from Authorize.net

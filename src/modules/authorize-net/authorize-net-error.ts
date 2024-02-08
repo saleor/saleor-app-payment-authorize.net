@@ -2,10 +2,9 @@ import { BaseError } from "@/errors";
 
 export const AuthorizeNetError = BaseError.subclass("AuthorizeNetError");
 
-export const AuthorizeNetCreateTransactionError = AuthorizeNetError.subclass(
-  "AuthorizeNetCreateTransactionError",
-);
-
-export const AuthorizeNetInvalidWebhookSignatureError = AuthorizeNetError.subclass(
-  "AuthorizeNetInvalidWebhookSignatureError",
+/**
+ * We parse each response from Authorize.net and if it doesn't match the expected schema we throw this error. It probably means that the transaction flow differed from what is implemented.
+ */
+export const AuthorizeNetResponseValidationError = AuthorizeNetError.subclass(
+  "AuthorizeNetResponseValidationError",
 );

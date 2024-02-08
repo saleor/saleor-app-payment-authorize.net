@@ -1,6 +1,7 @@
 import AuthorizeNet from "authorizenet";
 
 import { z } from "zod";
+import { AuthorizeNetResponseValidationError } from "../authorize-net-error";
 import { AuthorizeNetClient, baseAuthorizeObjectSchema } from "./authorize-net-client";
 
 const ApiContracts = AuthorizeNet.APIContracts;
@@ -12,6 +13,10 @@ const createTransactionSchema = baseAuthorizeObjectSchema.and(
       transId: z.string().min(1),
     }),
   }),
+);
+
+const AuthorizeCreateTransactionResponseError = AuthorizeNetResponseValidationError.subclass(
+  "AuthorizeCreateTransactionResponseError",
 );
 
 export type CreateTransactionResponse = z.infer<typeof createTransactionSchema>;
@@ -39,8 +44,18 @@ export class CreateTransactionClient extends AuthorizeNetClient {
           const response = new ApiContracts.CreateTransactionResponse(apiResponse);
 
           this.logger.trace({ response }, "CreateTransactionResponse");
-          const parsedResponse = createTransactionSchema.parse(response);
+          const parseResult = createTransactionSchema.safeParse(response);
 
+          if (!parseResult.success) {
+            throw new AuthorizeCreateTransactionResponseError(
+              "The response from Authorize.net CreateTransaction did not match the expected schema",
+              {
+                errors: parseResult.error.errors,
+              },
+            );
+          }
+
+          const parsedResponse = parseResult.data;
           this.resolveResponseErrors(parsedResponse);
 
           resolve(parsedResponse);

@@ -1,6 +1,7 @@
 import AuthorizeNet from "authorizenet";
 
 import { z } from "zod";
+import { AuthorizeNetResponseValidationError } from "../authorize-net-error";
 import { AuthorizeNetClient, baseAuthorizeObjectSchema } from "./authorize-net-client";
 
 const ApiContracts = AuthorizeNet.APIContracts;
@@ -25,8 +26,9 @@ const getTransactionDetailsSchema = baseAuthorizeObjectSchema.and(
 
 export type GetTransactionDetailsResponse = z.infer<typeof getTransactionDetailsSchema>;
 
-export type AuthorizeTransactionStatus =
-  GetTransactionDetailsResponse["transaction"]["transactionStatus"];
+const AuthorizeGetTransactionDetailsResponseError = AuthorizeNetResponseValidationError.subclass(
+  "AuthorizeGetTransactionDetailsResponseError",
+);
 
 export class TransactionDetailsClient extends AuthorizeNetClient {
   async getTransactionDetails({
@@ -52,8 +54,16 @@ export class TransactionDetailsClient extends AuthorizeNetClient {
           const apiResponse = transactionController.getResponse();
           const response = new ApiContracts.GetTransactionDetailsResponse(apiResponse);
           this.logger.trace({ response }, "getTransactionDetails response");
-          const parsedResponse = getTransactionDetailsSchema.parse(response);
+          const parseResult = getTransactionDetailsSchema.safeParse(response);
 
+          if (!parseResult.success) {
+            throw new AuthorizeGetTransactionDetailsResponseError(
+              "The response from Authorize.net GetTransactionDetails did not match the expected schema",
+              { cause: parseResult.error },
+            );
+          }
+
+          const parsedResponse = parseResult.data;
           this.resolveResponseErrors(parsedResponse);
 
           resolve(parsedResponse);

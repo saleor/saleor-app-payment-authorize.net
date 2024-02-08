@@ -1,7 +1,8 @@
 import { z } from "zod";
+import { AuthorizeNetResponseValidationError } from "../authorize-net-error";
 import { createAuthorizeWebhooksFetch } from "./create-authorize-webhooks-fetch";
-import { createLogger } from "@/lib/logger";
 import { type AuthorizeConfig } from "@/modules/authorize-net/authorize-net-config";
+import { createLogger } from "@/lib/logger";
 
 export const authorizeNetEventSchema = z.enum([
   "net.authorize.payment.authorization.created",
@@ -46,6 +47,14 @@ const webhookResponseSchema = z
 
 const listWebhooksResponseSchema = z.array(webhookSchema);
 
+const AuthorizeNetWebhookClientListWebhooksError = AuthorizeNetResponseValidationError.subclass(
+  "AuthorizeNetWebhookClientListWebhooksError",
+);
+
+const AuthorizeNetWebhookClientRegisterWebhookError = AuthorizeNetResponseValidationError.subclass(
+  "AuthorizeNetWebhookClientRegisterWebhookError",
+);
+
 /**
  * @description Authorize.net has a separate API for registering webhooks. This class communicates with that API.
  * @see AuthorizeNetClient for managing transactions etc.
@@ -71,9 +80,16 @@ export class AuthorizeNetWebhookClient {
 
     this.logger.trace({ result }, "registerWebhook response:");
 
-    const parsedResult = webhookResponseSchema.parse(result);
+    const parseResult = webhookResponseSchema.safeParse(result);
 
-    return parsedResult;
+    if (!parseResult.success) {
+      throw new AuthorizeNetWebhookClientRegisterWebhookError(
+        "The response from Authorize.net RegisterWebhook did not match the expected schema",
+        { cause: parseResult.error },
+      );
+    }
+
+    return parseResult.data;
   }
 
   async listWebhooks() {
@@ -85,8 +101,15 @@ export class AuthorizeNetWebhookClient {
 
     this.logger.trace({ result }, "listWebhooks response:");
 
-    const parsedResult = listWebhooksResponseSchema.parse(result);
+    const parseResult = listWebhooksResponseSchema.safeParse(result);
 
-    return parsedResult;
+    if (!parseResult.success) {
+      throw new AuthorizeNetWebhookClientListWebhooksError(
+        "The response from Authorize.net ListWebhooks did not match the expected schema",
+        { cause: parseResult.error },
+      );
+    }
+
+    return parseResult.data;
   }
 }

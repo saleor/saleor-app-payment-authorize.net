@@ -1,5 +1,6 @@
 import AuthorizeNet from "authorizenet";
 import { z } from "zod";
+import { AuthorizeNetResponseValidationError } from "../authorize-net-error";
 import { AuthorizeNetClient, baseAuthorizeObjectSchema } from "./authorize-net-client";
 import { type UserWithEmailFragment } from "generated/graphql";
 
@@ -20,6 +21,14 @@ const getCustomerProfileSchema = baseAuthorizeObjectSchema.and(
       customerProfileId: z.string().min(1),
     }),
   }),
+);
+
+const AuthorizeCreateCustomerProfileResponseError = AuthorizeNetResponseValidationError.subclass(
+  "AuthorizeCreateCustomerProfileResponseError",
+);
+
+const AuthorizeGetCustomerProfileResponseError = AuthorizeNetResponseValidationError.subclass(
+  "AuthorizeGetCustomerProfileResponseError",
 );
 
 type GetCustomerProfileResponse = z.infer<typeof getCustomerProfileSchema>;
@@ -53,8 +62,18 @@ export class CustomerProfileClient extends AuthorizeNetClient {
           const apiResponse: unknown = customerProfileController.getResponse();
           const response = new ApiContracts.CreateCustomerProfileResponse(apiResponse);
           this.logger.trace({ response }, "createCustomerProfile response");
-          const parsedResponse = createCustomerProfileSchema.parse(response);
+          const parseResult = createCustomerProfileSchema.safeParse(response);
 
+          if (!parseResult.success) {
+            throw new AuthorizeCreateCustomerProfileResponseError(
+              "The response from Authorize.net CreateCustomerProfileResponse did not match the expected schema",
+              {
+                errors: parseResult.error.errors,
+              },
+            );
+          }
+
+          const parsedResponse = parseResult.data;
           this.resolveResponseErrors(parsedResponse);
 
           resolve(parsedResponse);
@@ -90,8 +109,18 @@ export class CustomerProfileClient extends AuthorizeNetClient {
         try {
           const apiResponse: unknown = customerProfileController.getResponse();
           const response = new ApiContracts.GetCustomerProfileResponse(apiResponse);
-          const parsedResponse = getCustomerProfileSchema.parse(response);
+          const parseResult = getCustomerProfileSchema.safeParse(response);
 
+          if (!parseResult.success) {
+            throw new AuthorizeGetCustomerProfileResponseError(
+              "The response from Authorize.net GetCustomerProfileResponse did not match the expected schema",
+              {
+                errors: parseResult.error.errors,
+              },
+            );
+          }
+
+          const parsedResponse = parseResult.data;
           this.resolveResponseErrors(parsedResponse);
 
           resolve(parsedResponse);
