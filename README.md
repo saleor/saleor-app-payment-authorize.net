@@ -72,6 +72,17 @@ Credit cards payments are handled through [Accept Hosted](https://developer.auth
 - PayPal (_in progress_)
 - Apple Pay (_in progress_)
 
+### Payment flow
+
+1. Execute `checkoutCreate` mutation from the front-end.
+2. Execute `paymentGatewayInitialize` mutation from the front-end.
+   `paymentGatewayInitialize` app handler (`payment-gateway-initialize-session.ts`) will go through all the implemented payment methods and return the data needed to render their UI. Currently, this webhook is redundant, as it does not return any meaningful data. You could hardcode the list of payment methods in the front-end. It may change once Apple Pay and PayPal are implemented.
+3. When Accept Hosted is selected:
+   1. The front-end will execute `transactionInitialize` mutation. The app will return the data needed to render the Accept Hosted payment form. It couldn't be done during the `paymentGatewayInitialize` because Saleor transaction must exist before the payment form is rendered.
+   2. Accept Hosted will communicate with Authorize.net API and create a corresponding transaction.
+   3. When a callback is received from Authorize.net, the front-end will execute `transactionProcess` mutation. The app will try to confirm the transaction on the `transaction-process-session` webhook. If the Authorize transaction was successful, the Saleor transaction status will change to `AUTHORIZATION_SUCCESS`.
+4. When the status of Authorize transaction change in Authorize.net, the app will synchronize the change with Saleor through webhooks. There is no flow for the CHARGE event, as the app only authorizes the transactions. The CHARGE event is expected to happen outside of the app.
+
 ### Assumptions
 
 - The app only authorizes the transactions. The CHARGE event is expected to happen outside of the app. The app will synchronize the CHARGE event with Saleor through webhooks.
