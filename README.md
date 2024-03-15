@@ -45,6 +45,21 @@ pnpm generate
 
 to regenerate the GraphQL types.
 
+### Running storefront example
+
+This app comes with a simple storefront example. To run it, follow these steps:
+
+1. Go to the `example` directory.
+2. Copy `.env.example` to `.env` and fill in the required values.
+3. `pnpm install`
+4. `pnpm dev`
+
+Each time you modify a `.graphql` file, you have to run:
+
+```bash
+pnpm generate
+```
+
 ### Vendor software
 
 The app uses the [official Authorize.net Node SDK](https://github.com/AuthorizeNet/sdk-node).
