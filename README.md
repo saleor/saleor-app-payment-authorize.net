@@ -49,6 +49,8 @@ to regenerate the GraphQL types.
 
 The app uses the [official Authorize.net Node SDK](https://github.com/AuthorizeNet/sdk-node).
 
+Credit cards payments are handled through [Accept Hosted](https://developer.authorize.net/api/reference/features/accept-hosted.html) - Authorize.net hosted payment form.
+
 ## Overview
 
 ### Features
@@ -66,7 +68,7 @@ The app uses the [official Authorize.net Node SDK](https://github.com/AuthorizeN
 
 #### Payment methods
 
-- Credit card
+- Credit card ([Accept Hosted](https://developer.authorize.net/api/reference/features/accept-hosted.html))
 - PayPal (_in progress_)
 - Apple Pay (_in progress_)
 
