@@ -22,7 +22,9 @@ export const acceptJsPaymentGatewayDataSchema = z.object({});
 
 type AcceptJsPaymentGatewayData = z.infer<typeof acceptJsPaymentGatewayDataSchema>;
 
-// what should request `data` object include
+/**
+ * @example { data: { type: "acceptJs", data: { <z.object({}) goes here> } } }
+ */
 export const acceptJsTransactionInitializeRequestDataSchema = gatewayUtils.createGatewayDataSchema(
   "acceptJs",
   z.object({}),
@@ -74,6 +76,15 @@ export class AcceptJsGateway implements PaymentGateway {
     }
 
     // START: Synchronize fields specific for Accept.js gateway
+
+    // const payment = new AuthorizeNet.APIContracts.PaymentType();
+    // const opaqueData = new AuthorizeNet.APIContracts.OpaqueDataType();
+
+    // opaqueData.setDataDescriptor("");
+    // opaqueData.setDataValue("");
+
+    // payment.setOpaqueData(opaqueData);
+    // transactionRequest.setPayment(payment);
 
     // END: Synchronize fields specific for Accept.js gateway
 
