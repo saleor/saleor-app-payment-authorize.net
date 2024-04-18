@@ -15,7 +15,10 @@ import {
 
 import { IncorrectWebhookResponseDataError } from "@/errors";
 import { createLogger } from "@/lib/logger";
-import { type PaymentGateway } from "@/modules/webhooks/payment-gateway-initialize-session";
+import {
+  type AppPaymentMethod,
+  type PaymentGateway,
+} from "@/modules/authorize-net/gateways/payment-gateway";
 import { type TransactionInitializeSessionResponse } from "@/schemas/TransactionInitializeSession/TransactionInitializeSessionResponse.mjs";
 
 export const acceptJsPaymentGatewayDataSchema = z.object({});
@@ -130,6 +133,21 @@ export class AcceptJsGateway implements PaymentGateway {
       amount: payload.action.amount,
       result: "AUTHORIZATION_ACTION_REQUIRED",
       data,
+    };
+  }
+
+  async listStoredPaymentMethods(): Promise<AppPaymentMethod> {
+    // START: Get stored payment methods for Accept.js flow
+
+    // END
+
+    return {
+      id: "",
+      type: "acceptJs",
+      data: {
+        // Add fields specific to Accept.js gateway
+      },
+      supportedPaymentFlows: [],
     };
   }
 }

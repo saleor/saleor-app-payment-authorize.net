@@ -21,7 +21,7 @@ import {
 import { IncorrectWebhookResponseDataError } from "@/errors";
 import { env } from "@/lib/env.mjs";
 import { createLogger } from "@/lib/logger";
-import { type PaymentGateway } from "@/modules/webhooks/payment-gateway-initialize-session";
+import { type PaymentGateway } from "@/modules/authorize-net/gateways/payment-gateway";
 import { type TransactionInitializeSessionResponse } from "@/schemas/TransactionInitializeSession/TransactionInitializeSessionResponse.mjs";
 
 const ApiContracts = AuthorizeNet.APIContracts;

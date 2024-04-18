@@ -1,0 +1,10 @@
+fragment ListStoredPaymentMethodsEvent on ListStoredPaymentMethods {
+  __typename
+  issuingPrincipal {
+    __typename
+    ... on App {
+      id
+      name
+    }
+  }
+}
