@@ -14,6 +14,7 @@ import {
 } from "generated/graphql";
 import { paypalPaymentGatewayResponseDataSchema } from "@/modules/authorize-net/gateways/paypal-gateway";
 import { errorUtils } from "@/error-utils";
+import { acceptJsPaymentGatewayDataSchema } from "@/modules/authorize-net/gateways/accept-js-gateway";
 
 const paymentGatewaySchema = z.union([
   acceptHostedPaymentGatewayDataSchema,
@@ -26,6 +27,7 @@ const dataSchema = z.object({
   acceptHosted: acceptHostedPaymentGatewayDataSchema.optional(),
   applePay: applePayPaymentGatewayResponseDataSchema.optional(),
   paypal: paypalPaymentGatewayResponseDataSchema.optional(),
+  acceptJs: acceptJsPaymentGatewayDataSchema.optional(),
 });
 
 export type PaymentGatewayInitializeSessionData = z.infer<typeof dataSchema>;
