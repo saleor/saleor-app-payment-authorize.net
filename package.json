@@ -32,7 +32,7 @@
     "github:release": "pnpm changeset tag && git push --follow-tags"
   },
   "saleor": {
-    "schemaVersion": "3.13"
+    "schemaVersion": "3.19"
   },
   "dependencies": {
     "@hookform/resolvers": "3.3.0",
