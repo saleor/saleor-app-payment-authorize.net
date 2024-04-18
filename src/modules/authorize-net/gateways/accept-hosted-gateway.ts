@@ -59,7 +59,7 @@ export class AcceptHostedGateway implements PaymentGateway {
   private customerProfileManager: CustomerProfileManager;
 
   private logger = createLogger({
-    name: "TransactionInitializeSessionService",
+    name: "AcceptHostedGateway",
   });
 
   constructor() {
