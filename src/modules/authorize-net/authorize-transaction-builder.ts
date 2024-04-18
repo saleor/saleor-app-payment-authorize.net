@@ -43,6 +43,9 @@ function buildAuthorizeTransactionRequest({
   return transactionRequest;
 }
 
+/**
+ * @description This function is used to build a transaction request object that can be used to create an Authorize.net transaction. It is built from a transaction initialize payload. It includes the logic of connecting the Saleor transaction with the Authorize.net transaction.
+ */
 function buildTransactionFromTransactionInitializePayload(
   payload: TransactionInitializeSessionEventFragment,
 ): AuthorizeNet.APIContracts.TransactionRequestType {
