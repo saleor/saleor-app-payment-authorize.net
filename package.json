@@ -38,7 +38,7 @@
     "@hookform/resolvers": "3.3.0",
     "@next/env": "13.4.19",
     "@radix-ui/react-alert-dialog": "1.0.4",
-    "@saleor/app-sdk": "0.43.0",
+    "@saleor/app-sdk": "0.50.0",
     "@saleor/macaw-ui": "0.8.0-pre.123",
     "@sentry/nextjs": "7.80.0",
     "@t3-oss/env-nextjs": "0.6.1",

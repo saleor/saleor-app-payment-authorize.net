@@ -23,7 +23,7 @@ export const listStoredPaymentMethodsSyncWebhook =
   new SaleorSyncWebhook<ListStoredPaymentMethodsEventFragment>({
     name: "ListStoredPaymentMethods",
     apl: saleorApp.apl,
-    event: "TRANSACTION_REFUND_REQUESTED",
+    event: "LIST_STORED_PAYMENT_METHODS",
     query: UntypedListStoredPaymentMethodsDocument,
     webhookPath: "/api/webhooks/list-stored-payment-methods",
   });
