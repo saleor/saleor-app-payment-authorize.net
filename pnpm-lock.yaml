@@ -18,8 +18,8 @@ dependencies:
     specifier: 1.0.4
     version: 1.0.4(@types/react-dom@18.2.7)(@types/react@18.2.21)(react-dom@18.2.0)(react@18.2.0)
   '@saleor/app-sdk':
-    specifier: 0.43.0
-    version: 0.43.0(next@14.2.3)(react-dom@18.2.0)(react@18.2.0)
+    specifier: 0.50.0
+    version: 0.50.0(graphql@16.8.1)(next@13.4.19)(react-dom@18.2.0)(react@18.2.0)
   '@saleor/macaw-ui':
     specifier: 0.8.0-pre.123
     version: 0.8.0-pre.123(@types/react-dom@18.2.7)(@types/react@18.2.21)(react-dom@18.2.0)(react@18.2.0)
@@ -3682,8 +3682,8 @@ packages:
     resolution: {integrity: sha512-0xd7qez0AQ+MbHatZTlI1gu5vkG8r7MYRUJAHPAHJBmGLs16zpkrpAVLvjQKQOqaXPDUBwOiJzNc00znHSCVBw==}
     dev: true
 
-  /@saleor/app-sdk@0.43.0(next@14.2.3)(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-hDZ/VNgz6vxeA1h4GtKYs2la8j8E2OocKWDK6HZYbsqDg83K+9LzFOIOHf7U/ZEmBgXR0Ezd0vuhmJBPKLC4jA==}
+  /@saleor/app-sdk@0.50.0(graphql@16.8.1)(next@13.4.19)(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-lg/mRV3lSnCQMiXF2EWWI8FYOBIwQCVZXlMa4fn3mrgkf0pO5tADi+RbgtMKFJtOUxmE4cRIKuZ1JXOTsTmHQg==}
     peerDependencies:
       '@vercel/kv': ^1.0.0
       graphql: '>=16.6.0'
