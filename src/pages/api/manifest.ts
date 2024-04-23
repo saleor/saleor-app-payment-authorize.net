@@ -11,21 +11,25 @@ import { listStoredPaymentMethodsSyncWebhook } from "./webhooks/list-stored-paym
 
 export default createManifestHandler({
   async manifestFactory(context) {
+    const baseDomain =
+      (context.request.headers["x-forwarded-host"] as string) ||
+      (context.request.headers.host as string);
+    const appBaseUrl = `https://${baseDomain}`;
     const manifest: AppManifest = {
       name: "Authorize.net",
-      tokenTargetUrl: `${context.appBaseUrl}/api/register`,
-      appUrl: `${context.appBaseUrl}/config`,
+      tokenTargetUrl: `${appBaseUrl}/api/register`,
+      appUrl: `${appBaseUrl}/config`,
       permissions: ["HANDLE_PAYMENTS"],
       id: "saleor.app.authorize.net",
       version: packageJson.version,
       requiredSaleorVersion: ">=3.13",
       webhooks: [
-        transactionInitializeSessionSyncWebhook.getWebhookManifest(context.appBaseUrl),
-        transactionProcessSessionSyncWebhook.getWebhookManifest(context.appBaseUrl),
-        transactionCancelationRequestedSyncWebhook.getWebhookManifest(context.appBaseUrl),
-        transactionRefundRequestedSyncWebhook.getWebhookManifest(context.appBaseUrl),
-        paymentGatewayInitializeSessionSyncWebhook.getWebhookManifest(context.appBaseUrl),
-        listStoredPaymentMethodsSyncWebhook.getWebhookManifest(context.appBaseUrl),
+        transactionInitializeSessionSyncWebhook.getWebhookManifest(appBaseUrl),
+        transactionProcessSessionSyncWebhook.getWebhookManifest(appBaseUrl),
+        transactionCancelationRequestedSyncWebhook.getWebhookManifest(appBaseUrl),
+        transactionRefundRequestedSyncWebhook.getWebhookManifest(appBaseUrl),
+        paymentGatewayInitializeSessionSyncWebhook.getWebhookManifest(appBaseUrl),
+        listStoredPaymentMethodsSyncWebhook.getWebhookManifest(appBaseUrl),
       ],
       extensions: [
         /**

@@ -1,8 +1,8 @@
 query ProductList {
 	products(
 		first: 1
-		channel: "default-channel"
-		where: { isAvailable: true, giftCard: false }
+		channel: "ken-r"
+		where: { isAvailable: true, giftCard: false, ids: ["UHJvZHVjdDoyNjA3MA=="] }
 		sortBy: { field: PRICE, direction: DESC }
 	) {
 		edges {

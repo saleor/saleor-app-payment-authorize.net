@@ -1,7 +1,12 @@
-import type AuthorizeNet from "authorizenet";
 import { z } from "zod";
-import { getAuthorizeConfig, type AuthorizeConfig } from "../authorize-net-config";
+import { APIContracts } from "authorizenet";
+import {
+  getAuthorizeConfig,
+  type AuthorizeConfig,
+  authorizeEnvironmentSchema,
+} from "../authorize-net-config";
 import { authorizeTransaction } from "../authorize-transaction-builder";
+import { CustomerProfileManager } from "../../customer-profile/customer-profile-manager";
 
 import {
   CreateTransactionClient,
@@ -35,11 +40,27 @@ type AcceptJsPaymentGatewayResponseData = z.infer<typeof acceptJsPaymentGatewayR
  */
 export const acceptJsTransactionInitializeRequestDataSchema = gatewayUtils.createGatewayDataSchema(
   "acceptJs",
-  z.object({}),
+  z.object({
+    opaqueData: z.object({
+      dataDescriptor: z.string().optional().default(""),
+      dataValue: z.string().optional().default(""),
+    }),
+    shouldCreateCustomerProfile: z.boolean().optional().default(false),
+  }),
 );
 
 // what should response `data` object include
-const acceptJsTransactionInitializeResponseDataSchema = z.object({});
+const acceptJsTransactionInitializeResponseDataSchema = z.object({
+  response: z.object({
+    messages: z.object({
+      resultCode: z.string().optional().default(""),
+    }),
+    transactionResponse: z.object({
+      transId: z.string().optional().default(""),
+    }),
+  }),
+  environment: authorizeEnvironmentSchema,
+});
 
 type AcceptJsTransactionInitializeResponseData = z.infer<
   typeof acceptJsTransactionInitializeResponseDataSchema
@@ -55,6 +76,7 @@ const AcceptJsTransactionInitializePayloadDataError = IncorrectWebhookResponseDa
 
 export class AcceptJsGateway implements PaymentGateway {
   private authorizeConfig: AuthorizeConfig;
+  private customerProfileManager: CustomerProfileManager;
 
   private logger = createLogger({
     name: "AcceptJsGateway",
@@ -62,14 +84,16 @@ export class AcceptJsGateway implements PaymentGateway {
 
   constructor() {
     this.authorizeConfig = getAuthorizeConfig();
+    this.customerProfileManager = new CustomerProfileManager();
   }
 
   private async buildTransactionFromPayload(
     payload: TransactionInitializeSessionEventFragment,
-  ): Promise<AuthorizeNet.APIContracts.TransactionRequestType> {
+  ): Promise<APIContracts.TransactionRequestType> {
     // Build initial transaction request
     const transactionRequest =
       authorizeTransaction.buildTransactionFromTransactionInitializePayload(payload);
+    const user = payload.sourceObject.user;
 
     // Parse the payload `data` object
     const parseResult = acceptJsTransactionInitializeRequestDataSchema.safeParse(payload.data);
@@ -85,14 +109,40 @@ export class AcceptJsGateway implements PaymentGateway {
 
     // START: Synchronize fields specific for Accept.js gateway
 
-    // const payment = new AuthorizeNet.APIContracts.PaymentType();
-    // const opaqueData = new AuthorizeNet.APIContracts.OpaqueDataType();
+    const payment = new APIContracts.PaymentType();
+    const opaqueDataType = new APIContracts.OpaqueDataType();
+    const {
+      data: { opaqueData, shouldCreateCustomerProfile },
+    } = parseResult.data;
 
-    // opaqueData.setDataDescriptor("");
-    // opaqueData.setDataValue("");
+    if (opaqueData?.dataDescriptor && opaqueData?.dataValue) {
+      opaqueDataType.setDataDescriptor(opaqueData.dataDescriptor);
+      opaqueDataType.setDataValue(opaqueData.dataValue);
+    }
 
-    // payment.setOpaqueData(opaqueData);
-    // transactionRequest.setPayment(payment);
+    if (!shouldCreateCustomerProfile) {
+      this.logger.trace("Skipping customerProfileId lookup.");
+    }
+
+    let customerProfileId = null;
+    if (user && shouldCreateCustomerProfile) {
+      this.logger.trace("Looking up customerProfileId.");
+      customerProfileId = await this.customerProfileManager.getUserCustomerProfileId({
+        user,
+      });
+    }
+
+    if (customerProfileId) {
+      this.logger.trace("Found customerProfileId, adding to transaction request.");
+      const profile = {
+        customerProfileId,
+      };
+
+      transactionRequest.setProfile(profile);
+    }
+
+    payment.setOpaqueData(opaqueDataType);
+    transactionRequest.setPayment(payment);
 
     // END: Synchronize fields specific for Accept.js gateway
 
@@ -100,9 +150,12 @@ export class AcceptJsGateway implements PaymentGateway {
   }
 
   private mapResponseToTransactionInitializeData(
-    _response: CreateTransactionResponse,
+    response: CreateTransactionResponse,
   ): AcceptJsTransactionInitializeResponseData {
-    const dataParseResult = acceptJsTransactionInitializeResponseDataSchema.safeParse({});
+    const dataParseResult = acceptJsTransactionInitializeResponseDataSchema.safeParse({
+      response,
+      environment: this.authorizeConfig.environment,
+    });
 
     if (!dataParseResult.success) {
       this.logger.error({ error: dataParseResult.error.format() });

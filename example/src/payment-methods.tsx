@@ -10,6 +10,7 @@ import { authorizeNetAppId } from "./lib/common";
 
 import { AcceptHostedForm } from "./accept-hosted-form";
 import { getCheckoutId } from "./pages/cart";
+import { AcceptPaymentForm } from "./accept-payment-form";
 
 const acceptHostedPaymentGatewaySchema = z.object({});
 
@@ -20,11 +21,17 @@ const dataSchema = z.object({
 	acceptHosted: z.unknown().optional(),
 	applePay: z.unknown().optional(),
 	paypal: z.unknown().optional(),
+	acceptJs: z.object({ enabled: z.boolean().optional() }),
 });
 
 type PaymentMethods = z.infer<typeof dataSchema>;
 
 const paymentGatewayInitializeSessionSchema = dataSchema;
+
+const payloadDataSchema = z.object({
+	shouldCreateCustomerProfile: z.boolean(),
+	iframeUrl: z.string(),
+});
 
 export const PaymentMethods = () => {
 	const [isLoading, setIsLoading] = React.useState(false);
@@ -39,11 +46,21 @@ export const PaymentMethods = () => {
 
 	const getPaymentGateways = React.useCallback(async () => {
 		setIsLoading(true);
+		const payloadData = payloadDataSchema.parse({
+			shouldCreateCustomerProfile: true,
+			iframeUrl: "",
+		});
 		const response = await initializePaymentGateways({
 			variables: {
 				appId: authorizeNetAppId,
 				checkoutId,
-				data: {},
+				data: {
+					/**
+					 * This needs to be selectable - if we want type apple pay, paypal, or acceptHosted
+					 */
+					type: "acceptJs",
+					data: payloadData,
+				},
 			},
 		});
 
@@ -55,9 +72,7 @@ export const PaymentMethods = () => {
 			throw new Error("No payment gateway found");
 		}
 
-		console.log(gateway.data);
-
-		const data = paymentGatewayInitializeSessionSchema.parse(gateway.data);
+		const data = paymentGatewayInitializeSessionSchema?.parse(gateway.data);
 
 		if (!data) {
 			throw new Error("No data found");
@@ -78,6 +93,11 @@ export const PaymentMethods = () => {
 				{paymentMethods?.acceptHosted !== undefined && (
 					<li>
 						<AcceptHostedForm />
+					</li>
+				)}
+				{paymentMethods?.acceptJs !== undefined && (
+					<li>
+						<AcceptPaymentForm />
 					</li>
 				)}
 				{paymentMethods?.applePay !== undefined && (

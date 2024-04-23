@@ -26,8 +26,7 @@ export default function Page() {
 	const [updateDelivery] = useMutation<UpdateDeliveryMutation, UpdateDeliveryMutationVariables>(
 		gql(UpdateDeliveryDocument.toString()),
 	);
-
-	const product = data?.products?.edges[0].node;
+	const product = data?.products?.edges[0]?.node;
 	const variant = product?.defaultVariant;
 
 	const router = useRouter();
@@ -40,7 +39,6 @@ export default function Page() {
 		e.preventDefault();
 
 		const response = await createCheckout({ variables: { variantId: variant.id } });
-
 		if (!response.data?.checkoutCreate?.checkout?.id) {
 			throw new Error("Failed to create checkout");
 		}
