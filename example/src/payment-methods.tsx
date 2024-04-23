@@ -35,15 +35,6 @@ const payloadDataSchemaAcceptJs = z.object({
 	shouldCreateCustomerProfile: z.boolean(),
 });
 
-const payloadDataSchemaAcceptHosted = z.object({
-	shouldCreateCustomerProfile: z.boolean(),
-	iframeUrl: z.string(),
-});
-
-const payloadDataSchemaAcceptJs = z.object({
-	shouldCreateCustomerProfile: z.boolean(),
-});
-
 export const PaymentMethods = () => {
 	const [isLoading, setIsLoading] = React.useState(false);
 	const [paymentMethods, setPaymentMethods] = React.useState<PaymentMethods>();
