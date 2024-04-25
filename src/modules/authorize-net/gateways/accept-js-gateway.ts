@@ -30,6 +30,11 @@ export const acceptJsPaymentGatewayResponseDataSchema = z.object({});
 
 type AcceptJsPaymentGatewayResponseData = z.infer<typeof acceptJsPaymentGatewayResponseDataSchema>;
 
+export const acceptJsPaymentGatewayRequestDataSchema = gatewayUtils.createGatewayDataSchema(
+  "acceptJs",
+  z.object({}),
+);
+
 /**
  * @example { data: { type: "acceptJs", data: { <z.object({}) goes here> } } }
  */

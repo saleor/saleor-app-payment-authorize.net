@@ -28,6 +28,11 @@ const ApiContracts = AuthorizeNet.APIContracts;
 
 export const acceptHostedPaymentGatewayResponseDataSchema = z.object({});
 
+export const acceptHostedPaymentGatewayRequestDataSchema = gatewayUtils.createGatewayDataSchema(
+  "acceptHosted",
+  z.object({}),
+);
+
 type AcceptHostedPaymentGatewayResponseData = z.infer<
   typeof acceptHostedPaymentGatewayResponseDataSchema
 >;
