@@ -28,12 +28,12 @@ import {
 import { type TransactionInitializeSessionResponse } from "@/schemas/TransactionInitializeSession/TransactionInitializeSessionResponse.mjs";
 import { invariant } from "@/lib/invariant";
 
+export const acceptJsPaymentGatewayResponseDataSchema = z.object({});
+
 export const acceptJsPaymentGatewayRequestDataSchema = gatewayUtils.createGatewayDataSchema(
   "acceptJs",
   z.object({}),
 );
-
-export const acceptJsPaymentGatewayResponseDataSchema = z.object({});
 
 type AcceptJsPaymentGatewayResponseData = z.infer<typeof acceptJsPaymentGatewayResponseDataSchema>;
 
