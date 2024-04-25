@@ -16,10 +16,6 @@ export const paymentGatewayInitializeSessionRequestDataSchema = z.union([
   acceptJsPaymentGatewayRequestDataSchema,
 ]);
 
-const dataSchema = z.object({
-  type: z.string().optional(),
-});
-
 export class PaymentGatewayInitializeSessionService {
   async execute(
     payload: PaymentGatewayInitializeSessionEventFragment,
