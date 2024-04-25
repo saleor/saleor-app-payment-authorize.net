@@ -28,9 +28,13 @@ type PaymentMethods = z.infer<typeof dataSchema>;
 
 const paymentGatewayInitializeSessionSchema = dataSchema;
 
-const payloadDataSchema = z.object({
+const payloadDataSchemaAcceptHosted = z.object({
 	shouldCreateCustomerProfile: z.boolean(),
 	iframeUrl: z.string(),
+});
+
+const payloadDataSchemaAcceptJs = z.object({
+	shouldCreateCustomerProfile: z.boolean(),
 });
 
 export const PaymentMethods = () => {
@@ -46,21 +50,35 @@ export const PaymentMethods = () => {
 
 	const getPaymentGateways = React.useCallback(async () => {
 		setIsLoading(true);
-		const payloadData = payloadDataSchema.parse({
+		const payloadDataAcceptHosted = payloadDataSchemaAcceptHosted.parse({
 			shouldCreateCustomerProfile: true,
 			iframeUrl: "",
 		});
+		const payloadDataAcceptJs = payloadDataSchemaAcceptJs.parse({
+			shouldCreateCustomerProfile: true,
+		});
 		const response = await initializePaymentGateways({
 			variables: {
-				appId: authorizeNetAppId,
 				checkoutId,
-				data: {
-					/**
-					 * This needs to be selectable - if we want type apple pay, paypal, or acceptHosted
-					 */
-					type: "acceptJs",
-					data: payloadData,
-				},
+				paymentGateways: [
+					{
+						id: authorizeNetAppId,
+						data: {
+							/**
+							 * This needs to be selectable - if we want type apple pay, paypal, or acceptHosted
+							 */
+							type: "acceptHosted",
+							data: payloadDataAcceptHosted,
+						},
+					},
+					{
+						id: authorizeNetAppId,
+						data: {
+							type: "acceptJs",
+							data: payloadDataAcceptJs,
+						},
+					},
+				],
 			},
 		});
 

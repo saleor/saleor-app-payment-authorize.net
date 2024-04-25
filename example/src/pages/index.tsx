@@ -17,6 +17,12 @@ import {
 export default function Page() {
 	const { data, loading } = useQuery<ProductListQuery, ProductListQueryVariables>(
 		gql(ProductListDocument.toString()),
+		{
+			/**
+			 * We pull an example product from this saleor channel.
+			 */
+			variables: { channel: process.env.NEXT_PUBLIC_SALEOR_CHANNEL },
+		},
 	);
 
 	const [createCheckout] = useMutation<CreateCheckoutMutation, CreateCheckoutMutationVariables>(
