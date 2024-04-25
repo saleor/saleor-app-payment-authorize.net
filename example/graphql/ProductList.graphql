@@ -1,8 +1,8 @@
-query ProductList {
+query ProductList($channel: String) {
 	products(
 		first: 1
-		channel: "ken-r"
-		where: { isAvailable: true, giftCard: false, ids: ["UHJvZHVjdDoyNjA3MA=="] }
+		channel: $channel
+		where: { isAvailable: true, giftCard: false, stockAvailability: IN_STOCK }
 		sortBy: { field: PRICE, direction: DESC }
 	) {
 		edges {
