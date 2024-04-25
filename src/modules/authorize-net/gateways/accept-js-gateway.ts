@@ -21,9 +21,14 @@ import {
 } from "@/modules/authorize-net/gateways/payment-gateway";
 import { type TransactionInitializeSessionResponse } from "@/schemas/TransactionInitializeSession/TransactionInitializeSessionResponse.mjs";
 
-export const acceptJsPaymentGatewayDataSchema = z.object({});
+export const acceptJsPaymentGatewayRequestDataSchema = gatewayUtils.createGatewayDataSchema(
+  "acceptJs",
+  z.object({}),
+);
 
-type AcceptJsPaymentGatewayData = z.infer<typeof acceptJsPaymentGatewayDataSchema>;
+export const acceptJsPaymentGatewayResponseDataSchema = z.object({});
+
+type AcceptJsPaymentGatewayResponseData = z.infer<typeof acceptJsPaymentGatewayResponseDataSchema>;
 
 /**
  * @example { data: { type: "acceptJs", data: { <z.object({}) goes here> } } }
@@ -112,7 +117,7 @@ export class AcceptJsGateway implements PaymentGateway {
   // If you need to return some data before creating the transaction with Accept.js, you can do it here
   async initializePaymentGateway(
     _payload: PaymentGatewayInitializeSessionEventFragment,
-  ): Promise<AcceptJsPaymentGatewayData> {
+  ): Promise<AcceptJsPaymentGatewayResponseData> {
     return {};
   }
 

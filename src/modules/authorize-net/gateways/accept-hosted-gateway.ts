@@ -26,9 +26,16 @@ import { type TransactionInitializeSessionResponse } from "@/schemas/Transaction
 
 const ApiContracts = AuthorizeNet.APIContracts;
 
-export const acceptHostedPaymentGatewayDataSchema = z.object({});
+export const acceptHostedPaymentGatewayRequestDataSchema = gatewayUtils.createGatewayDataSchema(
+  "acceptHosted",
+  z.object({}),
+);
 
-type AcceptHostedPaymentGatewayData = z.infer<typeof acceptHostedPaymentGatewayDataSchema>;
+export const acceptHostedPaymentGatewayResponseDataSchema = z.object({});
+
+type AcceptHostedPaymentGatewayResponseData = z.infer<
+  typeof acceptHostedPaymentGatewayResponseDataSchema
+>;
 
 export const acceptHostedTransactionInitializeRequestDataSchema =
   gatewayUtils.createGatewayDataSchema(
@@ -181,8 +188,10 @@ export class AcceptHostedGateway implements PaymentGateway {
 
   async initializePaymentGateway(
     _payload: PaymentGatewayInitializeSessionEventFragment,
-  ): Promise<AcceptHostedPaymentGatewayData> {
-    return {};
+  ): Promise<AcceptHostedPaymentGatewayResponseData> {
+    return {
+      data: {},
+    };
   }
 
   async initializeTransaction(

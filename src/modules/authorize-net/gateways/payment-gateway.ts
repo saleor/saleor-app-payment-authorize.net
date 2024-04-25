@@ -1,5 +1,6 @@
+import { type PaymentGatewayInitializeSessionResponseData } from "@/pages/api/webhooks/payment-gateway-initialize-session";
 import { type ListStoredPaymentMethodsResponse } from "@/schemas/ListStoredPaymentMethods/ListStoredPaymentMethodsResponse.mjs";
-import { type PaymentGatewayInitializeSessionResponse } from "@/schemas/PaymentGatewayInitializeSession/PaymentGatewayInitializeSessionResponse.mjs";
+
 import { type TransactionInitializeSessionResponse } from "@/schemas/TransactionInitializeSession/TransactionInitializeSessionResponse.mjs";
 import {
   type PaymentGatewayInitializeSessionEventFragment,
@@ -16,7 +17,7 @@ export type AppPaymentMethod = ListStoredPaymentMethodsResponse["paymentMethods"
 export interface PaymentGateway {
   initializePaymentGateway(
     payload: PaymentGatewayInitializeSessionEventFragment,
-  ): Promise<PaymentGatewayInitializeSessionResponse>;
+  ): Promise<PaymentGatewayInitializeSessionResponseData>;
   initializeTransaction(
     payload: TransactionInitializeSessionEventFragment,
   ): Promise<TransactionInitializeSessionResponse>;
