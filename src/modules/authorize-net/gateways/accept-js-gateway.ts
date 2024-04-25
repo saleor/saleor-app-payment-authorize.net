@@ -26,11 +26,6 @@ import {
 } from "@/modules/authorize-net/gateways/payment-gateway";
 import { type TransactionInitializeSessionResponse } from "@/schemas/TransactionInitializeSession/TransactionInitializeSessionResponse.mjs";
 
-export const acceptJsPaymentGatewayRequestDataSchema = gatewayUtils.createGatewayDataSchema(
-  "acceptJs",
-  z.object({}),
-);
-
 export const acceptJsPaymentGatewayResponseDataSchema = z.object({});
 
 type AcceptJsPaymentGatewayResponseData = z.infer<typeof acceptJsPaymentGatewayResponseDataSchema>;
