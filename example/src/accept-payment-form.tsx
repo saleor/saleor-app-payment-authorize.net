@@ -16,15 +16,8 @@ import { useRouter } from "next/router";
 import { useAcceptJs } from "react-acceptjs";
 
 const authData = {
-	apiLoginID: process.env.NEXT_PUBLIC_AUTHORIZE_API_LOGIN_ID,
-	clientKey: process.env.NEXT_PUBLIC_AUTHORIZE_PUBLIC_CLIENT_KEY,
-};
-
-type BasicCardInfo = {
-	cardNumber: string;
-	cardCode: string;
-	month: string;
-	year: string;
+	apiLoginID: process.env.NEXT_PUBLIC_AUTHORIZE_API_LOGIN_ID as string,
+	clientKey: process.env.NEXT_PUBLIC_AUTHORIZE_PUBLIC_CLIENT_KEY as string,
 };
 
 export interface IAuthorizeTransactionResponse {
@@ -55,13 +48,6 @@ export function AcceptPaymentForm() {
 	const checkoutId = getCheckoutId();
 	const router = useRouter();
 	const { dispatchData, loading, error } = useAcceptJs({ authData });
-	const [cardData, setCardData] = React.useState<BasicCardInfo>({
-		cardNumber: "",
-		month: "",
-		year: "",
-		cardCode: "",
-	});
-
 	const [initializeTransaction] = useMutation<
 		TransactionInitializeMutation,
 		TransactionInitializeMutationVariables
@@ -166,41 +152,13 @@ export function AcceptPaymentForm() {
 		<>
 			<form onSubmit={handleSubmit} className="flex flex-col mt-4">
 				<label className="font-medium text-sm">Card Number</label>
-				<input
-					className=" mb-2  border-2 p-2"
-					type="text"
-					name="cardNumber"
-					placeholder="cardNumber"
-					value={cardData.cardNumber}
-					onChange={(event) => setCardData({ ...cardData, cardNumber: event.target.value })}
-				/>
+				<input className=" mb-2  border-2 p-2" type="text" name="cardNumber" placeholder="cardNumber" />
 				<label className="font-medium text-sm">Month</label>
-				<input
-					className=" mb-2  border-2 p-2"
-					type="text"
-					name="month"
-					placeholder="month"
-					value={cardData.month}
-					onChange={(event) => setCardData({ ...cardData, month: event.target.value })}
-				/>
+				<input className=" mb-2  border-2 p-2" type="text" name="month" placeholder="month" />
 				<label className="font-medium text-sm">Year</label>
-				<input
-					className=" mb-2  border-2 p-2"
-					type="text"
-					name="year"
-					placeholder="year"
-					value={cardData.year}
-					onChange={(event) => setCardData({ ...cardData, year: event.target.value })}
-				/>
+				<input className=" mb-2  border-2 p-2" type="text" name="year" placeholder="year" />
 				<label className="font-medium text-sm">Card Code</label>
-				<input
-					className=" mb-2  border-2 p-2"
-					type="text"
-					name="cardCode"
-					placeholder="cardCode"
-					value={cardData.cardCode}
-					onChange={(event) => setCardData({ ...cardData, cardCode: event.target.value })}
-				/>
+				<input className=" mb-2  border-2 p-2" type="text" name="cardCode" placeholder="cardCode" />
 				<button
 					type="submit"
 					disabled={loading || error}
