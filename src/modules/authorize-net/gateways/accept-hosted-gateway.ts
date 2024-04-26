@@ -189,7 +189,7 @@ export class AcceptHostedGateway implements PaymentGateway {
   async initializePaymentGateway(
     _payload: PaymentGatewayInitializeSessionEventFragment,
   ): Promise<AcceptHostedPaymentGatewayResponseData> {
-    return {};
+    return { type: "acceptHosted" };
   }
 
   async initializeTransaction(

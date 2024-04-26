@@ -167,7 +167,7 @@ export class AcceptJsGateway implements PaymentGateway {
   async initializePaymentGateway(
     _payload: PaymentGatewayInitializeSessionEventFragment,
   ): Promise<AcceptJsPaymentGatewayResponseData> {
-    return {};
+    return { type: "acceptJs" };
   }
 
   async initializeTransaction(

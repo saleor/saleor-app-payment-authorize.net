@@ -18,15 +18,13 @@ export type AcceptHostedData = z.infer<typeof acceptHostedPaymentGatewaySchema>;
 
 // currently, Payment Gateway Initialize doesnt return any config data
 const dataSchema = z.object({
-	acceptHosted: z.unknown().optional(),
+	acceptHosted: z.object({ type: z.string().optional() }).optional(),
 	applePay: z.unknown().optional(),
 	paypal: z.unknown().optional(),
-	acceptJs: z.object({ enabled: z.boolean().optional() }),
+	acceptJs: z.object({ type: z.string().optional() }).optional(),
 });
 
 type PaymentMethods = z.infer<typeof dataSchema>;
-
-const paymentGatewayInitializeSessionSchema = dataSchema;
 
 const payloadDataSchemaAcceptHosted = z.object({
 	shouldCreateCustomerProfile: z.boolean(),
@@ -89,14 +87,28 @@ export const PaymentMethods = () => {
 		if (!gateway) {
 			throw new Error("No payment gateway found");
 		}
+		const gatewayData = (gateway.data as { data?: { type: string } })?.data;
 
-		const data = paymentGatewayInitializeSessionSchema?.parse(gateway.data);
+		/**
+		 * This needs to be selectable - if we want type apple pay, paypal, or acceptHosted
+		 */
+		switch (gatewayData?.type) {
+			case "acceptJs":
+				setPaymentMethods({ acceptJs: gatewayData });
+				break;
+			case "acceptHosted":
+				setPaymentMethods({ acceptHosted: gatewayData });
+				break;
 
-		if (!data) {
-			throw new Error("No data found");
+			case "applePay":
+				setPaymentMethods({ applePay: "" });
+				break;
+			case "paypal":
+				setPaymentMethods({ paypal: "" });
+				break;
+			default:
+				throw new Error("No data found");
 		}
-
-		setPaymentMethods(data);
 	}, [initializePaymentGateways, checkoutId]);
 
 	React.useEffect(() => {
