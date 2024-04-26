@@ -129,11 +129,7 @@ export class AcceptJsGateway implements PaymentGateway {
 
     if (customerProfileId) {
       this.logger.trace("Found customerProfileId, adding to transaction request.");
-      const profile = {
-        customerProfileId,
-      };
-
-      transactionRequest.setProfile(profile);
+      transactionRequest.setCustomer({ id: customerProfileId });
     }
 
     payment.setOpaqueData(opaqueDataType);
