@@ -1,3 +1,4 @@
+import { type APIContracts } from "authorizenet";
 import type { JSONValue } from "../types";
 import { BaseError, UnknownError } from "@/errors";
 
@@ -60,3 +61,9 @@ export const isObject = (val: unknown): val is Record<string, unknown> =>
   typeof val === "object" && val !== null && !Array.isArray(val);
 
 export const __do = <T>(fn: () => T): T => fn();
+
+export type CreateCustomerProfileReqType = {
+  customerProfileId: string;
+  opaqueData: APIContracts.OpaqueDataType;
+  billTo: APIContracts.CustomerAddressType;
+};

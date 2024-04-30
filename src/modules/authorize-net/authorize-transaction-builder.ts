@@ -48,6 +48,7 @@ function buildAuthorizeTransactionRequest({
  */
 function buildTransactionFromTransactionInitializePayload(
   payload: TransactionInitializeSessionEventFragment,
+  isCustomerProfileCreated?: boolean,
 ): AuthorizeNet.APIContracts.TransactionRequestType {
   const authorizeTransactionId = transactionId.resolveAuthorizeTransactionIdFromTransaction(
     payload.transaction,
@@ -68,9 +69,12 @@ function buildTransactionFromTransactionInitializePayload(
   const lineItems = authorizeTransaction.buildLineItemsFromOrderOrCheckout(payload.sourceObject);
   transactionRequest.setLineItems(lineItems);
 
-  invariant(payload.sourceObject.billingAddress, "Billing address is missing from payload.");
-  const billTo = authorizeTransaction.buildBillTo(payload.sourceObject.billingAddress);
-  transactionRequest.setBillTo(billTo);
+  // Here we skip adding billTo in case of charge with payment profile as per authorize.net requirements
+  if (!isCustomerProfileCreated) {
+    invariant(payload.sourceObject.billingAddress, "Billing address is missing from payload.");
+    const billTo = authorizeTransaction.buildBillTo(payload.sourceObject.billingAddress);
+    transactionRequest.setBillTo(billTo);
+  }
 
   invariant(payload.sourceObject.shippingAddress, "Shipping address is missing from payload.");
   const shipTo = authorizeTransaction.buildShipTo(payload.sourceObject.shippingAddress);

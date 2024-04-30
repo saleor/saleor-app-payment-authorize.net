@@ -1,6 +1,7 @@
 import { CustomerProfileClient } from "../authorize-net/client/customer-profile-client";
 import { type UserWithEmailFragment } from "generated/graphql";
 import { createLogger } from "@/lib/logger";
+import { type CreateCustomerProfileReqType } from "@/lib/utils";
 
 export class CustomerProfileManager {
   private customerProfileClient: CustomerProfileClient;
@@ -65,5 +66,13 @@ export class CustomerProfileManager {
       this.logger.trace("Customer profile not found in Authorize.net");
       return undefined;
     }
+  }
+
+  /**
+   * @description Creates a new customer payment profile in Authorize.net.
+   */
+  async createCustomerPaymentProfile(request: CreateCustomerProfileReqType) {
+    const response = await this.customerProfileClient.createCustomerPaymentProfile(request);
+    return response.customerPaymentProfileId;
   }
 }

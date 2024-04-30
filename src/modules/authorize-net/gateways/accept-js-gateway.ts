@@ -26,6 +26,7 @@ import {
   type PaymentGateway,
 } from "@/modules/authorize-net/gateways/payment-gateway";
 import { type TransactionInitializeSessionResponse } from "@/schemas/TransactionInitializeSession/TransactionInitializeSessionResponse.mjs";
+import { invariant } from "@/lib/invariant";
 
 export const acceptJsPaymentGatewayResponseDataSchema = z.object({});
 
@@ -47,6 +48,7 @@ export const acceptJsTransactionInitializeRequestDataSchema = gatewayUtils.creat
       dataValue: z.string().optional().default(""),
     }),
     shouldCreateCustomerProfile: z.boolean().optional().default(false),
+    shouldCreateCustomerPaymentProfile: z.boolean().optional().default(false),
   }),
 );
 
@@ -91,9 +93,6 @@ export class AcceptJsGateway implements PaymentGateway {
   private async buildTransactionFromPayload(
     payload: TransactionInitializeSessionEventFragment,
   ): Promise<APIContracts.TransactionRequestType> {
-    // Build initial transaction request
-    const transactionRequest =
-      authorizeTransaction.buildTransactionFromTransactionInitializePayload(payload);
     const user = payload.sourceObject.user;
 
     // Parse the payload `data` object
@@ -111,9 +110,14 @@ export class AcceptJsGateway implements PaymentGateway {
     // START: Synchronize fields specific for Accept.js gateway
 
     const payment = new APIContracts.PaymentType();
+
+    const profileToCharge = new APIContracts.CustomerProfilePaymentType();
+
+    const paymentProfile = new APIContracts.PaymentProfile();
+
     const opaqueDataType = new APIContracts.OpaqueDataType();
     const {
-      data: { opaqueData, shouldCreateCustomerProfile },
+      data: { opaqueData, shouldCreateCustomerProfile, shouldCreateCustomerPaymentProfile },
     } = parseResult.data;
 
     if (opaqueData?.dataDescriptor && opaqueData?.dataValue) {
@@ -126,20 +130,51 @@ export class AcceptJsGateway implements PaymentGateway {
     }
 
     let customerProfileId = null;
+    let customerPaymentProfileId = null;
     if (user && shouldCreateCustomerProfile) {
       this.logger.trace("Looking up customerProfileId.");
       customerProfileId = await this.customerProfileManager.getUserCustomerProfileId({
         user,
       });
+      if (shouldCreateCustomerPaymentProfile && customerProfileId) {
+        invariant(payload.sourceObject.billingAddress, "Billing address is missing from payload.");
+        const billTo = authorizeTransaction.buildBillTo(payload.sourceObject.billingAddress);
+
+        customerPaymentProfileId = await this.customerProfileManager.createCustomerPaymentProfile({
+          customerProfileId,
+          opaqueData: opaqueDataType,
+          billTo,
+        });
+        this.logger.trace("Customer payment profile created.");
+      }
     }
+    const isCustomerProfileCreated =
+      customerPaymentProfileId?.length && customerProfileId?.length ? true : false;
+
+    // Build initial transaction request
+    const transactionRequest =
+      authorizeTransaction.buildTransactionFromTransactionInitializePayload(
+        payload,
+        isCustomerProfileCreated,
+      );
 
     if (customerProfileId) {
       this.logger.trace("Found customerProfileId, adding to transaction request.");
       transactionRequest.setCustomer({ id: customerProfileId });
     }
 
-    payment.setOpaqueData(opaqueDataType);
-    transactionRequest.setPayment(payment);
+    if (!customerPaymentProfileId) {
+      payment.setOpaqueData(opaqueDataType);
+      transactionRequest.setPayment(payment);
+    }
+
+    // here we are charge a customer payment profile
+    if (customerPaymentProfileId && customerProfileId) {
+      profileToCharge.setCustomerProfileId(customerProfileId);
+      paymentProfile.setPaymentProfileId(customerPaymentProfileId);
+      profileToCharge.setPaymentProfile(paymentProfile);
+      transactionRequest.setProfile(profileToCharge);
+    }
 
     // END: Synchronize fields specific for Accept.js gateway
 

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { AuthorizeNetResponseValidationError } from "../authorize-net-error";
 import { AuthorizeNetClient, baseAuthorizeObjectSchema } from "./authorize-net-client";
 import { type UserWithEmailFragment } from "generated/graphql";
+import { type CreateCustomerProfileReqType } from "@/lib/utils";
 
 const ApiContracts = AuthorizeNet.APIContracts;
 const ApiControllers = AuthorizeNet.APIControllers;
@@ -22,7 +23,7 @@ const paymentProfileSchema = z.object({
       cardNumber: z.string(),
       expirationDate: z.string(),
       cardType: z.string(),
-      issuerNumber: z.string(),
+      issuerNumber: z.string().optional(),
     }),
   }),
 });
@@ -36,6 +37,13 @@ const getCustomerProfileSchema = baseAuthorizeObjectSchema.and(
   }),
 );
 
+const getCustomerPaymentProfileSchema = baseAuthorizeObjectSchema.and(
+  z.object({
+    customerProfileId: z.string().default(""),
+    customerPaymentProfileId: z.string().default(""),
+  }),
+);
+
 const AuthorizeCreateCustomerProfileResponseError = AuthorizeNetResponseValidationError.subclass(
   "AuthorizeCreateCustomerProfileResponseError",
 );
@@ -45,6 +53,7 @@ const AuthorizeGetCustomerProfileResponseError = AuthorizeNetResponseValidationE
 );
 
 type GetCustomerProfileResponse = z.infer<typeof getCustomerProfileSchema>;
+type GetCustomerPaymentProfileResponse = z.infer<typeof getCustomerPaymentProfileSchema>;
 
 export class CustomerProfileClient extends AuthorizeNetClient {
   createCustomerProfile({
@@ -137,6 +146,48 @@ export class CustomerProfileClient extends AuthorizeNetClient {
           this.resolveResponseErrors(parsedResponse);
 
           resolve(parsedResponse);
+        } catch (error) {
+          if (error instanceof z.ZodError) {
+            return reject(error.format());
+          }
+          return reject(error);
+        }
+      });
+    });
+  }
+
+  createCustomerPaymentProfile({
+    customerProfileId,
+    opaqueData,
+    billTo,
+  }: CreateCustomerProfileReqType): Promise<GetCustomerPaymentProfileResponse> {
+    const createRequest = new ApiContracts.CreateCustomerPaymentProfileRequest();
+    const profile = new ApiContracts.CustomerPaymentProfileType();
+    profile.setPayment({ opaqueData });
+    profile.setBillTo(billTo);
+    createRequest.setMerchantAuthentication(this.merchantAuthenticationType);
+    createRequest.setCustomerProfileId(customerProfileId);
+    createRequest.setPaymentProfile(profile);
+
+    const customerPaymentProfileController =
+      new ApiControllers.CreateCustomerPaymentProfileController(createRequest.getJSON());
+
+    return new Promise((resolve, reject) => {
+      customerPaymentProfileController.execute(() => {
+        try {
+          const apiResponse: unknown = customerPaymentProfileController.getResponse();
+          const response = new ApiContracts.CreateCustomerPaymentProfileResponse(apiResponse);
+          const parseResult = getCustomerPaymentProfileSchema.safeParse(response);
+
+          if (!parseResult.success) {
+            throw new AuthorizeGetCustomerProfileResponseError(
+              "The response from Authorize.net GetCustomerPaymentProfileResponse did not match the expected schema",
+              {
+                errors: parseResult.error.errors,
+              },
+            );
+          }
+          resolve(parseResult.data);
         } catch (error) {
           if (error instanceof z.ZodError) {
             return reject(error.format());
