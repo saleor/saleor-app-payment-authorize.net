@@ -49,4 +49,21 @@ export class CustomerProfileManager {
 
     return this.createCustomerProfile({ user });
   }
+
+  /**
+   * @description Returns the Authorize.net customerSavedPaymentProfile for the given userEmail.
+   */
+  async getUserCustomerPaymentProfile({ user }: { user: UserWithEmailFragment }) {
+    try {
+      const response = await this.customerProfileClient.getCustomerProfileByUser({ user });
+      if (!response.profile?.paymentProfiles?.length) {
+        return [];
+      }
+      this.logger.debug("Customer profile found in Authorize.net");
+      return response.profile.paymentProfiles;
+    } catch (error) {
+      this.logger.trace("Customer profile not found in Authorize.net");
+      return undefined;
+    }
+  }
 }

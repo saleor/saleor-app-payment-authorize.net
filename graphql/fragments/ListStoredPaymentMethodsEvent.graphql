@@ -6,5 +6,9 @@ fragment ListStoredPaymentMethodsEvent on ListStoredPaymentMethods {
       id
       name
     }
+    ... on User {
+      id
+      email
+    }
   }
 }

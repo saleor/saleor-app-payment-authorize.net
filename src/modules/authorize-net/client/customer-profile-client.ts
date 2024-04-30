@@ -15,10 +15,23 @@ const createCustomerProfileSchema = baseAuthorizeObjectSchema.and(
 
 type CreateCustomerProfileResponse = z.infer<typeof createCustomerProfileSchema>;
 
+const paymentProfileSchema = z.object({
+  customerPaymentProfileId: z.string(),
+  payment: z.object({
+    creditCard: z.object({
+      cardNumber: z.string(),
+      expirationDate: z.string(),
+      cardType: z.string(),
+      issuerNumber: z.string(),
+    }),
+  }),
+});
+
 const getCustomerProfileSchema = baseAuthorizeObjectSchema.and(
   z.object({
     profile: z.object({
       customerProfileId: z.string().min(1),
+      paymentProfiles: z.array(paymentProfileSchema).optional(),
     }),
   }),
 );

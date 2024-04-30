@@ -13,8 +13,7 @@ export class ListStoredPaymentMethodsService {
     _payload: ListStoredPaymentMethodsEventFragment,
   ): Promise<ListStoredPaymentMethodsResponse> {
     const acceptJs = new AcceptJsGateway();
-    const paymentMethods = await Promise.all([acceptJs.listStoredPaymentMethods()]);
-
+    const paymentMethods = await Promise.all([acceptJs.listStoredPaymentMethods(_payload)]);
     return {
       paymentMethods,
     };

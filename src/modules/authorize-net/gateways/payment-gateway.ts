@@ -3,6 +3,7 @@ import { type ListStoredPaymentMethodsResponse } from "@/schemas/ListStoredPayme
 
 import { type TransactionInitializeSessionResponse } from "@/schemas/TransactionInitializeSession/TransactionInitializeSessionResponse.mjs";
 import {
+  type ListStoredPaymentMethodsEventFragment,
   type PaymentGatewayInitializeSessionEventFragment,
   type TransactionInitializeSessionEventFragment,
 } from "generated/graphql";
@@ -21,5 +22,7 @@ export interface PaymentGateway {
   initializeTransaction(
     payload: TransactionInitializeSessionEventFragment,
   ): Promise<TransactionInitializeSessionResponse>;
-  listStoredPaymentMethods?(): Promise<AppPaymentMethod>;
+  listStoredPaymentMethods?(
+    payload: ListStoredPaymentMethodsEventFragment,
+  ): Promise<AppPaymentMethod>;
 }

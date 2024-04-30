@@ -14,6 +14,7 @@ import {
 } from "../client/create-transaction";
 import { gatewayUtils } from "./gateway-utils";
 import {
+  type ListStoredPaymentMethodsEventFragment,
   type PaymentGatewayInitializeSessionEventFragment,
   type TransactionInitializeSessionEventFragment,
 } from "generated/graphql";
@@ -190,10 +191,13 @@ export class AcceptJsGateway implements PaymentGateway {
     };
   }
 
-  async listStoredPaymentMethods(): Promise<AppPaymentMethod> {
-    // START: Get stored payment methods for Accept.js flow
-
-    // END
+  async listStoredPaymentMethods(
+    payload: ListStoredPaymentMethodsEventFragment,
+  ): Promise<AppPaymentMethod> {
+    //TODO: need to use the user info on next line
+    console.log("payload Data", payload);
+    // const user = payload.issuingPrincipal;
+    // const response = await this.customerProfileManager.getUserCustomerPaymentProfile({ user });
 
     return {
       id: "",
