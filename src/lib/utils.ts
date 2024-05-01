@@ -1,6 +1,7 @@
 import { type APIContracts } from "authorizenet";
 import type { JSONValue } from "../types";
 import { BaseError, UnknownError } from "@/errors";
+import { type UserWithEmailFragment } from "generated/graphql";
 
 export const tryJsonParse = (text: string | undefined) => {
   if (!text) {
@@ -66,4 +67,9 @@ export type CreateCustomerProfileReqType = {
   customerProfileId: string;
   opaqueData: APIContracts.OpaqueDataType;
   billTo: APIContracts.CustomerAddressType;
+};
+
+export type CustomerProfileReq = {
+  user?: UserWithEmailFragment;
+  guestEmail?: string;
 };

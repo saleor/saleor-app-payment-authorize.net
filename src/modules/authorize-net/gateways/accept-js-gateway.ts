@@ -93,7 +93,8 @@ export class AcceptJsGateway implements PaymentGateway {
   private async buildTransactionFromPayload(
     payload: TransactionInitializeSessionEventFragment,
   ): Promise<APIContracts.TransactionRequestType> {
-    const user = payload.sourceObject.user;
+    const user = payload.sourceObject.user || undefined;
+    const guestEmail = payload.sourceObject.userEmail || undefined;
 
     // Parse the payload `data` object
     const parseResult = acceptJsTransactionInitializeRequestDataSchema.safeParse(payload.data);
@@ -131,10 +132,12 @@ export class AcceptJsGateway implements PaymentGateway {
 
     let customerProfileId = null;
     let customerPaymentProfileId = null;
-    if (user && shouldCreateCustomerProfile) {
+    if (shouldCreateCustomerProfile) {
       this.logger.trace("Looking up customerProfileId.");
+
       customerProfileId = await this.customerProfileManager.getUserCustomerProfileId({
         user,
+        guestEmail,
       });
       if (shouldCreateCustomerPaymentProfile && customerProfileId) {
         invariant(payload.sourceObject.billingAddress, "Billing address is missing from payload.");
@@ -148,6 +151,7 @@ export class AcceptJsGateway implements PaymentGateway {
         this.logger.trace("Customer payment profile created.");
       }
     }
+
     const isCustomerProfileCreated =
       customerPaymentProfileId?.length && customerProfileId?.length ? true : false;
 

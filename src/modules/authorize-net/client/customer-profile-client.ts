@@ -2,8 +2,7 @@ import AuthorizeNet from "authorizenet";
 import { z } from "zod";
 import { AuthorizeNetResponseValidationError } from "../authorize-net-error";
 import { AuthorizeNetClient, baseAuthorizeObjectSchema } from "./authorize-net-client";
-import { type UserWithEmailFragment } from "generated/graphql";
-import { type CreateCustomerProfileReqType } from "@/lib/utils";
+import { type CustomerProfileReq, type CreateCustomerProfileReqType } from "@/lib/utils";
 
 const ApiContracts = AuthorizeNet.APIContracts;
 const ApiControllers = AuthorizeNet.APIControllers;
@@ -58,17 +57,25 @@ type GetCustomerPaymentProfileResponse = z.infer<typeof getCustomerPaymentProfil
 export class CustomerProfileClient extends AuthorizeNetClient {
   createCustomerProfile({
     user,
-  }: {
-    user: UserWithEmailFragment;
-  }): Promise<CreateCustomerProfileResponse> {
+    guestEmail,
+  }: CustomerProfileReq): Promise<CreateCustomerProfileResponse> {
     const createRequest = new ApiContracts.CreateCustomerProfileRequest();
     createRequest.setMerchantAuthentication(this.merchantAuthenticationType);
     createRequest.setProfile(new ApiContracts.CustomerProfileType());
 
     const customerProfileType = new ApiContracts.CustomerProfileType();
-    customerProfileType.setEmail(user.email);
-    // @todo we should set `MerchantCustomerId` on customerProfile but unfortunately Saleor user IDs are longer than 20 characters
-    // and Authorize.net won't allow it
+
+    // Set `MerchantCustomerId` on regular customerProfile when user is logged and set email in case of guest user
+    if (!user) {
+      customerProfileType.setEmail(guestEmail);
+      customerProfileType.setDescription("Guest user profile");
+      customerProfileType.setProfileType("guest");
+    }
+    if (user) {
+      customerProfileType.setMerchantCustomerId(user.id);
+      customerProfileType.setEmail(user.email);
+      customerProfileType.setDescription("Regular user profile");
+    }
 
     createRequest.setProfile(customerProfileType);
 
@@ -111,12 +118,13 @@ export class CustomerProfileClient extends AuthorizeNetClient {
 
   getCustomerProfileByUser({
     user,
-  }: {
-    user: UserWithEmailFragment;
-  }): Promise<GetCustomerProfileResponse> {
+    guestEmail,
+  }: CustomerProfileReq): Promise<GetCustomerProfileResponse> {
     const createRequest = new ApiContracts.GetCustomerProfileRequest();
     createRequest.setMerchantAuthentication(this.merchantAuthenticationType);
-    createRequest.setEmail(user.email);
+
+    if (!user) createRequest.setEmail(guestEmail);
+    if (user) createRequest.setMerchantCustomerId(user.id);
     // @todo we should get customer profile by `MerchantCustomerId` but unfortunately Saleor user IDs are longer than 20 characters
     // and Authorize.net won't allow it
 
