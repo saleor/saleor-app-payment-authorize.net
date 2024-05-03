@@ -32,6 +32,7 @@ const getCustomerProfileSchema = baseAuthorizeObjectSchema.and(
     profile: z.object({
       customerProfileId: z.string().min(1),
       paymentProfiles: z.array(paymentProfileSchema).optional(),
+      profileType: z.string().optional(),
     }),
   }),
 );
@@ -51,7 +52,7 @@ const AuthorizeGetCustomerProfileResponseError = AuthorizeNetResponseValidationE
   "AuthorizeGetCustomerProfileResponseError",
 );
 
-type GetCustomerProfileResponse = z.infer<typeof getCustomerProfileSchema>;
+export type GetCustomerProfileResponse = z.infer<typeof getCustomerProfileSchema>;
 type GetCustomerPaymentProfileResponse = z.infer<typeof getCustomerPaymentProfileSchema>;
 
 export class CustomerProfileClient extends AuthorizeNetClient {
@@ -74,6 +75,7 @@ export class CustomerProfileClient extends AuthorizeNetClient {
     if (user) {
       customerProfileType.setMerchantCustomerId(user.id);
       customerProfileType.setEmail(user.email);
+      customerProfileType.setProfileType("regular");
       customerProfileType.setDescription("Regular user profile");
     }
 
@@ -123,8 +125,8 @@ export class CustomerProfileClient extends AuthorizeNetClient {
     const createRequest = new ApiContracts.GetCustomerProfileRequest();
     createRequest.setMerchantAuthentication(this.merchantAuthenticationType);
 
-    if (!user) createRequest.setEmail(guestEmail);
-    if (user) createRequest.setMerchantCustomerId(user.id);
+    createRequest.setEmail(user ? user.email : guestEmail);
+
     // @todo we should get customer profile by `MerchantCustomerId` but unfortunately Saleor user IDs are longer than 20 characters
     // and Authorize.net won't allow it
 
@@ -196,6 +198,64 @@ export class CustomerProfileClient extends AuthorizeNetClient {
             );
           }
           resolve(parseResult.data);
+        } catch (error) {
+          if (error instanceof z.ZodError) {
+            return reject(error.format());
+          }
+          return reject(error);
+        }
+      });
+    });
+  }
+
+  updateCustomerProfile(
+    { profileType, user }: CustomerProfileReq,
+    customerProfileId: string,
+    description: string,
+  ): Promise<CreateCustomerProfileResponse> {
+    const updateCustomerRequest = new ApiContracts.UpdateCustomerProfileRequest();
+    updateCustomerRequest.setMerchantAuthentication(this.merchantAuthenticationType);
+
+    // Note : always use below format to update the customer details to safe from invalid error from authorize.
+    updateCustomerRequest.setProfile({
+      merchantCustomerId: user?.id,
+      description,
+      email: user?.email,
+      customerProfileId,
+      profileType: profileType,
+    });
+
+    const customerProfileController = new ApiControllers.UpdateCustomerProfileController(
+      updateCustomerRequest.getJSON(),
+    );
+
+    customerProfileController.setEnvironment(this.getEnvironment());
+
+    return new Promise((resolve, reject) => {
+      customerProfileController.execute(() => {
+        try {
+          const apiResponse: unknown = customerProfileController.getResponse();
+          const response = new ApiContracts.CreateCustomerProfileResponse(apiResponse);
+          this.logger.trace({ response }, "update customer response");
+
+          const parseResult = createCustomerProfileSchema.safeParse({
+            ...response,
+            customerProfileId,
+          });
+
+          if (!parseResult.success) {
+            throw new AuthorizeCreateCustomerProfileResponseError(
+              "The response from Authorize.net UpdateCustomerProfileResponse did not match the expected schema",
+              {
+                errors: parseResult.error.errors,
+              },
+            );
+          }
+
+          const parsedResponse = parseResult.data;
+          this.resolveResponseErrors(parsedResponse);
+
+          resolve(parsedResponse);
         } catch (error) {
           if (error instanceof z.ZodError) {
             return reject(error.format());

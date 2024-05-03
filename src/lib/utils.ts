@@ -63,6 +63,8 @@ export const isObject = (val: unknown): val is Record<string, unknown> =>
 
 export const __do = <T>(fn: () => T): T => fn();
 
+export type ProfileType = "guest" | "regular" | null;
+
 export type CreateCustomerProfileReqType = {
   customerProfileId: string;
   opaqueData: APIContracts.OpaqueDataType;
@@ -72,4 +74,5 @@ export type CreateCustomerProfileReqType = {
 export type CustomerProfileReq = {
   user?: UserWithEmailFragment;
   guestEmail?: string;
+  profileType?: ProfileType;
 };
