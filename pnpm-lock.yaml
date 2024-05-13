@@ -1,5 +1,9 @@
 lockfileVersion: '6.0'
 
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
 overrides:
   '@urql/exchange-auth>@urql/core': 3.2.2
 
@@ -134,8 +138,8 @@ dependencies:
     specifier: 3.0.4
     version: 3.0.4(graphql@16.8.1)(react@18.2.0)
   uuidv7:
-    specifier: 0.6.2
-    version: 0.6.2
+    specifier: 1.0.0
+    version: 1.0.0
   vite:
     specifier: 4.4.9
     version: 4.4.9(@types/node@20.10.4)
@@ -11171,8 +11175,8 @@ packages:
     hasBin: true
     dev: false
 
-  /uuidv7@0.6.2:
-    resolution: {integrity: sha512-VLVN90rtN2KFewkXa9T6WWGCnRbk4kiQpPpuL47S0jdMr1rDzOEBq8VJDK5f2ykmjlCZEPLTMTPLHwa+aj9JZg==}
+  /uuidv7@1.0.0:
+    resolution: {integrity: sha512-XkvPwTtSmYwxIE1FSYQTYg79zHL1ZWV5vM/Qyl9ahXCU8enOPPA4bTjzvafvYUB7l2+miv4EqK/qEe75cOXIdA==}
     hasBin: true
     dev: false
 
@@ -11754,7 +11758,3 @@ packages:
       react: 18.2.0
       use-sync-external-store: 1.2.0(react@18.2.0)
     dev: false
-
-settings:
-  autoInstallPeers: true
-  excludeLinksFromLockfile: false
