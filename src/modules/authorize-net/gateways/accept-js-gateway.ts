@@ -43,12 +43,15 @@ type AcceptJsPaymentGatewayResponseData = z.infer<typeof acceptJsPaymentGatewayR
 export const acceptJsTransactionInitializeRequestDataSchema = gatewayUtils.createGatewayDataSchema(
   "acceptJs",
   z.object({
-    opaqueData: z.object({
-      dataDescriptor: z.string().optional().default(""),
-      dataValue: z.string().optional().default(""),
-    }),
+    opaqueData: z
+      .object({
+        dataDescriptor: z.string().optional().default(""),
+        dataValue: z.string().optional().default(""),
+      })
+      .optional(),
     shouldCreateCustomerProfile: z.boolean().optional().default(false),
     shouldCreateCustomerPaymentProfile: z.boolean().optional().default(false),
+    paymentProfileId: z.string().optional(),
   }),
 );
 
@@ -95,7 +98,6 @@ export class AcceptJsGateway implements PaymentGateway {
   ): Promise<APIContracts.TransactionRequestType> {
     const user = payload.sourceObject.user || undefined;
     const guestEmail = payload.sourceObject.userEmail || undefined;
-
     // Parse the payload `data` object
     const parseResult = acceptJsTransactionInitializeRequestDataSchema.safeParse(payload.data);
 
@@ -118,10 +120,15 @@ export class AcceptJsGateway implements PaymentGateway {
 
     const opaqueDataType = new APIContracts.OpaqueDataType();
     const {
-      data: { opaqueData, shouldCreateCustomerProfile, shouldCreateCustomerPaymentProfile },
+      data: {
+        opaqueData,
+        shouldCreateCustomerProfile,
+        shouldCreateCustomerPaymentProfile,
+        paymentProfileId,
+      },
     } = parseResult.data;
 
-    if (opaqueData?.dataDescriptor && opaqueData?.dataValue) {
+    if (opaqueData?.dataDescriptor && opaqueData?.dataValue && !paymentProfileId) {
       opaqueDataType.setDataDescriptor(opaqueData.dataDescriptor);
       opaqueDataType.setDataValue(opaqueData.dataValue);
     }
@@ -131,7 +138,7 @@ export class AcceptJsGateway implements PaymentGateway {
     }
 
     let customerProfileId = null;
-    let customerPaymentProfileId = null;
+    let customerPaymentProfileId = paymentProfileId || null;
     if (shouldCreateCustomerProfile) {
       this.logger.trace("Looking up customerProfileId.");
 
@@ -143,11 +150,15 @@ export class AcceptJsGateway implements PaymentGateway {
         invariant(payload.sourceObject.billingAddress, "Billing address is missing from payload.");
         const billTo = authorizeTransaction.buildBillTo(payload.sourceObject.billingAddress);
 
-        customerPaymentProfileId = await this.customerProfileManager.createCustomerPaymentProfile({
-          customerProfileId,
-          opaqueData: opaqueDataType,
-          billTo,
-        });
+        if (!paymentProfileId && opaqueDataType) {
+          customerPaymentProfileId = await this.customerProfileManager.createCustomerPaymentProfile(
+            {
+              customerProfileId,
+              opaqueData: opaqueDataType,
+              billTo,
+            },
+          );
+        }
         this.logger.trace("Customer payment profile created.");
       }
     }
