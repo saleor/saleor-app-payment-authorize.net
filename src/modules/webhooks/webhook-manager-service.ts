@@ -8,6 +8,7 @@ import { TransactionRefundRequestedService } from "./transaction-refund-requeste
 
 import { PaymentGatewayInitializeSessionService } from "./payment-gateway-initialize-session";
 import { TransactionInitializeSessionService } from "./transaction-initialize-session";
+import { ListStoredPaymentMethodsService } from "./list-stored-payment-methods";
 import { createServerClient } from "@/lib/create-graphq-client";
 import { type PaymentGatewayInitializeSessionResponse } from "@/pages/api/webhooks/payment-gateway-initialize-session";
 import { type TransactionCancelationRequestedResponse } from "@/schemas/TransactionCancelationRequested/TransactionCancelationRequestedResponse.mjs";
@@ -15,12 +16,14 @@ import { type TransactionInitializeSessionResponse } from "@/schemas/Transaction
 import { type TransactionProcessSessionResponse } from "@/schemas/TransactionProcessSession/TransactionProcessSessionResponse.mjs";
 import { type TransactionRefundRequestedResponse } from "@/schemas/TransactionRefundRequested/TransactionRefundRequestedResponse.mjs";
 import {
+  type ListStoredPaymentMethodsEventFragment,
   type PaymentGatewayInitializeSessionEventFragment,
   type TransactionCancelationRequestedEventFragment,
   type TransactionInitializeSessionEventFragment,
   type TransactionProcessSessionEventFragment,
   type TransactionRefundRequestedEventFragment,
 } from "generated/graphql";
+import { type ListStoredPaymentMethodsResponse } from "@/schemas/ListStoredPaymentMethods/ListStoredPaymentMethodsResponse.mjs";
 
 export interface PaymentsWebhooks {
   transactionInitializeSession: (
@@ -32,6 +35,9 @@ export interface PaymentsWebhooks {
   transactionCancelationRequested: (
     payload: TransactionCancelationRequestedEventFragment,
   ) => Promise<TransactionCancelationRequestedResponse>;
+  listStoredPaymentMethods: (
+    payload: ListStoredPaymentMethodsEventFragment,
+  ) => Promise<ListStoredPaymentMethodsResponse>;
 }
 
 export class AppWebhookManager implements PaymentsWebhooks {
@@ -39,6 +45,14 @@ export class AppWebhookManager implements PaymentsWebhooks {
 
   constructor({ apiClient }: { apiClient: Client }) {
     this.apiClient = apiClient;
+  }
+
+  async listStoredPaymentMethods(
+    payload: ListStoredPaymentMethodsEventFragment,
+  ): Promise<ListStoredPaymentMethodsResponse> {
+    const service = new ListStoredPaymentMethodsService();
+
+    return service.execute(payload);
   }
 
   async transactionInitializeSession(

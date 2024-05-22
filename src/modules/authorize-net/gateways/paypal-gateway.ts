@@ -3,7 +3,7 @@ import { z } from "zod";
 import { CreateTransactionClient } from "../client/create-transaction";
 import { authorizeTransaction } from "../authorize-transaction-builder";
 import { gatewayUtils } from "./gateway-utils";
-import { type PaymentGateway } from "@/modules/webhooks/payment-gateway-initialize-session";
+import { type PaymentGateway } from "@/modules/authorize-net/gateways/payment-gateway";
 import { type TransactionInitializeSessionResponse } from "@/schemas/TransactionInitializeSession/TransactionInitializeSessionResponse.mjs";
 import {
   type PaymentGatewayInitializeSessionEventFragment,

@@ -1,6 +1,8 @@
 import { z } from "zod";
 
-const createGatewayDataSchema = <TName extends string, TData extends z.ZodTypeAny>(
+type GatewayName = "acceptHosted" | "paypal" | "applePay" | "acceptJs"; // todo: centralize all the gateway and infer the names
+
+const createGatewayDataSchema = <TName extends GatewayName, TData extends z.ZodTypeAny>(
   gatewayName: TName,
   data: TData,
 ) => {
