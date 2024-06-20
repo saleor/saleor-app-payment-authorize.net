@@ -138,8 +138,8 @@ dependencies:
     specifier: 3.0.4
     version: 3.0.4(graphql@16.8.1)(react@18.2.0)
   uuidv7:
-    specifier: 0.6.2
-    version: 0.6.2
+    specifier: 1.0.1
+    version: 1.0.1
   vite:
     specifier: 4.4.9
     version: 4.4.9(@types/node@20.10.4)
@@ -11189,8 +11189,8 @@ packages:
     hasBin: true
     dev: false
 
-  /uuidv7@0.6.2:
-    resolution: {integrity: sha512-VLVN90rtN2KFewkXa9T6WWGCnRbk4kiQpPpuL47S0jdMr1rDzOEBq8VJDK5f2ykmjlCZEPLTMTPLHwa+aj9JZg==}
+  /uuidv7@1.0.1:
+    resolution: {integrity: sha512-2noB909GbI352dKfASOY6VHHl59KvevZ1FF8gCAXCwDyrt2kkZhuFbczF9udqTfeejiRYEmO4wzUZ0WhVP+IUA==}
     hasBin: true
     dev: false
 
