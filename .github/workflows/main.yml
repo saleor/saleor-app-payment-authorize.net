@@ -62,7 +62,7 @@ jobs:
 
       - name: Download coverage report from main branch
         if: ${{ github.event_name != 'push' }}
-        uses: dawidd6/action-download-artifact@v2
+        uses: dawidd6/action-download-artifact@v6
         with:
           workflow_conclusion: success
           branch: main
