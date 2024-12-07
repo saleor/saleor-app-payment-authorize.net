@@ -7,6 +7,14 @@ const nextConfig = {
 	reactStrictMode: false,
 	images: {
 		domains: url ? [url.hostname] : [],
+		remotePatterns: [
+			{
+				protocol: "https",
+				hostname: url.hostname ?? "",
+				port: "",
+				pathname: "/w20/**",
+			},
+		],
 	},
 };
 

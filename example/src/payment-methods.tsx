@@ -10,6 +10,7 @@ import { authorizeNetAppId } from "./lib/common";
 
 import { AcceptHostedForm } from "./accept-hosted-form";
 import { getCheckoutId } from "./pages/cart";
+import { AcceptPaymentForm } from "./accept-payment-form";
 
 const acceptHostedPaymentGatewaySchema = z.object({});
 
@@ -17,14 +18,22 @@ export type AcceptHostedData = z.infer<typeof acceptHostedPaymentGatewaySchema>;
 
 // currently, Payment Gateway Initialize doesnt return any config data
 const dataSchema = z.object({
-	acceptHosted: z.unknown().optional(),
+	acceptHosted: z.object({ type: z.string().optional() }).optional(),
 	applePay: z.unknown().optional(),
 	paypal: z.unknown().optional(),
+	acceptJs: z.object({ type: z.string().optional() }).optional(),
 });
 
 type PaymentMethods = z.infer<typeof dataSchema>;
 
-const paymentGatewayInitializeSessionSchema = dataSchema;
+const payloadDataSchemaAcceptHosted = z.object({
+	shouldCreateCustomerProfile: z.boolean(),
+	iframeUrl: z.string(),
+});
+
+const payloadDataSchemaAcceptJs = z.object({
+	shouldCreateCustomerProfile: z.boolean(),
+});
 
 export const PaymentMethods = () => {
 	const [isLoading, setIsLoading] = React.useState(false);
@@ -39,11 +48,35 @@ export const PaymentMethods = () => {
 
 	const getPaymentGateways = React.useCallback(async () => {
 		setIsLoading(true);
+		const payloadDataAcceptHosted = payloadDataSchemaAcceptHosted.parse({
+			shouldCreateCustomerProfile: true,
+			iframeUrl: "",
+		});
+		const payloadDataAcceptJs = payloadDataSchemaAcceptJs.parse({
+			shouldCreateCustomerProfile: true,
+		});
 		const response = await initializePaymentGateways({
 			variables: {
-				appId: authorizeNetAppId,
 				checkoutId,
-				data: {},
+				paymentGateways: [
+					{
+						id: authorizeNetAppId,
+						data: {
+							/**
+							 * This needs to be selectable - if we want type apple pay, paypal, or acceptHosted
+							 */
+							type: "acceptHosted",
+							data: payloadDataAcceptHosted,
+						},
+					},
+					{
+						id: authorizeNetAppId,
+						data: {
+							type: "acceptJs",
+							data: payloadDataAcceptJs,
+						},
+					},
+				],
 			},
 		});
 
@@ -54,16 +87,28 @@ export const PaymentMethods = () => {
 		if (!gateway) {
 			throw new Error("No payment gateway found");
 		}
+		const gatewayData = (gateway.data as { data?: { type: string } })?.data;
 
-		console.log(gateway.data);
+		/**
+		 * This needs to be selectable - if we want type apple pay, paypal, or acceptHosted
+		 */
+		switch (gatewayData?.type) {
+			case "acceptJs":
+				setPaymentMethods({ acceptJs: gatewayData });
+				break;
+			case "acceptHosted":
+				setPaymentMethods({ acceptHosted: gatewayData });
+				break;
 
-		const data = paymentGatewayInitializeSessionSchema.parse(gateway.data);
-
-		if (!data) {
-			throw new Error("No data found");
+			case "applePay":
+				setPaymentMethods({ applePay: "" });
+				break;
+			case "paypal":
+				setPaymentMethods({ paypal: "" });
+				break;
+			default:
+				throw new Error("No data found");
 		}
-
-		setPaymentMethods(data);
 	}, [initializePaymentGateways, checkoutId]);
 
 	React.useEffect(() => {
@@ -78,6 +123,11 @@ export const PaymentMethods = () => {
 				{paymentMethods?.acceptHosted !== undefined && (
 					<li>
 						<AcceptHostedForm />
+					</li>
+				)}
+				{paymentMethods?.acceptJs !== undefined && (
+					<li>
+						<AcceptPaymentForm />
 					</li>
 				)}
 				{paymentMethods?.applePay !== undefined && (

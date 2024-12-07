@@ -11,6 +11,10 @@ import {
   PaypalGateway,
   paypalTransactionInitializeRequestDataSchema,
 } from "../authorize-net/gateways/paypal-gateway";
+import {
+  AcceptJsGateway,
+  acceptJsTransactionInitializeRequestDataSchema,
+} from "../authorize-net/gateways/accept-js-gateway";
 import { type TransactionInitializeSessionEventFragment } from "generated/graphql";
 
 import { BaseError, IncorrectWebhookPayloadDataError } from "@/errors";
@@ -36,6 +40,7 @@ const transactionInitializeDataSchema = z.union([
   applePayTransactionInitializeDataSchema,
   acceptHostedTransactionInitializeRequestDataSchema,
   paypalTransactionInitializeRequestDataSchema,
+  acceptJsTransactionInitializeRequestDataSchema,
 ]);
 
 const TransactionInitializePayloadDataError = IncorrectWebhookPayloadDataError.subclass(
@@ -74,6 +79,12 @@ export class TransactionInitializeSessionService {
 
       case "paypal": {
         const gateway = new PaypalGateway();
+
+        return gateway.initializeTransaction(payload);
+      }
+
+      case "acceptJs": {
+        const gateway = new AcceptJsGateway();
 
         return gateway.initializeTransaction(payload);
       }

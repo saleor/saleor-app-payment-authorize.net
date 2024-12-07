@@ -1,42 +1,51 @@
-import { AcceptHostedGateway } from "../authorize-net/gateways/accept-hosted-gateway";
-import { type PaymentGatewayInitializeSessionData } from "@/pages/api/webhooks/payment-gateway-initialize-session";
-import { type PaymentGatewayInitializeSessionResponse } from "@/schemas/PaymentGatewayInitializeSession/PaymentGatewayInitializeSessionResponse.mjs";
-import { type TransactionInitializeSessionResponse } from "@/schemas/TransactionInitializeSession/TransactionInitializeSessionResponse.mjs";
+import { z } from "zod";
 import {
-  type PaymentGatewayInitializeSessionEventFragment,
-  type TransactionInitializeSessionEventFragment,
-} from "generated/graphql";
+  AcceptHostedGateway,
+  acceptHostedPaymentGatewayRequestDataSchema,
+} from "../authorize-net/gateways/accept-hosted-gateway";
+import {
+  AcceptJsGateway,
+  acceptJsPaymentGatewayRequestDataSchema,
+} from "../authorize-net/gateways/accept-js-gateway";
 
-/**
- * PaymentGatewayInitialize will return the list of payment gateways. One of them will be Accept Hosted.
- * The Accept Hosted payment flow differs from the other payment gateways. The Authorize transaction is created inside the Accept Hosted payment form.
- * The other payment gateways require the TransactionInitializeSession webhook to create the Authorize transaction.
- */
-export interface PaymentGateway {
-  initializePaymentGateway(
-    payload: PaymentGatewayInitializeSessionEventFragment,
-  ): Promise<PaymentGatewayInitializeSessionResponse>;
-  initializeTransaction(
-    payload: TransactionInitializeSessionEventFragment,
-  ): Promise<TransactionInitializeSessionResponse>;
-}
+import { type PaymentGatewayInitializeSessionEventFragment } from "generated/graphql";
+import { type PaymentGatewayInitializeSessionResponse } from "@/pages/api/webhooks/payment-gateway-initialize-session";
+
+export const paymentGatewayInitializeSessionRequestDataSchema = z.union([
+  acceptHostedPaymentGatewayRequestDataSchema,
+  acceptJsPaymentGatewayRequestDataSchema,
+]);
+
+const dataSchema = z.object({
+  type: z.string().optional(),
+});
 
 export class PaymentGatewayInitializeSessionService {
   async execute(
     payload: PaymentGatewayInitializeSessionEventFragment,
-  ): Promise<PaymentGatewayInitializeSessionData> {
-    const acceptHostedGateway = new AcceptHostedGateway();
-    const initializeAcceptHosted = acceptHostedGateway.initializePaymentGateway(payload);
+  ): Promise<PaymentGatewayInitializeSessionResponse> {
+    const data = paymentGatewayInitializeSessionRequestDataSchema.parse(payload.data);
 
-    /**
-     * @see: ApplePayGateway, PaypalGateway
-     * Import once they are implemented.
-     */
+    switch (data.type) {
+      case "acceptHosted": {
+        const acceptHostedGateway = new AcceptHostedGateway();
 
-    const [acceptHosted] = await Promise.all([initializeAcceptHosted]);
+        const acceptHosted = await acceptHostedGateway.initializePaymentGateway(payload);
 
-    return {
-      acceptHosted,
-    };
+        return {
+          data: acceptHosted,
+        };
+      }
+
+      case "acceptJs": {
+        const acceptJsGateway = new AcceptJsGateway();
+
+        const acceptJs = await acceptJsGateway.initializePaymentGateway(payload);
+
+        return {
+          data: acceptJs,
+        };
+      }
+    }
   }
 }
