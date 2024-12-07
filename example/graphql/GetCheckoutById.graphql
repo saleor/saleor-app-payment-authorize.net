@@ -1,6 +1,22 @@
 query GetCheckoutById($id: ID!) {
 	checkout(id: $id) {
 		id
+		totalPrice {
+			gross {
+				amount
+				currency
+			}
+		}
+		billingAddress {
+			country {
+				code
+			}
+		}
+		shippingAddress {
+			country {
+				code
+			}
+		}
 		lines {
 			id
 			variant {

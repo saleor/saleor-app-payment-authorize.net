@@ -74,7 +74,7 @@ export function AcceptHostedForm() {
 			throw new Error("No data found in response");
 		}
 
-		console.log(data);
+		console.log({ data });
 
 		const nextAcceptData = acceptHostedTransactionInitializeResponseDataSchema.parse(data);
 		setAcceptData(nextAcceptData);

@@ -1,3 +1,13 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.apple-pay-button {
+	display: inline-block;
+	-webkit-appearance: -apple-pay-button;
+	-apple-pay-button-type: plain;
+	@apply rounded-md mt-2 h-[46px] w-36 block indent-[-9999px];
+}
+.apple-pay-button-black {
+	-apple-pay-button-style: black;
+}
