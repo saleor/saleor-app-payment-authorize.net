@@ -9,8 +9,8 @@ overrides:
 
 dependencies:
   '@hookform/resolvers':
-    specifier: 3.3.0
-    version: 3.3.0(react-hook-form@7.45.4)
+    specifier: 3.10.0
+    version: 3.10.0(react-hook-form@7.45.4)
   '@next/env':
     specifier: 13.4.19
     version: 13.4.19
@@ -2470,8 +2470,8 @@ packages:
       graphql: 16.8.1
     dev: true
 
-  /@hookform/resolvers@3.3.0(react-hook-form@7.45.4):
-    resolution: {integrity: sha512-tgK3nWlfFLlqhqpXZmFMP3RN5E7mlbGfnM2h2ILVsW1TNGuFSod0ePW0grlIY2GAbL4pJdtmOT4HQSZsTwOiKg==}
+  /@hookform/resolvers@3.10.0(react-hook-form@7.45.4):
+    resolution: {integrity: sha512-79Dv+3mDF7i+2ajj7SkypSKHhl1cbln1OGavqrsF7p6mbUv11xpqpacPsGDCTRvCSjEEIez2ef1NveSVL3b0Ag==}
     peerDependencies:
       react-hook-form: ^7.0.0
     dependencies:
