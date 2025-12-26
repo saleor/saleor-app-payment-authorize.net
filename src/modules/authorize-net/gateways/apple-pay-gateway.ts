@@ -5,7 +5,7 @@ import { CreateTransactionClient } from "../client/create-transaction";
 import { gatewayUtils } from "./gateway-utils";
 import { IncorrectWebhookPayloadDataError } from "@/errors";
 import { createLogger } from "@/lib/logger";
-import { type PaymentGateway } from "@/modules/webhooks/payment-gateway-initialize-session";
+import { type PaymentGateway } from "@/modules/authorize-net/gateways/payment-gateway";
 import { type TransactionInitializeSessionResponse } from "@/schemas/TransactionInitializeSession/TransactionInitializeSessionResponse.mjs";
 import {
   type PaymentGatewayInitializeSessionEventFragment,

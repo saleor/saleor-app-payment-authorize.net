@@ -1,26 +1,26 @@
 mutation CreateCheckout($variantId: ID!) {
 	checkoutCreate(
 		input: {
-			channel: "default-channel"
+			channel: "ken-r"
 			lines: [{ quantity: 1, variantId: $variantId }]
 			languageCode: EN_US
 			email: "demo@saleor.io"
 			billingAddress: {
 				firstName: "John"
 				lastName: "Doe"
-				streetAddress1: "813 Howard Street"
-				city: "Oswego"
+				streetAddress1: "500 8th Avenue"
+				city: "New York"
 				countryArea: "NY"
-				postalCode: "13126"
+				postalCode: "10018"
 				country: US
 			}
 			shippingAddress: {
 				firstName: "John"
 				lastName: "Doe"
-				streetAddress1: "813 Howard Street"
-				city: "Oswego"
+				streetAddress1: "500 8th Avenue"
+				city: "New York"
 				countryArea: "NY"
-				postalCode: "13126"
+				postalCode: "10018"
 				country: US
 			}
 		}

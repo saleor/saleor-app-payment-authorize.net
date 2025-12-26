@@ -10,6 +10,7 @@ fragment PaymentGatewayInitializeSessionEvent on PaymentGatewayInitializeSession
       id
     }
   }
+  data
   sourceObject {
     __typename
     ...OrderOrCheckoutSourceObject

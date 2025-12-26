@@ -21,14 +21,21 @@ import {
 import { IncorrectWebhookResponseDataError } from "@/errors";
 import { env } from "@/lib/env.mjs";
 import { createLogger } from "@/lib/logger";
-import { type PaymentGateway } from "@/modules/webhooks/payment-gateway-initialize-session";
+import { type PaymentGateway } from "@/modules/authorize-net/gateways/payment-gateway";
 import { type TransactionInitializeSessionResponse } from "@/schemas/TransactionInitializeSession/TransactionInitializeSessionResponse.mjs";
 
 const ApiContracts = AuthorizeNet.APIContracts;
 
-export const acceptHostedPaymentGatewayDataSchema = z.object({});
+export const acceptHostedPaymentGatewayResponseDataSchema = z.object({});
 
-type AcceptHostedPaymentGatewayData = z.infer<typeof acceptHostedPaymentGatewayDataSchema>;
+export const acceptHostedPaymentGatewayRequestDataSchema = gatewayUtils.createGatewayDataSchema(
+  "acceptHosted",
+  z.object({}),
+);
+
+type AcceptHostedPaymentGatewayResponseData = z.infer<
+  typeof acceptHostedPaymentGatewayResponseDataSchema
+>;
 
 export const acceptHostedTransactionInitializeRequestDataSchema =
   gatewayUtils.createGatewayDataSchema(
@@ -59,7 +66,7 @@ export class AcceptHostedGateway implements PaymentGateway {
   private customerProfileManager: CustomerProfileManager;
 
   private logger = createLogger({
-    name: "TransactionInitializeSessionService",
+    name: "AcceptHostedGateway",
   });
 
   constructor() {
@@ -181,8 +188,8 @@ export class AcceptHostedGateway implements PaymentGateway {
 
   async initializePaymentGateway(
     _payload: PaymentGatewayInitializeSessionEventFragment,
-  ): Promise<AcceptHostedPaymentGatewayData> {
-    return {};
+  ): Promise<AcceptHostedPaymentGatewayResponseData> {
+    return { type: "acceptHosted" };
   }
 
   async initializeTransaction(

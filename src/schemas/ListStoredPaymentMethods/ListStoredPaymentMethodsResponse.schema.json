@@ -1,0 +1,54 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "type": "object",
+  "properties": {
+    "paymentMethods": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "supportedPaymentFlows": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["INTERACTIVE"]
+            }
+          },
+          "type": {
+            "type": "string"
+          },
+          "creditCardInfo": {
+            "type": "object",
+            "properties": {
+              "brand": {
+                "type": "string"
+              },
+              "lastDigits": {
+                "type": "string"
+              },
+              "expMonth": {
+                "type": "string"
+              },
+              "expYear": {
+                "type": "string"
+              },
+              "firstDigits": {
+                "type": "string"
+              }
+            },
+            "required": ["brand", "lastDigits", "expMonth", "expYear"]
+          },
+          "name": {
+            "type": "string"
+          },
+          "data": {}
+        },
+        "required": ["id", "supportedPaymentFlows", "type"]
+      }
+    }
+  },
+  "required": ["paymentMethods"]
+}
