@@ -20,6 +20,13 @@
 			}
 		]
 	},
-	"include": ["next-env.d.ts", "paypal.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+	"include": [
+		"@types/applepayjs",
+		"next-env.d.ts",
+		"paypal.d.ts",
+		"**/*.ts",
+		"**/*.tsx",
+		".next/types/**/*.ts"
+	],
 	"exclude": ["node_modules"]
 }

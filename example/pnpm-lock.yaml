@@ -1,5 +1,9 @@
 lockfileVersion: '6.0'
 
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
 dependencies:
   '@apollo/client':
     specifier: 3.8.5
@@ -39,6 +43,9 @@ devDependencies:
   '@next/env':
     specifier: 13.4.19
     version: 13.4.19
+  '@types/applepayjs':
+    specifier: 14.0.3
+    version: 14.0.3
   '@types/node':
     specifier: 20.6.0
     version: 20.6.0
@@ -1537,6 +1544,10 @@ packages:
     dependencies:
       tslib: 2.6.2
     dev: false
+
+  /@types/applepayjs@14.0.3:
+    resolution: {integrity: sha512-3ketgiX96+ZbFpK1/aCvEAEHUlPsuBt7cv1VCUVYZfWEekvn6oKaTtzK4G+CUINOQwh+1U5QwFb270xhOn94gA==}
+    dev: true
 
   /@types/js-yaml@4.0.5:
     resolution: {integrity: sha512-FhpRzf927MNQdRZP0J5DLIdTXhjLYzeUTmLAu69mnVksLH9CJY3IuSeEgbKUki7GQZm0WqDkGzyxju2EZGD2wA==}
@@ -5463,7 +5474,3 @@ packages:
   /zod@3.22.4:
     resolution: {integrity: sha512-iC+8Io04lddc+mVqQ9AZ7OQ2MrUKGN+oIQyq1vemgt46jwCwLfhq7/pwnBnNXXXZb8VTVLKwp9EDkx+ryxIWmg==}
     dev: false
-
-settings:
-  autoInstallPeers: true
-  excludeLinksFromLockfile: false
